@@ -2,6 +2,11 @@ import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
+import Link from "next/link";
+import Image from "next/image";
+import { headers } from "next/headers";
+import ContextProvider from "~/context";
+import { Home, Folder, UserRound, Tags, Compass } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -12,9 +17,12 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const cookies = headers().get('cookie')
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
-      <body>{children}</body>
+      <body>
+        <ContextProvider cookies={cookies}>{children}</ContextProvider>
+      </body>
     </html>
   );
 }

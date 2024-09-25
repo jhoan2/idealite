@@ -30,6 +30,7 @@ export default function HomePage() {
               deploy it.
             </div>
           </Link>
+          <w3m-button />
         </div>
       </div>
     </main>
