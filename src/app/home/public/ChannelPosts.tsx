@@ -10,12 +10,12 @@ import {
 export default async function ChannelPosts() {
     const channelPosts = await getChannelFeed('dailylearning');
     return (
-        <div className="space-y-2 flex justify-center">
+        <div className="w-full h-full space-y-2 flex justify-center">
             <Carousel
                 opts={{
                     align: "start",
                 }}
-                className="w-2/3 p-2"
+                className="w-2/3 max-w-xl p-2"
                 orientation="horizontal"
             >
                 <CarouselContent className="-ml-[4px]">
@@ -37,7 +37,7 @@ export default async function ChannelPosts() {
                                 <img
                                     src={post.embeds[0].url}
                                     alt="Post image"
-                                    className="w-full rounded-lg"
+                                    className="w-full h-full max-h-36 rounded-lg object-contain"
                                 />
                             )}
                         </CarouselItem>

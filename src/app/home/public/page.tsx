@@ -7,7 +7,7 @@ export default async function page() {
     const channelDetails = await getChannelDetails('dailylearning');
 
     return (
-        <div className='grid grid-cols-3 grid-rows-2 gap-2 m-2'>
+        <div className='grid grid-cols-3 gap-2 m-2'>
             <div className="flex flex-col items-center justify-center w-full h-64 rounded-lg overflow-hidden">
                 <img
                     src={channelDetails.channel.image_url}
@@ -31,7 +31,7 @@ export default async function page() {
                 <h2 className="text-4xl font-bold text-white mb-2">{channelDetails.channel.name}</h2>
                 <p className="text-md text-gray-400">{channelDetails.channel.description}</p>
             </div>
-            <div className="flex flex-col col-span-3 items-center justify-center w-full h-64 bg-gray-800 rounded-lg">
+            <div className="flex flex-col col-span-3 h-full items-center justify-center w-full bg-gray-800 rounded-lg">
                 <Suspense fallback={<LoadingSpinner />}>
                     <ChannelPosts />
                 </Suspense>
