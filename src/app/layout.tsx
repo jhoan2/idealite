@@ -2,12 +2,10 @@ import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
-import Link from "next/link";
-import Image from "next/image";
 import { headers } from "next/headers";
 import ContextProvider from "~/context";
-import { Home, Folder, UserRound, Tags, Compass } from "lucide-react";
 import { PHProvider } from "~/app/providers";
+import SideNav from "~/app/SideNav";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -23,7 +21,12 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
         <ContextProvider cookies={cookies}>
-          <PHProvider>{children}</PHProvider>
+          <PHProvider>
+            <div className="flex h-screen">
+              <SideNav />
+              {children}
+            </div>
+          </PHProvider>
         </ContextProvider>
       </body>
     </html>
