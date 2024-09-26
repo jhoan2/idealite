@@ -2,8 +2,7 @@ import { Suspense } from 'react';
 import { getChannelDetails } from '~/server/farcaster';
 import ChannelPosts from './ChannelPosts';
 import LoadingSpinner from '~/components/ui/LoadingSpinner';
-import { Avatar, AvatarImage, AvatarFallback } from '~/components/ui/avatar';
-
+import NewMembers from './NewMembers';
 export default async function page() {
     const channelDetails = await getChannelDetails('dailylearning');
 
@@ -22,21 +21,9 @@ export default async function page() {
                     <h2 className="text-lg font-bold text-white">Total Members</h2>
                 </div>
                 <div className="flex-1 flex flex-col items-center justify-center bg-gray-800 rounded-lg overflow-hidden">
-                    <div className="flex justify-center relative w-full">
-                        {[...Array(5)].map((_, index) => (
-                            <Avatar
-                                key={index}
-                                className="w-10 h-10 border-2 border-white absolute"
-                                style={{
-                                    left: `calc(30% + ${index * 30 - 30}px)`,
-                                    zIndex: 5 - index,
-                                }}
-                            >
-                                <AvatarImage src={`https://api.dicebear.com/6.x/avataaars/svg?seed=${index}`} />
-                                <AvatarFallback>Avatar</AvatarFallback>
-                            </Avatar>
-                        ))}
-                    </div>
+                    <Suspense fallback={<LoadingSpinner />}>
+                        <NewMembers />
+                    </Suspense>
                     <h2 className="text-lg font-bold text-white mt-14">New Members</h2>
                 </div>
             </div>
