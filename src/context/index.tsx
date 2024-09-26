@@ -6,11 +6,12 @@ import { createAppKit } from '@reown/appkit/react'
 import { base } from '@reown/appkit/networks'
 import React, { type ReactNode } from 'react'
 import { cookieToInitialState, WagmiProvider, type Config } from 'wagmi'
+import { siweConfig } from '~/config/siweConfig'
 
 // Set up queryClient
 const queryClient = new QueryClient()
 
-const projectId = process.env.NEXT_PUBLIC_PROJECT_ID
+const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID
 
 if (!projectId) {
     throw new Error('Project ID is not defined')
@@ -38,11 +39,11 @@ const modal = createAppKit({
         emailShowWallets: true, // default to true
     },
     allWallets: 'SHOW', // default to SHOW
+    siweConfig: siweConfig
 })
 
 function ContextProvider({ children, cookies }: { children: ReactNode; cookies: string | null }) {
     const initialState = cookieToInitialState(wagmiAdapter.wagmiConfig as Config, cookies)
-
     return (
         <WagmiProvider config={wagmiAdapter.wagmiConfig as Config} initialState={initialState}>
             <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
