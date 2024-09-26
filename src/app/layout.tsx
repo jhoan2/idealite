@@ -7,6 +7,7 @@ import Image from "next/image";
 import { headers } from "next/headers";
 import ContextProvider from "~/context";
 import { Home, Folder, UserRound, Tags, Compass } from "lucide-react";
+import { PHProvider } from "~/app/providers";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
-        <ContextProvider cookies={cookies}>{children}</ContextProvider>
+        <ContextProvider cookies={cookies}>
+          <PHProvider>{children}</PHProvider>
+        </ContextProvider>
       </body>
     </html>
   );
