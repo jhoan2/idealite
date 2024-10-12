@@ -13,14 +13,20 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}  className={`${inter.className} antialiased`}>
       <body suppressHydrationWarning={true}>
           <PHProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
               <NeynarProvider>
-            <div className="flex h-screen">
-              <SideNav />
-              {children}
-            </div>
+                <div className="flex h-screen">
+                    <SideNav />
+                    {children}
+                </div>
               </NeynarProvider>
+            </ThemeProvider>
           </PHProvider>
-        </ThemeProvider>
       </body>
     </html>
   );
