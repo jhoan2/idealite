@@ -7,6 +7,8 @@ import { Home, Folder, UserRound } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { ModeToggle } from './NextThemeButton'
+import { NeynarAuthButton } from "@neynar/react";
+
 
 export default function SideNav() {
     const pathname = usePathname()
@@ -83,7 +85,8 @@ export default function SideNav() {
                     </Link>
                 </div>
             </div>
-            <div className='pt-2 flex justify-center items-center'>
+            <div className='pt-2 flex justify-center items-center space-x-2'>
+                <NeynarAuthButton />
                 <ModeToggle />
             </div>
         </nav>
