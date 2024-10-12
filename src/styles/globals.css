@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-900 text-white;
+  @apply bg-gray-800 text-white;
 }
 
 @layer base {
@@ -58,6 +58,7 @@ body {
 
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 222.2 84% 4.9%;
 
@@ -113,6 +114,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

@@ -2,6 +2,10 @@ import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
+import { headers } from "next/headers";
+import ContextProvider from "~/context";
+import { PHProvider } from "~/app/providers";
+import SideNav from "~/app/SideNav";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -12,9 +16,19 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const cookies = headers().get('cookie')
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
-      <body>{children}</body>
+      <body>
+        <ContextProvider cookies={cookies}>
+          <PHProvider>
+            <div className="flex h-screen">
+              <SideNav />
+              {children}
+            </div>
+          </PHProvider>
+        </ContextProvider>
+      </body>
     </html>
   );
 }
