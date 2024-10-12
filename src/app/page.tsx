@@ -30,7 +30,6 @@ export default function FrontPage() {
               deploy it.
             </div>
           </Link>
-          <w3m-button />
         </div>
       </div>
     </main>

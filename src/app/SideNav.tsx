@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Home, Folder, UserRound } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
+import { ModeToggle } from './NextThemeButton'
 
 export default function SideNav() {
     const pathname = usePathname()
@@ -83,7 +84,7 @@ export default function SideNav() {
                 </div>
             </div>
             <div className='pt-2 flex justify-center items-center'>
-                <w3m-button balance='hide' />
+                <ModeToggle />
             </div>
         </nav>
     )
