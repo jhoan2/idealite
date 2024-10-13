@@ -3,9 +3,11 @@ import { getChannelDetails } from '~/server/farcaster';
 import ChannelPosts from './ChannelPosts';
 import LoadingSpinner from '~/components/ui/LoadingSpinner';
 import NewMembers from './NewMembers';
-export default async function page() {
-    const channelDetails = await getChannelDetails('dailylearning');
+import { auth } from "~/app/auth"
 
+export default async function page() {
+    const session = await auth();
+    const channelDetails = await getChannelDetails('dailylearning');
     return (
         <div className='grid grid-cols-3 gap-2 m-2'>
             <div className="flex flex-col items-center justify-center w-full h-64 rounded-lg overflow-hidden">
@@ -36,7 +38,6 @@ export default async function page() {
                     <ChannelPosts />
                 </Suspense>
             </div>
-
         </div>
     )
 }

@@ -8,6 +8,9 @@ import {
   serial,
   timestamp,
   varchar,
+  uuid,
+  integer,
+  text
 } from "drizzle-orm/pg-core";
 
 /**
@@ -18,11 +21,17 @@ import {
  */
 export const createTable = pgTableCreator((name) => `idealite_${name}`);
 
-export const posts = createTable(
-  "post",
+export const users = createTable(
+	"user",
   {
-    id: serial("id").primaryKey(),
-    name: varchar("name", { length: 256 }),
+		id: uuid("id").primaryKey().defaultRandom(),
+		fid: integer("fid"),
+    custody_address: varchar("custody_address", { length: 256 }),
+    username: varchar("username", { length: 256 }),
+    display_name: varchar("display_name", { length: 256 }),
+    pfp_url: varchar("pfp_url", { length: 256 }),
+    bio: text("bio"),
+		role: varchar("role", { length: 50 }).default("user").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -30,7 +39,5 @@ export const posts = createTable(
       () => new Date(),
     ),
   },
-  (example) => ({
-    nameIndex: index("name_idx").on(example.name),
-  }),
 );
+
