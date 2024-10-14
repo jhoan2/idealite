@@ -24,7 +24,7 @@ export default function NeynarProvider({
                 pfp_url: user.pfp_url,
                 username: user.username,
                 display_name: user.display_name,
-                bio: user.profile?.bio,
+                bio: user.profile?.bio?.text,
                 signer_uuid: user.signer_uuid,
               });
             },
