@@ -2,6 +2,21 @@ import NextAuth from "next-auth"
 import credentialsProvider from 'next-auth/providers/credentials'
 import { findUserByFid, createUser } from "~/server/userQueries"
 
+declare module "next-auth" {
+  interface Session {
+    user?: {
+      id: string
+      fid: number
+      custody_address: string
+      username: string
+      display_name: string
+      pfp_url: string
+      bio: string
+    }
+  }
+}
+
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
