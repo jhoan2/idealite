@@ -28,7 +28,17 @@ const coreConfig = {
   webpack: config => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding')
     return config
-  }
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.imgur.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 import { withSentryConfig } from "@sentry/nextjs";
