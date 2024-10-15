@@ -16,8 +16,6 @@ export async function getChannelDetails(id: string) {
     }
 }
 
-
-
 export async function getNewMembers(id: string) {
     const options = {
         method: 'GET',

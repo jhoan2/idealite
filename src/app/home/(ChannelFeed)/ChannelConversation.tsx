@@ -1,30 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-// import ConversationList from '~/components/ConversationList';
-import { Button } from "~/components/ui/button"
-import { Loader2 } from "lucide-react"
+import { Button } from "~/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { useNeynarContext } from '@neynar/react';
-
-interface Cast {
-  hash: string;
-  author: {
-    username: string;
-    display_name: string;
-    pfp_url: string;
-  };
-  text: string;
-  reactions: {
-    likes: { fid: number }[];
-    recasts: { fid: number }[];
-  };
-  replies: {
-    count: number;
-  };
-}
+import ConversationList from './ConversationList';
+import { Cast } from '~/types/cast';
 
 export default function ChannelConversation() {
-
   const [casts, setCasts] = useState<Cast[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +54,7 @@ export default function ChannelConversation() {
 
   return (
     <div className="space-y-4">
-      {/* <ConversationList casts={casts} /> */}
+      <ConversationList casts={casts} />
       {loading && <Loader2 className="w-6 h-6 animate-spin" />}
       {cursor && !loading && (
         <Button onClick={loadMore} variant="outline">

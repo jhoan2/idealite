@@ -22,7 +22,9 @@ export default function RootLayout({
               <NeynarProvider>
                 <div className="flex h-screen">
                     <SideNav />
-                    {children}
+                    <div className="flex-1 overflow-y-auto">
+                      {children}
+                    </div>
                 </div>
               </NeynarProvider>
             </ThemeProvider>
