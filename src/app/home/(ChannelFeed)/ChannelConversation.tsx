@@ -56,10 +56,13 @@ export default function ChannelConversation() {
     <div className="space-y-4">
       <ConversationList casts={casts} />
       {loading && <Loader2 className="w-6 h-6 animate-spin" />}
+
       {cursor && !loading && (
+        <div className="flex justify-center">
         <Button onClick={loadMore} variant="outline">
-          Load More
-        </Button>
+            Load More
+          </Button>
+        </div>
       )}
     </div>
   );
