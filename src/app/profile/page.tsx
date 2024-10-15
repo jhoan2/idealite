@@ -11,7 +11,7 @@ export default async function ProfilePage() {
     }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto p-6">
       <h1 className="mb-6 text-3xl font-bold">Account Settings</h1>
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
