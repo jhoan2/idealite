@@ -1,5 +1,6 @@
 import React from 'react';
 import RecursiveCastCard from './RecursiveCastCard';
+import ChannelFeedCard from './ChannelFeedCard';
 import { Cast } from '~/types/cast';
 
 interface ConversationListProps {
@@ -10,7 +11,7 @@ export default function ConversationList({ casts }: ConversationListProps) {
   return (
     <div className="space-y-4 pt-4">
       {casts.map((cast) => (
-        <RecursiveCastCard key={cast.hash} cast={cast} isTopLevel={true} />
+        <ChannelFeedCard key={cast.hash} cast={cast} />
       ))}
     </div>
   );

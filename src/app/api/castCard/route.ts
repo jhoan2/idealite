@@ -36,3 +36,41 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: 'An error occurred while fetching the event feed' }, { status: 500 });
     }
 }
+
+export async function DELETE(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const eventCastHash = searchParams.get('eventCastHash');
+    const { signer_uuid } = await req.json();
+
+    if (!signer_uuid) {
+        return NextResponse.json({ error: 'signer_uuid is required in the request body' }, { status: 400 });
+    }
+
+    if (!eventCastHash) {
+        return NextResponse.json({ error: 'eventCastHash is required' }, { status: 400 });
+    }
+
+    try {
+        const options = {
+            method: 'DELETE',
+            headers: {
+                accept: 'application/json',
+                api_key: process.env.NEYNAR_API_KEY!,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({ signer_uuid, target_hash: eventCastHash })
+        };
+
+        const response = await fetch('https://api.neynar.com/v2/farcaster/cast', options);
+        const data = await response.json();
+
+        if (response.ok) {
+            return NextResponse.json({ message: 'Cast deleted successfully', data });
+        } else {
+            return NextResponse.json({ error: 'Failed to delete cast', data }, { status: response.status });
+        }
+    } catch (err) {
+        console.error(err);
+        return NextResponse.json({ error: 'An error occurred while deleting the cast' }, { status: 500 });
+    }
+}

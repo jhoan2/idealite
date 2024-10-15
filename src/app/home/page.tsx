@@ -1,10 +1,10 @@
-import ChannelConversation from './(ChannelFeed)/ChannelConversation'
+import ChannelFeed from './(ChannelFeed)/ChannelFeed'
 
 export default function Home() {
 
   return (
     <>
-      <ChannelConversation />
+      <ChannelFeed />
     </>
   )
 }
