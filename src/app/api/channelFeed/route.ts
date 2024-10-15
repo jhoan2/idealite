@@ -42,7 +42,6 @@ export async function GET(request: NextRequest) {
     }
 
     const conversationResponse = await fetchNeynarAPI(url.toString());
-    console.log(conversationResponse)
     return NextResponse.json(conversationResponse);
   } catch (error) {
     console.error('Error fetching event feed:', error);
