@@ -52,6 +52,7 @@ export default function ChannelConversation() {
     return <div className="text-red-500">Error: {error}</div>;
   }
 
+
   return (
     <div className="space-y-4">
       <ConversationList casts={casts} />
