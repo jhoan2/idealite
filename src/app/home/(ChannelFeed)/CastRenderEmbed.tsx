@@ -19,7 +19,6 @@ export default function CastRenderEmbed({ embed }: { embed: Embed }) {
       }
 
       const data = await response.json();
-      console.log(data);
       setCastData(data.cast);
     } catch (error) {
       console.error("Error fetching cast data:", error);
