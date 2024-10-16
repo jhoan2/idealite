@@ -10,7 +10,7 @@ interface RecursiveCastCardProps {
 const RecursiveCastCard: React.FC<RecursiveCastCardProps> = ({ cast, isTopLevel = true }) => {
   const hasDirectReplies = cast.direct_replies && cast.direct_replies.length > 0;
   const isLastInBranch = !hasDirectReplies;
-
+  
   return (
     <div>
       <CastCard
@@ -20,13 +20,13 @@ const RecursiveCastCard: React.FC<RecursiveCastCardProps> = ({ cast, isTopLevel 
       />
 
       {hasDirectReplies && (
-        cast.direct_replies?.map((reply) => (
+        cast.replies?.count > 0 ? cast.replies?.map((reply: Cast) => (
           <RecursiveCastCard
             key={reply.hash}
             cast={reply}
             isTopLevel={false}
           />
-        ))
+        )) : null 
       )}
     </div>
   );
