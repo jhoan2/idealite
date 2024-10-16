@@ -4,7 +4,7 @@ import { PHProvider } from "~/app/providers";
 import SideNav from "~/app/SideNav";
 import { ThemeProvider } from "~/app/ThemeProvider";
 import NeynarProvider from "~/app/NeynarProvider";
-
+import { Toaster } from "~/components/ui/sonner";
 
 export default function RootLayout({
   children,
@@ -22,9 +22,8 @@ export default function RootLayout({
               <NeynarProvider>
                 <div className="flex h-screen">
                     <SideNav />
-                    <div className="flex-1 overflow-y-auto">
-                      {children}
-                    </div>
+                <div className="flex-1 overflow-y-auto">{children}</div>
+                <Toaster />
                 </div>
               </NeynarProvider>
             </ThemeProvider>
