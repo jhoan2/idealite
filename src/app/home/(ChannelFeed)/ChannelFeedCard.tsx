@@ -14,17 +14,18 @@ import { Cast } from "~/types/cast";
 import { useNeynarContext } from "@neynar/react";
 import { v4 as uuidv4 } from "uuid";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuRadioGroup,
-    DropdownMenuLabel,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "~/components/ui/dropdown-menu";	
+} from "~/components/ui/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-
+import CastRenderEmbed from "./CastRenderEmbed";
+import { Embed } from "~/types/cast";
 interface ChannelFeedCardProps {
   cast: Cast;
 }
@@ -37,7 +38,6 @@ const ChannelFeedCard: React.FC<ChannelFeedCardProps> = ({ cast }) => {
     reactions,
     replies,
     hash,
-    viewer_context,
     embeds = [],
     frames = [],
   } = cast;
@@ -81,43 +81,43 @@ const ChannelFeedCard: React.FC<ChannelFeedCardProps> = ({ cast }) => {
   const likeCast = async () => {
     if (!user || !user.signer_uuid) {
       console.error("User or signer_uuid not available");
-        return;
+      return;
     }
 
     try {
       const response = await fetch("/api/castCard", {
         method: "PATCH",
-            headers: {
+        headers: {
           "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
+        },
+        body: JSON.stringify({
           reaction_type: "like",
-                signer_uuid: user.signer_uuid,
+          signer_uuid: user.signer_uuid,
           target: hash,
           target_author_fid: author.fid,
           idem: uuidv4(),
-            }),
-        });
+        }),
+      });
 
-        if (!response.ok) {
+      if (!response.ok) {
         throw new Error("Failed to like cast");
-        }
+      }
 
       const data = await response.json();
 
-        if (data.success) {
+      if (data.success) {
         setLikes(likes + 1);
-        }
+      }
     } catch (error) {
       console.error("Error liking cast:", error);
       toast.error("Error liking cast");
     }
-};
+  };
 
-const parseTextWithLinks = (text: string) => {
+  const parseTextWithLinks = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return text.split(urlRegex).map((part, index) => {
-        if (part.match(urlRegex)) {
+      if (part.match(urlRegex)) {
         return (
           <a
             key={index}
@@ -129,10 +129,10 @@ const parseTextWithLinks = (text: string) => {
             {part}
           </a>
         );
-        }
-        return part;
+      }
+      return part;
     });
-};
+  };
 
   return (
     <Card className="mx-auto flex max-w-xl">
@@ -150,7 +150,7 @@ const parseTextWithLinks = (text: string) => {
           <div className="flex">
             <div className="w-full">
               <div className="flex justify-between">
-          <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2">
                   <p className="font-semibold">{author.display_name}</p>
                   <p className="text-sm text-gray-500">
                     @{author.username} · {timeAgo}
@@ -192,14 +192,31 @@ const parseTextWithLinks = (text: string) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+              <p className="mt-2">{parseTextWithLinks(text)}</p>
+              {filteredEmbeds.length > 0 && (
+                <div className="mt-2">
+                  {filteredEmbeds.map((embed, index) => (
+                    <CastRenderEmbed key={index} embed={embed as Embed} />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between p-2">
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="cursor-default hover:bg-transparent hover:text-inherit"
+          >
             <MessageCircle className="mr-2 h-4 w-4" />
-            {cast.replies.count}
+            {replies.count}
           </Button>
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="cursor-default hover:bg-transparent hover:text-inherit"
+          >
             <Repeat2 className="mr-2 h-4 w-4" />
             {cast.reactions.recasts_count}
           </Button>
