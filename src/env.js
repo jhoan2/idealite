@@ -13,6 +13,7 @@ export const env = createEnv({
       .default("development"),
     NEXTAUTH_SECRET: z.string(),
     NEYNAR_API_KEY: z.string(),
+    PINATA_JWT: z.string(),
   },
 
   /**
@@ -22,6 +23,7 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_NEYNAR_CLIENT_ID: z.string(),
+    NEXT_PUBLIC_GATEWAY_URL: z.string(),
   },
 
   /**
@@ -34,6 +36,8 @@ export const env = createEnv({
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEYNAR_API_KEY: process.env.NEYNAR_API_KEY,
     NEXT_PUBLIC_NEYNAR_CLIENT_ID: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID,
+    PINATA_JWT: process.env.PINATA_JWT,
+    NEXT_PUBLIC_GATEWAY_URL: process.env.NEXT_PUBLIC_GATEWAY_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
