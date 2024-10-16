@@ -26,6 +26,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import CastRenderEmbed from "./CastRenderEmbed";
 import { Embed } from "~/types/cast";
+import Link from "next/link";
 interface ChannelFeedCardProps {
   cast: Cast;
 }
@@ -204,14 +205,12 @@ const ChannelFeedCard: React.FC<ChannelFeedCardProps> = ({ cast }) => {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between p-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="cursor-default hover:bg-transparent hover:text-inherit"
-          >
-            <MessageCircle className="mr-2 h-4 w-4" />
-            {replies.count}
-          </Button>
+          <Link href={`/home/conversation?hash=${hash}`}>
+            <Button variant="ghost" size="sm">
+              <MessageCircle className="mr-2 h-4 w-4" />
+              {replies.count}
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="sm"
