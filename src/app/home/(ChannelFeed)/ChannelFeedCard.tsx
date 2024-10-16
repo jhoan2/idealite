@@ -58,13 +58,13 @@ const ChannelFeedCard: React.FC<ChannelFeedCardProps> = ({ cast }) => {
     }
 
     try {
-      const response = await fetch(`/api/eventCard?eventCastHash=${hash}`, {
+      const response = await fetch(`/api/castCard?eventCastHash=${hash}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          signerUuid: user.signer_uuid,
+          signer_uuid: user.signer_uuid,
         }),
       });
 
