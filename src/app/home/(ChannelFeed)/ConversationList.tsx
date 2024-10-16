@@ -1,5 +1,4 @@
 import React from "react";
-import RecursiveCastCard from "../conversation/(CastConversation)/RecursiveCastCard";
 import ChannelFeedCard from "./ChannelFeedCard";
 import { Cast } from "~/types/cast";
 
