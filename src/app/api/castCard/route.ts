@@ -1,4 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const url = searchParams.get("url");
+  const hash = searchParams.get("hash");
+
+  if (!url && !hash) {
+    return NextResponse.json(
+      { error: "Missing URL or hash parameter" },
+      { status: 400 },
+    );
+  }
+
+  const options = {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      api_key: process.env.NEYNAR_API_KEY!,
+    },
+  };
+
+  try {
+    const identifier = url || hash;
+    const type = url ? "url" : "hash";
+    const response = await fetch(
+      `https://api.neynar.com/v2/farcaster/cast?identifier=${identifier}&type=${type}`,
+      options,
+    );
+    const data = await response.json();
+    console.log(data, "server");
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "An error occurred while fetching the cast" },
+      { status: 500 },
+    );
+  }
+}
 export async function PATCH(req: NextRequest) {
     const { reaction_type, signer_uuid, target, target_author_fid, idem } = await req.json();
 
