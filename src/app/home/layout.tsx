@@ -1,7 +1,7 @@
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { getChannelDetails, getNewMembers } from "~/server/farcaster";
-import { getChannelDetails, getNewMembers } from '~/server/farcaster';
+import PostButton from "./PostButton";
 
 export default async function HomeLayout({
   children,
@@ -32,7 +32,7 @@ export default async function HomeLayout({
               </p>
             </div>
             <div>
-              <Button variant="outline">Post</Button>
+              <PostButton />
             </div>
           </div>
           <div className="mb-4 flex -space-x-2 overflow-hidden">

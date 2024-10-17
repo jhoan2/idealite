@@ -28,7 +28,6 @@ export async function GET(req: NextRequest) {
       options,
     );
     const data = await response.json();
-    console.log(data, "server");
     return NextResponse.json(data);
   } catch (err) {
     console.error(err);
@@ -38,105 +37,149 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-export async function PATCH(req: NextRequest) {
-  const { reaction_type, signer_uuid, target, target_author_fid, idem } =
+
+export async function POST(req: NextRequest) {
+  const { signer_uuid, text, embeds, parent, parent_author_fid } =
     await req.json();
 
-    if (!reaction_type || !signer_uuid || !target || !target_author_fid) {
+  if (!signer_uuid || !text) {
     return NextResponse.json(
       { error: "Missing required fields in request body" },
       { status: 400 },
     );
-    }
+  }
 
-    try {
-        const options = {
+  const postOptions = {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      api_key: process.env.NEYNAR_API_KEY!,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      embeds,
+      signer_uuid,
+      text,
+      parent,
+      parent_author_fid,
+    }),
+  };
+
+  try {
+    const response = await fetch(
+      "https://api.neynar.com/v2/farcaster/cast",
+      postOptions,
+    );
+    await response.json();
+    return NextResponse.json({ message: "success" });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "An error occurred while creating the cast" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  const { reaction_type, signer_uuid, target, target_author_fid, idem } =
+    await req.json();
+
+  if (!reaction_type || !signer_uuid || !target || !target_author_fid) {
+    return NextResponse.json(
+      { error: "Missing required fields in request body" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const options = {
       method: "POST",
-            headers: {
+      headers: {
         accept: "application/json",
-                api_key: process.env.NEYNAR_API_KEY!,
+        api_key: process.env.NEYNAR_API_KEY!,
         "content-type": "application/json",
-            },
-            body: JSON.stringify({
-                reaction_type,
-                signer_uuid,
-                target,
-                target_author_fid,
+      },
+      body: JSON.stringify({
+        reaction_type,
+        signer_uuid,
+        target,
+        target_author_fid,
         idem,
       }),
-        };
+    };
 
     const response = await fetch(
       "https://api.neynar.com/v2/farcaster/reaction",
       options,
     );
-        const data = await response.json();
+    const data = await response.json();
 
-        if (!response.ok) {
+    if (!response.ok) {
       throw new Error(
         `HTTP error! status: ${response.status}, message: ${data.message || "Unknown error"}`,
       );
-        }
+    }
 
-        return NextResponse.json(data);
-    } catch (err) {
-        console.error(err);
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error(err);
     return NextResponse.json(
       { error: "An error occurred while fetching the event feed" },
       { status: 500 },
     );
-    }
+  }
 }
 
 export async function DELETE(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
+  const { searchParams } = new URL(req.url);
   const eventCastHash = searchParams.get("eventCastHash");
-    const { signer_uuid } = await req.json();
+  const { signer_uuid } = await req.json();
 
-    if (!signer_uuid) {
+  if (!signer_uuid) {
     return NextResponse.json(
       { error: "signer_uuid is required in the request body" },
       { status: 400 },
     );
-    }
+  }
 
-    if (!eventCastHash) {
+  if (!eventCastHash) {
     return NextResponse.json(
       { error: "eventCastHash is required" },
       { status: 400 },
     );
-    }
+  }
 
-    try {
-        const options = {
+  try {
+    const options = {
       method: "DELETE",
-            headers: {
+      headers: {
         accept: "application/json",
-                api_key: process.env.NEYNAR_API_KEY!,
+        api_key: process.env.NEYNAR_API_KEY!,
         "content-type": "application/json",
-            },
+      },
       body: JSON.stringify({ signer_uuid, target_hash: eventCastHash }),
-        };
+    };
 
     const response = await fetch(
       "https://api.neynar.com/v2/farcaster/cast",
       options,
     );
-        const data = await response.json();
+    const data = await response.json();
 
-        if (response.ok) {
+    if (response.ok) {
       return NextResponse.json({ message: "Cast deleted successfully", data });
-        } else {
+    } else {
       return NextResponse.json(
         { error: "Failed to delete cast", data },
         { status: response.status },
       );
-        }
-    } catch (err) {
-        console.error(err);
+    }
+  } catch (err) {
+    console.error(err);
     return NextResponse.json(
       { error: "An error occurred while deleting the cast" },
       { status: 500 },
     );
-    }
+  }
 }
