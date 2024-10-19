@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -152,140 +152,144 @@ const CastCard: React.FC<CastCardProps> = ({
   };
 
   return (
-    <div>
-      <Card className="mx-auto max-w-xl">
-        <div className="flex">
-          <CardHeader className="flex flex-col items-start space-x-4 p-0">
-            <div className="pl-4 pt-4">
-              <Avatar>
-                <AvatarImage src={author.pfp_url} alt={author.display_name} />
-                <AvatarFallback>{author.display_name.charAt(0)}</AvatarFallback>
-              </Avatar>
-            </div>
-            {!isLastInBranch && !isTopLevel && (
-              <div className="h-full pl-3">
-                <div className="mx-2 h-full w-[2px] self-stretch bg-gray-300"></div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <div>
+        <Card className="mx-auto max-w-xl">
+          <div className="flex">
+            <CardHeader className="flex flex-col items-start space-x-4 p-0">
+              <div className="pl-4 pt-4">
+                <Avatar>
+                  <AvatarImage src={author.pfp_url} alt={author.display_name} />
+                  <AvatarFallback>
+                    {author.display_name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
               </div>
-            )}
-          </CardHeader>
-          <div className="flex-grow flex-col">
-            <CardContent className="p-2">
-              <div className="flex">
-                <div className="w-full">
-                  <div className="flex justify-between">
-                    <div className="flex items-center space-x-2">
-                      <p className="font-semibold">{author.display_name}</p>
-                      <p className="text-sm text-gray-500">
-                        @{author.username} · {timeAgo}
-                      </p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="lucide lucide-more-horizontal h-4 w-4"
-                          >
-                            <circle cx="12" cy="12" r="1" />
-                            <circle cx="19" cy="12" r="1" />
-                            <circle cx="5" cy="12" r="1" />
-                          </svg>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-44">
-                        <DropdownMenuRadioGroup>
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => deleteCast()}
-                            className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-red-600 outline-none transition-colors focus:bg-red-100 focus:text-red-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:focus:bg-slate-800 dark:focus:text-slate-50"
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuRadioGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <p className="mt-2">{parseTextWithLinks(text)}</p>
-                  {filteredEmbeds.length > 0 && (
-                    <div className="mt-2">
-                      {filteredEmbeds.map((embed, index) => (
-                        <CastRenderEmbed key={index} embed={embed} />
-                      ))}
-                    </div>
-                  )}
+              {!isLastInBranch && !isTopLevel && (
+                <div className="h-full pl-3">
+                  <div className="mx-2 h-full w-[2px] self-stretch bg-gray-300"></div>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between p-2">
-              <CastSubCardReply
-                author={author}
-                replies={replies}
-                timeAgo={timeAgo}
-                text={text}
-                hash={hash}
-              />
-              <Button
-                disabled={
-                  viewer_context.liked ||
-                  likes === cast.reactions.likes_count + 1
-                }
-                variant="ghost"
-                size="sm"
-                onClick={() => likeCast()}
-              >
-                <Heart
-                  className={`mr-2 h-4 w-4 ${viewer_context.liked || likes > reactions.likes_count ? "fill-red-500" : ""}`}
+              )}
+            </CardHeader>
+            <div className="flex-grow flex-col">
+              <CardContent className="p-2">
+                <div className="flex">
+                  <div className="w-full">
+                    <div className="flex justify-between">
+                      <div className="flex items-center space-x-2">
+                        <p className="font-semibold">{author.display_name}</p>
+                        <p className="text-sm text-gray-500">
+                          @{author.username} · {timeAgo}
+                        </p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="lucide lucide-more-horizontal h-4 w-4"
+                            >
+                              <circle cx="12" cy="12" r="1" />
+                              <circle cx="19" cy="12" r="1" />
+                              <circle cx="5" cy="12" r="1" />
+                            </svg>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-44">
+                          <DropdownMenuRadioGroup>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => deleteCast()}
+                              className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-red-600 outline-none transition-colors focus:bg-red-100 focus:text-red-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:focus:bg-slate-800 dark:focus:text-slate-50"
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <p className="mt-2">{parseTextWithLinks(text)}</p>
+                    {filteredEmbeds.length > 0 && (
+                      <div className="mt-2">
+                        {filteredEmbeds.map((embed, index) => (
+                          <CastRenderEmbed key={index} embed={embed} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between p-2">
+                <CastSubCardReply
+                  author={author}
+                  replies={replies}
+                  timeAgo={timeAgo}
+                  text={text}
+                  hash={hash}
                 />
-                {likes}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  navigator.clipboard
-                    .writeText(window.location.href)
-                    .then(() => {
-                      setIsLinkCopied(true);
-                      setTimeout(() => setIsLinkCopied(false), 1000);
-                    })
-                    .catch((err) => {
-                      console.error("Failed to copy link: ", err);
-                    });
-                }}
-              >
-                {isLinkCopied ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <Share className="h-4 w-4" />
-                )}
-              </Button>
-            </CardFooter>
+                <Button
+                  disabled={
+                    viewer_context.liked ||
+                    likes === cast.reactions.likes_count + 1
+                  }
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => likeCast()}
+                >
+                  <Heart
+                    className={`mr-2 h-4 w-4 ${viewer_context.liked || likes > reactions.likes_count ? "fill-red-500" : ""}`}
+                  />
+                  {likes}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard
+                      .writeText(window.location.href)
+                      .then(() => {
+                        setIsLinkCopied(true);
+                        setTimeout(() => setIsLinkCopied(false), 1000);
+                      })
+                      .catch((err) => {
+                        console.error("Failed to copy link: ", err);
+                      });
+                  }}
+                >
+                  {isLinkCopied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Share className="h-4 w-4" />
+                  )}
+                </Button>
+              </CardFooter>
+            </div>
           </div>
-        </div>
-        {isLastInBranch && replies.count > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full text-gray-500"
-            onClick={() => onShowMoreReplies(hash)}
-          >
-            <ChevronDown className="mr-2 h-4 w-4" />
-            Show more replies
-          </Button>
-        )}
-      </Card>
-      {isTopLevel ? <CastMainCardReply hash={hash} author={author} /> : null}
-    </div>
+          {isLastInBranch && replies.count > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-gray-500"
+              onClick={() => onShowMoreReplies(hash)}
+            >
+              <ChevronDown className="mr-2 h-4 w-4" />
+              Show more replies
+            </Button>
+          )}
+        </Card>
+        {isTopLevel ? <CastMainCardReply hash={hash} author={author} /> : null}
+      </div>
+    </Suspense>
   );
 };
 
