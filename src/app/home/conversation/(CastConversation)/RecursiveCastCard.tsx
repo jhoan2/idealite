@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import CastCard from "./CastCard";
 import { Cast } from "~/types/cast";
 
@@ -18,25 +18,27 @@ const RecursiveCastCard: React.FC<RecursiveCastCardProps> = ({
   const isLastInBranch = !hasDirectReplies;
 
   return (
-    <div>
-      <CastCard
-        cast={{ ...cast }}
-        onShowMoreReplies={onShowMoreReplies}
-        isLastInBranch={isLastInBranch}
-        isTopLevel={isTopLevel}
-      />
+    <Suspense fallback={<div>Loading...</div>}>
+      <div>
+        <CastCard
+          cast={{ ...cast }}
+          onShowMoreReplies={onShowMoreReplies}
+          isLastInBranch={isLastInBranch}
+          isTopLevel={isTopLevel}
+        />
 
-      {hasDirectReplies &&
-        cast.direct_replies &&
-        cast.direct_replies.map((reply, index) => (
-          <RecursiveCastCard
-            key={reply.hash}
-            cast={reply}
-            onShowMoreReplies={onShowMoreReplies}
-            isTopLevel={false}
-          />
-        ))}
-    </div>
+        {hasDirectReplies &&
+          cast.direct_replies &&
+          cast.direct_replies.map((reply, index) => (
+            <RecursiveCastCard
+              key={reply.hash}
+              cast={reply}
+              onShowMoreReplies={onShowMoreReplies}
+              isTopLevel={false}
+            />
+          ))}
+      </div>
+    </Suspense>
   );
 };
 
