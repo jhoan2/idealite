@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useNeynarContext } from "@neynar/react";
 import { Loader2, ChevronDown, ArrowLeft } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -145,41 +145,43 @@ export default function Conversation() {
   }, [hash]);
 
   return (
-    <div className="relative space-y-4 pt-4">
-      <Link href="/home" className="mb-4 inline-block">
-        <Button variant="ghost" className="rounded-full">
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
-      </Link>
-      {isLoading && (
-        <div className="z-10 flex items-center justify-center bg-white bg-opacity-50">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-        </div>
-      )}
-      {castConversation &&
-      castConversation.conversation &&
-      castConversation.conversation.cast ? (
-        <RecursiveCastCard
-          cast={castConversation.conversation.cast as any}
-          onShowMoreReplies={fetchMoreReplies}
-        />
-      ) : null}
-      {castConversation &&
-        castConversation.next &&
-        castConversation.next.cursor && (
-          <div className="mt-4 flex items-center justify-center">
-            <button
-              onClick={() =>
-                fetchCastConversation(castConversation.next?.cursor)
-              }
-              className="flex items-center space-x-2 rounded-full bg-gray-100 px-4 py-2 transition-colors duration-200 hover:bg-gray-200"
-            >
-              <span>Load more</span>
-              <ChevronDown className="h-4 w-4" />
-              <div className="h-2 w-2 rounded-full bg-yellow-400" />
-            </button>
+    <Suspense fallback={<div>Loading...</div>}>
+      <div className="relative space-y-4 pt-4">
+        <Link href="/home" className="mb-4 inline-block">
+          <Button variant="ghost" className="rounded-full">
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+        </Link>
+        {isLoading && (
+          <div className="z-10 flex items-center justify-center bg-white bg-opacity-50">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
           </div>
         )}
-    </div>
+        {castConversation &&
+        castConversation.conversation &&
+        castConversation.conversation.cast ? (
+          <RecursiveCastCard
+            cast={castConversation.conversation.cast as any}
+            onShowMoreReplies={fetchMoreReplies}
+          />
+        ) : null}
+        {castConversation &&
+          castConversation.next &&
+          castConversation.next.cursor && (
+            <div className="mt-4 flex items-center justify-center">
+              <button
+                onClick={() =>
+                  fetchCastConversation(castConversation.next?.cursor)
+                }
+                className="flex items-center space-x-2 rounded-full bg-gray-100 px-4 py-2 transition-colors duration-200 hover:bg-gray-200"
+              >
+                <span>Load more</span>
+                <ChevronDown className="h-4 w-4" />
+                <div className="h-2 w-2 rounded-full bg-yellow-400" />
+              </button>
+            </div>
+          )}
+      </div>
+    </Suspense>
   );
 }
