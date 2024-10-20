@@ -1,14 +1,13 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs"
-import Image from "next/image"
-import { findUserByFid } from "~/server/userQueries"
-import { auth } from "~/app/auth"
-import { redirect } from "next/navigation"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import Image from "next/image";
+import { auth } from "~/app/auth";
+import { redirect } from "next/navigation";
 
 export default async function ProfilePage() {
-    const session = await auth();
-    if (!session) {
-      redirect('/home');
-    }
+  const session = await auth();
+  if (!session) {
+    redirect("/home");
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -22,16 +21,25 @@ export default async function ProfilePage() {
             <div className="mb-6 flex items-center justify-between text-foreground">
               <div className="flex items-center space-x-4 text-foreground/60">
                 <Image
-                  src={session?.user?.pfp_url || "/placeholder.svg?height=80&width=80"}
+                  src={
+                    session?.user?.pfp_url ||
+                    "/placeholder.svg?height=80&width=80"
+                  }
                   alt="Profile picture"
                   className="h-20 w-20 rounded-full"
                   width={80}
                   height={80}
                 />
                 <div>
-                  <h2 className="text-xl font-semibold text-foreground">{session?.user?.display_name}</h2>
-                  <p className="text-gray-600 text-foreground/60">{session?.user?.username}</p>
-                  <p className="text-gray-600 text-foreground/60">{session?.user?.bio}</p>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {session?.user?.display_name}
+                  </h2>
+                  <p className="text-foreground/60 text-gray-600">
+                    {session?.user?.username}
+                  </p>
+                  <p className="text-foreground/60 text-gray-600">
+                    {session?.user?.bio}
+                  </p>
                 </div>
               </div>
               {/* <Button variant="outline" size="sm">
@@ -43,5 +51,5 @@ export default async function ProfilePage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
