@@ -21,24 +21,24 @@ function CirclePack({ width = 600, height = 600 }: CirclePackProps) {
     id: "root",
     name: "root",
     children: [
-      { id: "1", name: "Something", value: 100 },
-      { id: "2", name: "Threads", value: 100 },
+      { id: "1", name: "Something" },
+      { id: "2", name: "Threads" },
       {
         id: "3",
         name: "Chat Rooms",
         children: [
-          { id: "c1", name: "General", value: 100 },
-          { id: "c2", name: "Random", value: 100 },
-          { id: "c3", name: "Open Source Projects", value: 100 },
+          { id: "c1", name: "General" },
+          { id: "c2", name: "Random" },
+          { id: "c3", name: "Open Source Projects" },
         ],
       },
       {
         id: "4",
         name: "Direct Messages",
         children: [
-          { id: "d1", name: "Alice", value: 100 },
-          { id: "d2", name: "Bob", value: 100 },
-          { id: "d3", name: "Charlie", value: 100 },
+          { id: "d1", name: "Alice" },
+          { id: "d2", name: "Bob" },
+          { id: "d3", name: "Charlie" },
         ],
       },
     ],
@@ -104,8 +104,8 @@ function CirclePack({ width = 600, height = 600 }: CirclePackProps) {
 
   const hierarchy = d3
     .hierarchy(data)
-    .sum((d) => d.value || 0)
-    .sort((a, b) => (b.value || 0) - (a.value || 0));
+    .sum(() => 1) // Give each node a value of 1
+    .sort((a, b) => b.value! - a.value!);
 
   const packGenerator = d3
     .pack<TreeNodeData>()
