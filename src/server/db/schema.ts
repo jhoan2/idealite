@@ -12,6 +12,7 @@ import {
   text,
   boolean,
   AnyPgColumn,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -61,6 +62,28 @@ export const tags = createTable(
       name_idx: index("name_idx").on(table.name),
       created_at_idx: index("created_at_idx").on(table.created_at),
       deleted_idx: index("deleted_idx").on(table.deleted),
+    };
+  },
+);
+
+export const users_tags = createTable(
+  "users_tags",
+  {
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    tag_id: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.user_id, table.tag_id] }),
+      user_id_idx: index("user_id_idx").on(table.user_id),
+      tag_id_idx: index("tag_id_idx").on(table.tag_id),
     };
   },
 );
