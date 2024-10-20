@@ -31,10 +31,10 @@ export const users = createTable("user", {
   pfp_url: varchar("pfp_url", { length: 256 }),
   bio: text("bio"),
   role: varchar("role", { length: 50 }).default("user").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
+  created_at: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+  updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
     () => new Date(),
   ),
 });
