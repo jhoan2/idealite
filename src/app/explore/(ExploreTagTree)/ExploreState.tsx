@@ -3,12 +3,19 @@
 import { useState } from "react";
 import ExploreTagTree from "./ExploreTagTree";
 import CirclePack from "./CirclePack";
+import { TreeNodeData } from "~/server/tagQueries";
 
-export default function ExploreState() {
+interface ExploreStateProps {
+  tag: TreeNodeData;
+}
+
+export default function ExploreState({ tag }: ExploreStateProps) {
   return (
-    <>
+    <div className="flex">
       <ExploreTagTree />
-      <CirclePack />
-    </>
+      <div className="flex-1">
+        <CirclePack tag={tag} />
+      </div>
+    </div>
   );
 }

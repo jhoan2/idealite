@@ -6,43 +6,18 @@ import * as d3 from "d3";
 interface TreeNodeData {
   id: string;
   name: string;
-  value?: number;
   children?: TreeNodeData[];
 }
 
 interface CirclePackProps {
   width?: number;
   height?: number;
+  tag: TreeNodeData;
 }
 
-function CirclePack({ width = 600, height = 600 }: CirclePackProps) {
+function CirclePack({ width = 600, height = 600, tag }: CirclePackProps) {
   const [newCount, setNewCount] = useState(1);
-  const data: TreeNodeData = {
-    id: "root",
-    name: "root",
-    children: [
-      { id: "1", name: "Something" },
-      { id: "2", name: "Threads" },
-      {
-        id: "3",
-        name: "Chat Rooms",
-        children: [
-          { id: "c1", name: "General" },
-          { id: "c2", name: "Random" },
-          { id: "c3", name: "Open Source Projects" },
-        ],
-      },
-      {
-        id: "4",
-        name: "Direct Messages",
-        children: [
-          { id: "d1", name: "Alice" },
-          { id: "d2", name: "Bob" },
-          { id: "d3", name: "Charlie" },
-        ],
-      },
-    ],
-  };
+  const data: TreeNodeData = tag;
 
   const colors = [
     "#FFFF00",
@@ -167,7 +142,7 @@ function CirclePack({ width = 600, height = 600 }: CirclePackProps) {
 
   return (
     <div className="relative">
-      {newCount}
+      <h1>Select Tags</h1>
       <svg width={width} height={height} style={{ display: "inline-block" }}>
         {allCircles}
       </svg>
@@ -229,10 +204,10 @@ function MyComponentInFront() {
   );
 }
 
-export default function OnTheCanvasExample() {
+export default function OnTheCanvasExample({ tag }: { tag: TreeNodeData }) {
   const components = {
-    OnTheCanvas: CirclePack,
-    InFrontOfTheCanvas: MyComponentInFront,
+    OnTheCanvas: (props: any) => <CirclePack {...props} tag={tag} />,
+    // InFrontOfTheCanvas: MyComponentInFront,
   };
 
   return (
