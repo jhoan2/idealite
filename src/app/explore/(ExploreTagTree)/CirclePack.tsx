@@ -2,6 +2,7 @@ import { useState } from "react";
 import { stopEventPropagation, Tldraw, useEditor } from "tldraw";
 import "tldraw/tldraw.css";
 import * as d3 from "d3";
+import { mergeTrees } from "./TagTreeMerger";
 
 interface TreeNodeData {
   id: string;
@@ -13,10 +14,17 @@ interface CirclePackProps {
   width?: number;
   height?: number;
   tag: TreeNodeData;
+  tagTree: TreeNodeData | undefined;
+  setTagTree: (tag: TreeNodeData) => void;
 }
 
-function CirclePack({ width = 600, height = 600, tag }: CirclePackProps) {
-  const [newCount, setNewCount] = useState(1);
+function CirclePack({
+  width = 600,
+  height = 600,
+  tag,
+  tagTree,
+  setTagTree,
+}: CirclePackProps) {
   const data: TreeNodeData = tag;
 
   const colors = [
@@ -89,9 +97,16 @@ function CirclePack({ width = 600, height = 600, tag }: CirclePackProps) {
 
   const root = packGenerator(hierarchy);
 
-  const handleCircleClick = (event: React.MouseEvent) => {
+  const handleCircleClick = (
+    event: React.MouseEvent,
+    node: d3.HierarchyCircularNode<TreeNodeData>,
+  ) => {
     event.stopPropagation();
-    setNewCount((prevCount) => prevCount + 1);
+    if (tagTree) {
+      setTagTree(mergeTrees(tagTree, node.data));
+    } else {
+      setTagTree(node.data);
+    }
   };
 
   const firstLevelGroups = hierarchy?.children?.map((child) => child.data.name);
@@ -108,7 +123,7 @@ function CirclePack({ width = 600, height = 600, tag }: CirclePackProps) {
       return (
         <g
           key={node.data.name}
-          onClick={() => console.log(node.data)}
+          onClick={(event) => handleCircleClick(event, node)}
           onPointerDown={stopEventPropagation}
         >
           <circle
@@ -204,9 +219,24 @@ function MyComponentInFront() {
   );
 }
 
-export default function OnTheCanvasExample({ tag }: { tag: TreeNodeData }) {
+export default function OnTheCanvasExample({
+  tag,
+  tagTree,
+  setTagTree,
+}: {
+  tag: TreeNodeData;
+  tagTree: TreeNodeData | undefined;
+  setTagTree: (tag: TreeNodeData) => void;
+}) {
   const components = {
-    OnTheCanvas: (props: any) => <CirclePack {...props} tag={tag} />,
+    OnTheCanvas: (props: any) => (
+      <CirclePack
+        {...props}
+        tag={tag}
+        tagTree={tagTree}
+        setTagTree={setTagTree}
+      />
+    ),
     // InFrontOfTheCanvas: MyComponentInFront,
   };
 
@@ -215,6 +245,7 @@ export default function OnTheCanvasExample({ tag }: { tag: TreeNodeData }) {
       <Tldraw
         persistenceKey="things-on-the-canvas-example"
         components={components}
+        inferDarkMode
       />
     </div>
   );
