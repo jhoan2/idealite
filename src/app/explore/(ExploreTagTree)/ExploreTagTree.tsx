@@ -9,30 +9,27 @@ import {
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
 import { Button } from "~/components/ui/button";
+import { HierarchicalUserTag } from "./buildHierarchicalUserTagTree";
 
 interface ExploreTagTreeProps {
-  tagTree: TreeNodeData | undefined;
-  setTagTree: React.Dispatch<React.SetStateAction<TreeNodeData | undefined>>;
-  hasChanges: boolean;
+  tagTree: HierarchicalUserTag[];
 }
 
 interface TreeNodeData {
   id: string;
   name: string;
   children?: TreeNodeData[];
+  isInBoth?: boolean;
 }
 
 interface TreeProps {
   data: TreeNodeData;
-  setTagTree: React.Dispatch<React.SetStateAction<TreeNodeData | undefined>>;
-  hasChanges: boolean;
 }
 
 const TreeNode: React.FC<{
   node: TreeNodeData;
   level: number;
-  setTagTree: React.Dispatch<React.SetStateAction<TreeNodeData | undefined>>;
-}> = ({ node, level, setTagTree }) => {
+}> = ({ node, level }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
 
@@ -49,11 +46,6 @@ const TreeNode: React.FC<{
       }
       return tree;
     };
-
-    setTagTree((prevTree) => {
-      if (!prevTree) return undefined;
-      return removeNode({ ...prevTree }) || undefined;
-    });
   };
 
   return (
@@ -85,12 +77,7 @@ const TreeNode: React.FC<{
           {isExpanded && hasChildren && (
             <div className="ml-2">
               {node.children!.map((child, index) => (
-                <TreeNode
-                  key={index}
-                  node={child}
-                  level={level + 1}
-                  setTagTree={setTagTree}
-                />
+                <TreeNode key={index} node={child} level={level + 1} />
               ))}
             </div>
           )}
@@ -109,14 +96,10 @@ const TreeNode: React.FC<{
   );
 };
 
-const MinimalistTree: React.FC<TreeProps> = ({
-  data,
-  setTagTree,
-  hasChanges,
-}) => {
+const MinimalistTree: React.FC<TreeProps> = ({ data }) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      {hasChanges && (
+      {true && (
         <div className="mt-4 flex justify-center space-x-2">
           <Button variant="outline" size="sm">
             <Save className="mr-2 h-4 w-4" />
@@ -125,7 +108,7 @@ const MinimalistTree: React.FC<TreeProps> = ({
         </div>
       )}
       <div className="custom-scrollbar h-screen overflow-y-auto p-4">
-        <TreeNode node={data} level={0} setTagTree={setTagTree} />
+        <TreeNode node={data} level={0} />
       </div>
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -156,18 +139,8 @@ const MinimalistTree: React.FC<TreeProps> = ({
   );
 };
 
-export default function ExploreTagTree({
-  tagTree,
-  setTagTree,
-  hasChanges,
-}: ExploreTagTreeProps) {
-  const data: TreeNodeData = tagTree || { id: "", name: "" };
+export default function ExploreTagTree({ tagTree }: ExploreTagTreeProps) {
+  const data: TreeNodeData = tagTree[0] || { id: "", name: "" };
 
-  return (
-    <MinimalistTree
-      data={data}
-      setTagTree={setTagTree}
-      hasChanges={hasChanges}
-    />
-  );
+  return <MinimalistTree data={data} />;
 }
