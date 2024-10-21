@@ -290,7 +290,6 @@ export default function OnTheCanvasExample({
       <Tldraw
         persistenceKey="things-on-the-canvas-example"
         components={components}
-        inferDarkMode
       />
     </div>
   );
