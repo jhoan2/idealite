@@ -2,30 +2,35 @@ import { useState } from "react";
 import { stopEventPropagation, Tldraw, useEditor } from "tldraw";
 import "tldraw/tldraw.css";
 import * as d3 from "d3";
-import { mergeTrees } from "./TagTreeMerger";
+import { SelectTag } from "~/server/usersTagsQueries";
 
 interface TreeNodeData {
   id: string;
   name: string;
   children?: TreeNodeData[];
+  isInBoth?: boolean;
 }
 
 interface CirclePackProps {
   width?: number;
   height?: number;
-  tag: TreeNodeData;
   tagTree: TreeNodeData | undefined;
-  setTagTree: (tag: TreeNodeData) => void;
+  flatUserTags: SelectTag[];
+  setFlatUserTags: (tags: SelectTag[]) => void;
 }
 
 function CirclePack({
   width = 600,
   height = 600,
-  tag,
   tagTree,
-  setTagTree,
+  flatUserTags,
+  setFlatUserTags,
 }: CirclePackProps) {
-  const data: TreeNodeData = tag;
+  const data: TreeNodeData = tagTree || {
+    id: "root",
+    name: "Root",
+    children: [],
+  };
 
   const colors = [
     "#FFFF00",
@@ -102,11 +107,47 @@ function CirclePack({
     node: d3.HierarchyCircularNode<TreeNodeData>,
   ) => {
     event.stopPropagation();
-    if (tagTree) {
-      setTagTree(mergeTrees(tagTree, node.data));
-    } else {
-      setTagTree(node.data);
-    }
+
+    // Flatten the node data
+    const flattenNode = (
+      n: TreeNodeData,
+      parentId: string | null = null,
+    ): SelectTag[] => {
+      const result: SelectTag[] = [
+        {
+          id: n.id,
+          name: n.name,
+          parent_id: parentId,
+          created_at: new Date(),
+          updated_at: null,
+          deleted: false,
+        },
+      ];
+      if (n.children) {
+        n.children.forEach((child) => {
+          result.push(...flattenNode(child, n.id));
+        });
+      }
+      return result;
+    };
+
+    const newTags = flattenNode(node.data);
+
+    // Merge new tags with existing flatUserTags, updating or adding as needed
+    const mergedTags = flatUserTags.map((tag) => {
+      const updatedTag = newTags.find((newTag) => newTag.id === tag.id);
+      return updatedTag || tag;
+    });
+
+    // Add any new tags that weren't in flatUserTags
+    newTags.forEach((newTag) => {
+      if (!mergedTags.some((tag) => tag.id === newTag.id)) {
+        mergedTags.push(newTag);
+      }
+    });
+
+    // Update the state
+    setFlatUserTags(mergedTags);
   };
 
   const firstLevelGroups = hierarchy?.children?.map((child) => child.data.name);
@@ -134,8 +175,12 @@ function CirclePack({
             strokeWidth={1}
             strokeOpacity={0.3}
             fill={colorScale(parentName)}
-            fillOpacity={0.1}
-            className="transition-colors duration-200 hover:fill-slate-400"
+            fillOpacity={node.data.isInBoth ? 0.8 : 0.1}
+            className={
+              node.data.isInBoth
+                ? ""
+                : "transition-colors duration-200 hover:fill-slate-400"
+            }
           />
           <path id={node.data.name} fill="none" d={arcText} />
           <text fontSize={12} fontWeight={0.4}>
@@ -220,21 +265,21 @@ function MyComponentInFront() {
 }
 
 export default function OnTheCanvasExample({
-  tag,
   tagTree,
-  setTagTree,
+  flatUserTags,
+  setFlatUserTags,
 }: {
-  tag: TreeNodeData;
   tagTree: TreeNodeData | undefined;
-  setTagTree: (tag: TreeNodeData) => void;
+  flatUserTags: SelectTag[];
+  setFlatUserTags: (tags: SelectTag[]) => void;
 }) {
   const components = {
     OnTheCanvas: (props: any) => (
       <CirclePack
         {...props}
-        tag={tag}
         tagTree={tagTree}
-        setTagTree={setTagTree}
+        flatUserTags={flatUserTags}
+        setFlatUserTags={setFlatUserTags}
       />
     ),
     // InFrontOfTheCanvas: MyComponentInFront,
