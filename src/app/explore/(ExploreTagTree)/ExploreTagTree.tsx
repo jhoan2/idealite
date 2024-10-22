@@ -9,10 +9,23 @@ import {
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
 import { Button } from "~/components/ui/button";
-import { HierarchicalUserTag } from "./buildHierarchicalUserTagTree";
+import type { TreeNode } from "./buildHierarchicalUserTagTree";
+import type { SelectTag } from "~/server/tagQueries";
 
 interface ExploreTagTreeProps {
-  tagTree: HierarchicalUserTag[];
+  tagTree: {
+    id: string;
+    name: string;
+    children: {
+      id: string;
+      name: string;
+      children: TreeNode[];
+      parent_id: string | null;
+    }[];
+    parent_id: string | null;
+  }[];
+  flatUserTags: SelectTag[];
+  setFlatUserTags: (tags: SelectTag[]) => void;
 }
 
 interface TreeNodeData {
@@ -24,28 +37,22 @@ interface TreeNodeData {
 
 interface TreeProps {
   data: TreeNodeData;
+  flatUserTags: SelectTag[];
+  setFlatUserTags: (tags: SelectTag[]) => void;
 }
 
 const TreeNode: React.FC<{
   node: TreeNodeData;
   level: number;
-}> = ({ node, level }) => {
+  flatUserTags: SelectTag[];
+  setFlatUserTags: (tags: SelectTag[]) => void;
+}> = ({ node, level, flatUserTags, setFlatUserTags }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
 
   const handleDelete = (id: string) => {
-    const removeNode = (tree: TreeNodeData): TreeNodeData | undefined => {
-      if (tree.id === id) {
-        return undefined;
-      }
-      if (tree.children) {
-        tree.children = tree.children
-          .filter((child) => child.id !== id)
-          .map((child) => removeNode(child))
-          .filter((child): child is TreeNodeData => child !== undefined);
-      }
-      return tree;
-    };
+    const updatedTags = flatUserTags.filter((tag) => tag.id !== id);
+    setFlatUserTags(updatedTags);
   };
 
   return (
@@ -77,7 +84,13 @@ const TreeNode: React.FC<{
           {isExpanded && hasChildren && (
             <div className="ml-2">
               {node.children!.map((child, index) => (
-                <TreeNode key={index} node={child} level={level + 1} />
+                <TreeNode
+                  key={index}
+                  node={child}
+                  level={level + 1}
+                  flatUserTags={flatUserTags}
+                  setFlatUserTags={setFlatUserTags}
+                />
               ))}
             </div>
           )}
@@ -96,7 +109,11 @@ const TreeNode: React.FC<{
   );
 };
 
-const MinimalistTree: React.FC<TreeProps> = ({ data }) => {
+const MinimalistTree: React.FC<TreeProps> = ({
+  data,
+  flatUserTags,
+  setFlatUserTags,
+}) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       {true && (
@@ -108,7 +125,12 @@ const MinimalistTree: React.FC<TreeProps> = ({ data }) => {
         </div>
       )}
       <div className="custom-scrollbar h-screen overflow-y-auto p-4">
-        <TreeNode node={data} level={0} />
+        <TreeNode
+          node={data}
+          level={0}
+          flatUserTags={flatUserTags}
+          setFlatUserTags={setFlatUserTags}
+        />
       </div>
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -139,8 +161,17 @@ const MinimalistTree: React.FC<TreeProps> = ({ data }) => {
   );
 };
 
-export default function ExploreTagTree({ tagTree }: ExploreTagTreeProps) {
+export default function ExploreTagTree({
+  tagTree,
+  flatUserTags,
+  setFlatUserTags,
+}: ExploreTagTreeProps) {
   const data: TreeNodeData = tagTree[0] || { id: "", name: "" };
-
-  return <MinimalistTree data={data} />;
+  return (
+    <MinimalistTree
+      data={data}
+      flatUserTags={flatUserTags}
+      setFlatUserTags={setFlatUserTags}
+    />
+  );
 }

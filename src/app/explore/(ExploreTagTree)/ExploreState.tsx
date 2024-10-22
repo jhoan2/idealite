@@ -51,11 +51,14 @@ export default function ExploreState({ tag, userTags }: ExploreStateProps) {
     () => buildHierarchicalTree(flatUserTags),
     [flatUserTags],
   );
-  console.log(userTagTree);
 
   return (
     <div className="flex">
-      <ExploreTagTree tagTree={userTagTree} />
+      <ExploreTagTree
+        tagTree={userTagTree}
+        flatUserTags={flatUserTags}
+        setFlatUserTags={setFlatUserTags}
+      />
       <div className="flex-1">
         <CirclePack
           tagTree={tagTree[0]}
