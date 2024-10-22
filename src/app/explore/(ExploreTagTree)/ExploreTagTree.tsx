@@ -9,7 +9,7 @@ import {
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
 import { Button } from "~/components/ui/button";
-import type { TreeNode } from "./buildHierarchicalUserTagTree";
+import type { TreeNode } from "./buildUserTagTree";
 import type { SelectTag } from "~/server/tagQueries";
 
 interface ExploreTagTreeProps {
@@ -26,6 +26,7 @@ interface ExploreTagTreeProps {
   }[];
   flatUserTags: SelectTag[];
   setFlatUserTags: (tags: SelectTag[]) => void;
+  hasChanged: boolean;
 }
 
 interface TreeNodeData {
@@ -39,6 +40,7 @@ interface TreeProps {
   data: TreeNodeData;
   flatUserTags: SelectTag[];
   setFlatUserTags: (tags: SelectTag[]) => void;
+  hasChanged: boolean;
 }
 
 const TreeNode: React.FC<{
@@ -46,7 +48,8 @@ const TreeNode: React.FC<{
   level: number;
   flatUserTags: SelectTag[];
   setFlatUserTags: (tags: SelectTag[]) => void;
-}> = ({ node, level, flatUserTags, setFlatUserTags }) => {
+  hasChanged: boolean;
+}> = ({ node, level, flatUserTags, setFlatUserTags, hasChanged }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
 
@@ -90,6 +93,7 @@ const TreeNode: React.FC<{
                   level={level + 1}
                   flatUserTags={flatUserTags}
                   setFlatUserTags={setFlatUserTags}
+                  hasChanged={hasChanged}
                 />
               ))}
             </div>
@@ -113,10 +117,11 @@ const MinimalistTree: React.FC<TreeProps> = ({
   data,
   flatUserTags,
   setFlatUserTags,
+  hasChanged,
 }) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      {true && (
+      {hasChanged && (
         <div className="mt-4 flex justify-center space-x-2">
           <Button variant="outline" size="sm">
             <Save className="mr-2 h-4 w-4" />
@@ -130,6 +135,7 @@ const MinimalistTree: React.FC<TreeProps> = ({
           level={0}
           flatUserTags={flatUserTags}
           setFlatUserTags={setFlatUserTags}
+          hasChanged={hasChanged}
         />
       </div>
       <style jsx global>{`
@@ -165,6 +171,7 @@ export default function ExploreTagTree({
   tagTree,
   flatUserTags,
   setFlatUserTags,
+  hasChanged,
 }: ExploreTagTreeProps) {
   const data: TreeNodeData = tagTree[0] || { id: "", name: "" };
   return (
@@ -172,6 +179,7 @@ export default function ExploreTagTree({
       data={data}
       flatUserTags={flatUserTags}
       setFlatUserTags={setFlatUserTags}
+      hasChanged={hasChanged}
     />
   );
 }
