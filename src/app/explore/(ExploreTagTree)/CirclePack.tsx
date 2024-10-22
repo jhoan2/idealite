@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { stopEventPropagation, Tldraw, useEditor } from "tldraw";
+import { stopEventPropagation, Tldraw } from "tldraw";
 import "tldraw/tldraw.css";
 import * as d3 from "d3";
 import { SelectTag } from "~/server/usersTagsQueries";
