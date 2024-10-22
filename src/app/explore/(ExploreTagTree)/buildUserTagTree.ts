@@ -14,7 +14,7 @@ export type RootNode = {
   parent_id: string | null;
 };
 
-export function buildHierarchicalTree(nodes: SelectTag[]): TreeNode[] {
+export function buildUserTagTree(nodes: SelectTag[]): TreeNode[] {
   // Early return if no nodes
   if (!nodes || nodes.length === 0) {
     return [

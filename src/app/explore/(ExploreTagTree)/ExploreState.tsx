@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import ExploreTagTree from "./ExploreTagTree";
 import CirclePack from "./CirclePack";
 import { SelectTag } from "~/server/tagQueries";
-import { buildHierarchicalTree } from "./buildHierarchicalUserTagTree";
+import { buildUserTagTree } from "./buildUserTagTree";
 
 interface ExploreStateProps {
   tag: SelectTag[];
@@ -41,6 +41,7 @@ function createTagTree(
 export default function ExploreState({ tag, userTags }: ExploreStateProps) {
   const [flatRootTag] = useState<SelectTag[]>(tag);
   const [flatUserTags, setFlatUserTags] = useState<SelectTag[]>(userTags);
+  const [initialUserTags] = useState<SelectTag[]>(userTags);
 
   const tagTree = useMemo(
     () => createTagTree(flatRootTag, flatUserTags),
@@ -48,9 +49,16 @@ export default function ExploreState({ tag, userTags }: ExploreStateProps) {
   );
 
   const userTagTree = useMemo(
-    () => buildHierarchicalTree(flatUserTags),
+    () => buildUserTagTree(flatUserTags),
     [flatUserTags],
   );
+
+  const hasChanged = useMemo(() => {
+    const flatUserTagSet = new Set(flatUserTags.map((tag) => tag.id));
+    const initialUserTagSet = new Set(initialUserTags.map((tag) => tag.id));
+
+    return [...flatUserTagSet].some((id) => !initialUserTagSet.has(id));
+  }, [flatUserTags, initialUserTags]);
 
   return (
     <div className="flex">
@@ -58,6 +66,7 @@ export default function ExploreState({ tag, userTags }: ExploreStateProps) {
         tagTree={userTagTree}
         flatUserTags={flatUserTags}
         setFlatUserTags={setFlatUserTags}
+        hasChanged={hasChanged}
       />
       <div className="flex-1">
         <CirclePack
