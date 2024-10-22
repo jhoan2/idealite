@@ -27,6 +27,8 @@ interface ExploreTagTreeProps {
   flatUserTags: SelectTag[];
   setFlatUserTags: (tags: SelectTag[]) => void;
   hasChanged: boolean;
+  handleSaveChanges: () => void;
+  isSaving: boolean;
 }
 
 interface TreeNodeData {
@@ -41,6 +43,8 @@ interface TreeProps {
   flatUserTags: SelectTag[];
   setFlatUserTags: (tags: SelectTag[]) => void;
   hasChanged: boolean;
+  handleSaveChanges: () => void;
+  isSaving: boolean;
 }
 
 const TreeNode: React.FC<{
@@ -49,7 +53,17 @@ const TreeNode: React.FC<{
   flatUserTags: SelectTag[];
   setFlatUserTags: (tags: SelectTag[]) => void;
   hasChanged: boolean;
-}> = ({ node, level, flatUserTags, setFlatUserTags, hasChanged }) => {
+  handleSaveChanges: () => void;
+  isSaving: boolean;
+}> = ({
+  node,
+  level,
+  flatUserTags,
+  setFlatUserTags,
+  hasChanged,
+  handleSaveChanges,
+  isSaving,
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
 
@@ -94,6 +108,8 @@ const TreeNode: React.FC<{
                   flatUserTags={flatUserTags}
                   setFlatUserTags={setFlatUserTags}
                   hasChanged={hasChanged}
+                  handleSaveChanges={handleSaveChanges}
+                  isSaving={isSaving}
                 />
               ))}
             </div>
@@ -118,14 +134,21 @@ const MinimalistTree: React.FC<TreeProps> = ({
   flatUserTags,
   setFlatUserTags,
   hasChanged,
+  handleSaveChanges,
+  isSaving,
 }) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       {hasChanged && (
         <div className="mt-4 flex justify-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Save className="mr-2 h-4 w-4" />
-            Save
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSaveChanges}
+            disabled={isSaving}
+          >
+            {!isSaving && <Save className="mr-2 h-4 w-4" />}
+            {isSaving ? "Saving..." : "Save"}
           </Button>
         </div>
       )}
@@ -136,6 +159,8 @@ const MinimalistTree: React.FC<TreeProps> = ({
           flatUserTags={flatUserTags}
           setFlatUserTags={setFlatUserTags}
           hasChanged={hasChanged}
+          handleSaveChanges={handleSaveChanges}
+          isSaving={isSaving}
         />
       </div>
       <style jsx global>{`
@@ -172,6 +197,8 @@ export default function ExploreTagTree({
   flatUserTags,
   setFlatUserTags,
   hasChanged,
+  handleSaveChanges,
+  isSaving,
 }: ExploreTagTreeProps) {
   const data: TreeNodeData = tagTree[0] || { id: "", name: "" };
   return (
@@ -180,6 +207,8 @@ export default function ExploreTagTree({
       flatUserTags={flatUserTags}
       setFlatUserTags={setFlatUserTags}
       hasChanged={hasChanged}
+      handleSaveChanges={handleSaveChanges}
+      isSaving={isSaving}
     />
   );
 }

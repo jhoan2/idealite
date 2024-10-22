@@ -9,6 +9,7 @@ import { buildUserTagTree } from "./buildUserTagTree";
 interface ExploreStateProps {
   tag: SelectTag[];
   userTags: SelectTag[];
+  userId: string | null;
 }
 
 interface TagNode extends SelectTag {
@@ -38,10 +39,17 @@ function createTagTree(
   return buildTree(rootTags);
 }
 
-export default function ExploreState({ tag, userTags }: ExploreStateProps) {
+export default function ExploreState({
+  tag,
+  userTags,
+  userId,
+}: ExploreStateProps) {
   const [flatRootTag] = useState<SelectTag[]>(tag);
   const [flatUserTags, setFlatUserTags] = useState<SelectTag[]>(userTags);
-  const [initialUserTags] = useState<SelectTag[]>(userTags);
+  const [initialUserTags, setInitialUserTags] = useState<SelectTag[]>(userTags);
+  const [newlyAddedTags, setNewlyAddedTags] = useState<SelectTag[]>([]);
+  const [removedTags, setRemovedTags] = useState<SelectTag[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const tagTree = useMemo(
     () => createTagTree(flatRootTag, flatUserTags),
@@ -53,12 +61,69 @@ export default function ExploreState({ tag, userTags }: ExploreStateProps) {
     [flatUserTags],
   );
 
+  async function updateUserTags(
+    userId: string,
+    addedTags: SelectTag[],
+    removedTags: SelectTag[],
+  ) {
+    try {
+      const response = await fetch("/api/usersTags", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          addedTags,
+          removedTags,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update user tags");
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error("Error updating user tags:", error);
+      throw error;
+    }
+  }
+
   const hasChanged = useMemo(() => {
     const flatUserTagSet = new Set(flatUserTags.map((tag) => tag.id));
     const initialUserTagSet = new Set(initialUserTags.map((tag) => tag.id));
 
-    return [...flatUserTagSet].some((id) => !initialUserTagSet.has(id));
+    const addedTags = flatUserTags.filter(
+      (tag) => !initialUserTagSet.has(tag.id),
+    );
+    const removedTags = initialUserTags.filter(
+      (tag) => !flatUserTagSet.has(tag.id),
+    );
+
+    setNewlyAddedTags(addedTags);
+    setRemovedTags(removedTags);
+
+    return addedTags.length > 0 || removedTags.length > 0;
   }, [flatUserTags, initialUserTags]);
+
+  const handleSaveChanges = async () => {
+    if (!hasChanged) return;
+    if (!userId) return;
+    setIsSaving(true);
+    try {
+      await updateUserTags(userId, newlyAddedTags, removedTags);
+      setInitialUserTags([...flatUserTags]);
+      setNewlyAddedTags([]);
+      setRemovedTags([]);
+    } catch (error) {
+      console.error("Failed to save changes:", error);
+      // Handle error (e.g., show an error message to the user)
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="flex">
@@ -67,6 +132,8 @@ export default function ExploreState({ tag, userTags }: ExploreStateProps) {
         flatUserTags={flatUserTags}
         setFlatUserTags={setFlatUserTags}
         hasChanged={hasChanged}
+        handleSaveChanges={handleSaveChanges}
+        isSaving={isSaving}
       />
       <div className="flex-1">
         <CirclePack

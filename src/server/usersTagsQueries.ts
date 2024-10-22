@@ -3,6 +3,7 @@ import { users_tags, tags } from "./db/schema";
 import { eq, sql } from "drizzle-orm";
 
 export type SelectTag = typeof tags.$inferSelect;
+export type InsertTag = typeof tags.$inferInsert;
 
 export async function getUserTags(userId: string): Promise<SelectTag[]> {
   if (!userId) return [];
