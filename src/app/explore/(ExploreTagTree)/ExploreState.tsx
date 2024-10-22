@@ -5,6 +5,7 @@ import ExploreTagTree from "./ExploreTagTree";
 import CirclePack from "./CirclePack";
 import { SelectTag } from "~/server/tagQueries";
 import { buildUserTagTree } from "./buildUserTagTree";
+import { toast } from "sonner";
 
 interface ExploreStateProps {
   tag: SelectTag[];
@@ -119,7 +120,7 @@ export default function ExploreState({
       setRemovedTags([]);
     } catch (error) {
       console.error("Failed to save changes:", error);
-      // Handle error (e.g., show an error message to the user)
+      toast.error("Failed to save changes");
     } finally {
       setIsSaving(false);
     }
