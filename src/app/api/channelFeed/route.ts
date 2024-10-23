@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   try {
     let url = new URL(NEYNAR_API_URL);
     url.searchParams.append("viewer_fid", fid);
-    url.searchParams.append("limit", "20");
+    url.searchParams.append("limit", "10");
     url.searchParams.append("reply_depth", "3");
     url.searchParams.append("with_replies", "true");
     url.searchParams.append("include_chronological_parent_casts", "false");
