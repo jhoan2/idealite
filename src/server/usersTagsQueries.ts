@@ -7,17 +7,26 @@ export type InsertTag = typeof tags.$inferInsert;
 export type SelectPage = typeof pages.$inferSelect;
 export type InsertPage = typeof pages.$inferInsert;
 
-interface TreeTag {
+export interface TreePage {
+  id: string;
+  title: string | null;
+}
+
+// Types
+export interface TreeTag {
   id: string;
   name: string;
   children: TreeTag[];
-  pages: TreePage[];
+  pages: Array<{
+    id: string;
+    title: string;
+  }>;
 }
 
-interface TreePage {
+interface RawTag {
   id: string;
   name: string;
-  title: string | null;
+  parent_id: string | null;
 }
 
 export async function getUserTags(userId: string): Promise<SelectTag[]> {
@@ -53,7 +62,6 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
   const userPages = await db
     .select({
       page_id: pages.id,
-      page_name: pages.name,
       page_title: pages.title,
       tag_id: pages_tags.tag_id,
     })
@@ -62,24 +70,45 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
     .innerJoin(pages_tags, eq(pages_tags.page_id, pages.id))
     .where(and(eq(users_pages.user_id, userId), eq(pages.deleted, false)));
 
-  // 3. Build the tree structure
-  function buildTagTree(parentId: string | null): TreeTag[] {
-    const children = userTags.filter((tag) => tag.parent_id === parentId);
+  // Helper function to find root tags
+  function findRootTags(tags: RawTag[]): RawTag[] {
+    const parentIds = new Set(tags.map((tag) => tag.parent_id));
+    return tags.filter(
+      (tag) =>
+        !tags.some((otherTag) => otherTag.id === tag.parent_id) ||
+        !parentIds.has(tag.parent_id),
+    );
+  }
+
+  function buildTagTree(tags: RawTag[], parentId: string | null): TreeTag[] {
+    const children = tags.filter((tag) => tag.parent_id === parentId);
 
     return children.map((tag) => ({
       id: tag.id,
       name: tag.name,
-      children: buildTagTree(tag.id),
+      children: buildTagTree(tags, tag.id),
       pages: userPages
         .filter((page) => page.tag_id === tag.id)
-        .map(({ page_id, page_name, page_title }) => ({
+        .map(({ page_id, page_title }) => ({
           id: page_id,
-          name: page_name,
           title: page_title,
         })),
     }));
   }
 
-  // Start with root level tags (those with null parent_id)
-  return buildTagTree(null);
+  // Find root tags and build tree from there
+  const rootTags = findRootTags(userTags);
+  const tree = rootTags.map((rootTag) => ({
+    id: rootTag.id,
+    name: rootTag.name,
+    children: buildTagTree(userTags, rootTag.id),
+    pages: userPages
+      .filter((page) => page.tag_id === rootTag.id)
+      .map(({ page_id, page_title }) => ({
+        id: page_id,
+        title: page_title,
+      })),
+  }));
+
+  return tree;
 }
