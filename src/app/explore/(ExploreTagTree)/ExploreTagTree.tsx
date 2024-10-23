@@ -81,7 +81,7 @@ const TreeNode: React.FC<{
             style={{ paddingLeft: `${level * 16}px` }}
             onClick={() => hasChildren && setIsExpanded(!isExpanded)}
           >
-            {hasChildren && (
+            {
               <button
                 className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
                 aria-expanded={isExpanded}
@@ -93,7 +93,7 @@ const TreeNode: React.FC<{
                   <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
                 )}
               </button>
-            )}
+            }
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {node.name}
             </span>
