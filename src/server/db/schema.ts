@@ -92,11 +92,9 @@ export const pages = createTable(
   "page",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    name: text("name")
+    title: text("title")
       .notNull()
-      .unique()
-      .$default(() => sql`lower(name)`),
-    title: text("title"),
+      .$default(() => sql`lower(title)`),
     content: text("content"),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
@@ -108,7 +106,6 @@ export const pages = createTable(
   },
   (table) => {
     return {
-      name_idx: index("page_name_idx").on(table.name),
       created_at_idx: index("page_created_at_idx").on(table.created_at),
       deleted_idx: index("page_deleted_idx").on(table.deleted),
     };
