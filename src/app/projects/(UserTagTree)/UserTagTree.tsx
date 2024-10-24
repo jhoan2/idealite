@@ -10,7 +10,7 @@ import {
 } from "~/components/ui/context-menu";
 import type { TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
-import { createPage, deletePage } from "~/server/actions/usersTags";
+import { createPage, deletePage, deleteTag } from "~/server/actions/usersTags";
 import { toast } from "sonner";
 
 interface TreeProps {
@@ -58,6 +58,39 @@ const TreeNode: React.FC<{
       console.error("Error creating page:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const calculateOrphanedPages = (tag: TreeTag): number => {
+    let count = tag.pages.length;
+    if (tag.children) {
+      for (const child of tag.children) {
+        count += calculateOrphanedPages(child);
+      }
+    }
+    return count;
+  };
+
+  const handleDeleteTag = async () => {
+    const orphanedPages = calculateOrphanedPages(node);
+    const message =
+      orphanedPages === 0
+        ? "Are you sure you want to delete this tag?"
+        : `This will archive ${orphanedPages} page${orphanedPages === 1 ? "" : "s"}. Are you sure?`;
+
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    try {
+      const result = await deleteTag({ id: node.id });
+      if (!result.success) {
+        toast.error("Failed to delete tag");
+        return;
+      }
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      toast.error("Failed to delete tag");
     }
   };
 
@@ -124,7 +157,7 @@ const TreeNode: React.FC<{
                         className="text-red-600"
                       >
                         <Trash className="mr-2 h-4 w-4" />
-                        <span>Delete Page</span>
+                        <span>Delete page</span>
                       </ContextMenuItem>
                     </ContextMenuContent>
                   </ContextMenu>
@@ -140,14 +173,11 @@ const TreeNode: React.FC<{
           className={isLoading ? "cursor-not-allowed opacity-50" : ""}
         >
           <StickyNote className="mr-2 h-4 w-4" />
-          <span>{isLoading ? "Creating..." : "Create a Page"}</span>
+          <span>{isLoading ? "Creating..." : "Create  page"}</span>
         </ContextMenuItem>
-        <ContextMenuItem
-          onSelect={() => console.log(node)}
-          className="text-red-600"
-        >
+        <ContextMenuItem onSelect={handleDeleteTag} className="text-red-600">
           <Trash className="mr-2 h-4 w-4" />
-          <span>Delete</span>
+          <span>Delete tag</span>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

@@ -1,8 +1,8 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, exists } from "drizzle-orm";
 import { db } from "../db";
-import { pages, users_pages, pages_tags } from "../db/schema";
+import { pages, users_pages, pages_tags, tags, users_tags } from "../db/schema";
 import { revalidatePath } from "next/cache";
 import { auth } from "~/app/auth";
 import { z } from "zod";
@@ -97,5 +97,56 @@ export async function deletePage(input: z.infer<typeof deletePageSchema>) {
   } catch (error) {
     console.error("Error deleting page:", error);
     return { success: false, error: "Failed to delete page" };
+  }
+}
+
+export async function deleteTag({ id }: { id: string }) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
+    }
+
+    // Start a transaction to ensure all operations complete or none do
+    return await db.transaction(async (tx) => {
+      // Delete only this user's relationship with the tag
+      await tx
+        .delete(users_tags)
+        .where(
+          and(
+            eq(users_tags.tag_id, id),
+            eq(users_tags.user_id, session.user?.id ?? ""),
+          ),
+        );
+
+      // Delete this user's pages' relationships with the tag
+      await tx.delete(pages_tags).where(
+        and(
+          eq(pages_tags.tag_id, id),
+          // Only delete page_tags where the page belongs to this user
+          exists(
+            tx
+              .select()
+              .from(users_pages)
+              .where(
+                and(
+                  eq(users_pages.page_id, pages_tags.page_id),
+                  eq(users_pages.user_id, session.user?.id ?? ""),
+                ),
+              ),
+          ),
+        ),
+      );
+
+      revalidatePath("/projects");
+      return { success: true };
+    });
+  } catch (error) {
+    console.error("Error deleting tag:", error);
+    return { success: false, error: "Failed to delete tag" };
   }
 }
