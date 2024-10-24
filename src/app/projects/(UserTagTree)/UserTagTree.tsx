@@ -30,6 +30,8 @@ import {
 } from "~/components/ui/alert-dialog";
 import { MoveToDialog } from "./MoveToDialog";
 import { movePagesBetweenTags } from "~/server/actions/usersTags";
+import Link from "next/link";
+
 interface TreeProps {
   data: TreeTag[];
 }
@@ -217,14 +219,15 @@ const TreeNode: React.FC<{
                   node.pages.map((page) => (
                     <ContextMenu key={page.id}>
                       <ContextMenuTrigger>
-                        <div
+                        <Link
+                          href={`/projects/${page.id}`}
                           className="flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700"
                           style={{ paddingLeft: `${(level + 1) * 16}px` }}
                         >
                           <span className="text-sm text-gray-600 dark:text-gray-400">
                             {page.title}
                           </span>
-                        </div>
+                        </Link>
                       </ContextMenuTrigger>
                       <ContextMenuContent className="w-64">
                         <ContextMenuItem
