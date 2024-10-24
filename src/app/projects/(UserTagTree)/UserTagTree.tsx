@@ -82,6 +82,10 @@ const TreeNode: React.FC<{
     return count;
   };
 
+  const handleDeleteTag = async () => {
+    setShowDeleteAlert(true);
+  };
+
   const confirmDelete = async () => {
     try {
       const result = await deleteTag({ id: node.id });
