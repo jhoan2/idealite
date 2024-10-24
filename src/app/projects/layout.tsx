@@ -14,7 +14,6 @@ export default async function UserTagTreeLayout({
   return (
     <div className="flex">
       <UserTagTree userTagTree={userTagTree} />
-      {children}
     </div>
   );
 }

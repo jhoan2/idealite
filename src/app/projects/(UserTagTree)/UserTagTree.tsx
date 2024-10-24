@@ -31,6 +31,7 @@ import {
 import { MoveToDialog } from "./MoveToDialog";
 import { movePagesBetweenTags } from "~/server/actions/usersTags";
 import Link from "next/link";
+import PageTabs from "../(Page)/PageTabs";
 
 interface TreeProps {
   data: TreeTag[];
@@ -324,5 +325,14 @@ export default function UserTagTree({
 }: {
   userTagTree: TreeTag[];
 }) {
-  return <MinimalistTree data={userTagTree} />;
+  return (
+    <div className="flex h-screen">
+      <div className="w-64 overflow-hidden border-r">
+        <MinimalistTree data={userTagTree} />
+      </div>
+      <div className="flex-1 overflow-hidden p-4">
+        <PageTabs />
+      </div>
+    </div>
+  );
 }
