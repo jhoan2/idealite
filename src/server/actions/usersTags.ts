@@ -1,8 +1,8 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { db } from "./db";
-import { pages, users_pages, pages_tags } from "./db/schema";
+import { db } from "../db";
+import { pages, users_pages, pages_tags } from "../db/schema";
 import { revalidatePath } from "next/cache";
 import { auth } from "~/app/auth";
 

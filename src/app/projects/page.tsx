@@ -1,6 +1,6 @@
 import UserTagTree from "./(UserTagTree)/UserTagTree";
 import { auth } from "~/app/auth";
-import { getUserTagTree } from "~/server/usersTagsQueries";
+import { getUserTagTree } from "~/server/queries/usersTags";
 
 export default async function Projects() {
   const session = await auth();

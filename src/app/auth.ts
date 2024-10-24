@@ -1,21 +1,20 @@
-import NextAuth from "next-auth"
-import credentialsProvider from 'next-auth/providers/credentials'
-import { findUserByFid, createUser } from "~/server/userQueries"
+import NextAuth from "next-auth";
+import credentialsProvider from "next-auth/providers/credentials";
+import { findUserByFid, createUser } from "~/server/queries/user";
 
 declare module "next-auth" {
   interface Session {
     user?: {
-      id: string
-      fid: number
-      custody_address: string
-      username: string
-      display_name: string
-      pfp_url: string
-      bio: string
-    }
+      id: string;
+      fid: number;
+      custody_address: string;
+      username: string;
+      display_name: string;
+      pfp_url: string;
+      bio: string;
+    };
   }
 }
-
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
@@ -24,24 +23,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         try {
           if (!credentials?.signer_uuid) {
-            throw new Error('Signer UUID is undefined')
+            throw new Error("Signer UUID is undefined");
           }
-  
+
           const user = await findUserByFid(credentials.fid as number);
           if (!user) {
             const url = `https://api.neynar.com/v2/farcaster/signer?signer_uuid=${credentials.signer_uuid}`;
             const options = {
-              method: 'GET',
+              method: "GET",
               headers: {
-                accept: 'application/json',
-                api_key: process.env.NEYNAR_API_KEY || 'NEYNAR_API_DOCS'
-              }
+                accept: "application/json",
+                api_key: process.env.NEYNAR_API_KEY || "NEYNAR_API_DOCS",
+              },
             };
-  
+
             const response = await fetch(url, options);
             const json = await response.json();
-  
-            if (json && json.status === 'approved') {
+
+            if (json && json.status === "approved") {
               // Signer is valid, create a new user
               const newUser = await createUser({
                 fid: credentials.fid as number,
@@ -53,23 +52,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               });
               return newUser;
             } else {
-              throw new Error('Invalid signer');
+              throw new Error("Invalid signer");
             }
-  
           } else {
             return user;
           }
-  
-  
         } catch (e) {
-          console.error('error:', e);
-          return null
+          console.error("error:", e);
+          return null;
         }
-      }
-    })
+      },
+    }),
   ],
   session: {
-    strategy: 'jwt'
+    strategy: "jwt",
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -82,5 +78,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user = token.user as any;
       return session;
     },
-  }
-})
+  },
+});

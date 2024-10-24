@@ -8,9 +8,9 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import type { TreeTag } from "~/server/usersTagsQueries";
+import type { TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
-import { createPage } from "~/server/usersTagsActions";
+import { createPage } from "~/server/actions/usersTags";
 interface TreeProps {
   data: TreeTag[];
 }

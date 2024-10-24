@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import ExploreTagTree from "./ExploreTagTree";
 import CirclePack from "./CirclePack";
-import { SelectTag } from "~/server/tagQueries";
+import { SelectTag } from "~/server/queries/tag";
 import { buildUserTagTree } from "./buildUserTagTree";
 import { toast } from "sonner";
 

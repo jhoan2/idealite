@@ -1,6 +1,6 @@
 import ExploreState from "./(ExploreTagTree)/ExploreState";
-import { getTagWithChildren } from "~/server/tagQueries";
-import { getUserTags } from "~/server/usersTagsQueries";
+import { getTagWithChildren } from "~/server/queries/tag";
+import { getUserTags } from "~/server/queries/usersTags";
 import { auth } from "~/app/auth";
 
 export default async function Explore() {

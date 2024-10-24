@@ -1,13 +1,17 @@
 import "server-only";
-import { db } from "./db";
-import { users } from "./db/schema";
+import { db } from "~/server/db";
+import { users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 
 type SelectUser = typeof users.$inferSelect;
 type InsertUser = typeof users.$inferInsert;
 
 export async function findUserByFid(fid: number): Promise<SelectUser | null> {
-  const result = await db.select().from(users).where(eq(users.fid, fid)).limit(1);
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.fid, fid))
+    .limit(1);
   return result[0] || null;
 }
 

@@ -10,7 +10,7 @@ import {
 } from "~/components/ui/context-menu";
 import { Button } from "~/components/ui/button";
 import type { TreeNode } from "./buildUserTagTree";
-import type { SelectTag } from "~/server/tagQueries";
+import type { SelectTag } from "~/server/queries/tag";
 
 interface ExploreTagTreeProps {
   tagTree: {
