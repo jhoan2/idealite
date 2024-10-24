@@ -20,7 +20,9 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 
 export default function SideNav() {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(
+    pathname === "/home" ? false : true,
+  );
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
