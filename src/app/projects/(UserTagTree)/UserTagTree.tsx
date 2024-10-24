@@ -1,41 +1,38 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronRight, ChevronDown, Trash, Save } from "lucide-react";
+import { ChevronRight, ChevronDown, Trash, StickyNote } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import { Button } from "~/components/ui/button";
 import type { TreeTag } from "~/server/usersTagsQueries";
-
+import { v4 as uuidv4 } from "uuid";
+import { createPage } from "~/server/usersTagsActions";
 interface TreeProps {
   data: TreeTag[];
 }
 
-const example = [
-  {
-    id: "tag1",
-    name: "Work",
-    children: [
-      {
-        id: "tag2",
-        name: "Projects",
-        children: [],
-        pages: [{ id: "page1", name: "project-notes", title: "Project Notes" }],
-      },
-    ],
-    pages: [{ id: "page2", name: "work-todo", title: "Work TODO" }],
-  },
-  {
-    id: "tag3",
-    name: "Personal",
-    children: [],
-    pages: [{ id: "page3", name: "diary", title: "My Diary" }],
-  },
-];
+const createUntitledPage = (node: TreeTag) => {
+  // Get all untitled pages
+  const untitledPages = node.pages.filter((page) =>
+    page.title.toLowerCase().startsWith("untitled"),
+  );
+
+  // Create new page title using array length
+  const newTitle =
+    untitledPages.length === 0
+      ? "untitled"
+      : `untitled ${untitledPages.length}`;
+
+  return {
+    id: uuidv4(),
+    title: newTitle,
+    tag_id: node.id,
+  };
+};
 
 const TreeNode: React.FC<{
   node: TreeTag;
@@ -44,6 +41,23 @@ const TreeNode: React.FC<{
   const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
   const hasPages = node.pages && node.pages.length > 0;
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCreatePage = async () => {
+    try {
+      setIsLoading(true);
+      const pageInput = createUntitledPage(node);
+      const result = await createPage(pageInput);
+
+      if (!result.success) {
+        throw new Error("Failed to create page");
+      }
+    } catch (error) {
+      console.error("Error creating page:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <ContextMenu>
@@ -56,7 +70,7 @@ const TreeNode: React.FC<{
               (hasChildren || hasPages) && setIsExpanded(!isExpanded)
             }
           >
-            {(hasChildren || hasPages) && (
+            {
               <button
                 className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
                 aria-expanded={isExpanded}
@@ -68,7 +82,7 @@ const TreeNode: React.FC<{
                   <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
                 )}
               </button>
-            )}
+            }
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {node.name}
             </span>
@@ -97,7 +111,15 @@ const TreeNode: React.FC<{
       </ContextMenuTrigger>
       <ContextMenuContent className="w-64">
         <ContextMenuItem
-          onSelect={() => console.log(node.id)}
+          onSelect={handleCreatePage}
+          disabled={isLoading}
+          className={isLoading ? "cursor-not-allowed opacity-50" : ""}
+        >
+          <StickyNote className="mr-2 h-4 w-4" />
+          <span>{isLoading ? "Creating..." : "Create a Page"}</span>
+        </ContextMenuItem>
+        <ContextMenuItem
+          onSelect={() => console.log(node)}
           className="text-red-600"
         >
           <Trash className="mr-2 h-4 w-4" />
@@ -150,6 +172,5 @@ export default function UserTagTree({
 }: {
   userTagTree: TreeTag[];
 }) {
-  console.log(userTagTree, "userTagTree");
   return <MinimalistTree data={userTagTree} />;
 }
