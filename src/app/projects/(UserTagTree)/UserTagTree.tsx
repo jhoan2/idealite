@@ -12,6 +12,16 @@ import type { TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
 import { createPage, deletePage, deleteTag } from "~/server/actions/usersTags";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 
 interface TreeProps {
   data: TreeTag[];
@@ -44,6 +54,7 @@ const TreeNode: React.FC<{
   const hasChildren = node.children && node.children.length > 0;
   const hasPages = node.pages && node.pages.length > 0;
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
   const handleCreatePage = async () => {
     try {
@@ -73,15 +84,10 @@ const TreeNode: React.FC<{
 
   const handleDeleteTag = async () => {
     const orphanedPages = calculateOrphanedPages(node);
-    const message =
-      orphanedPages === 0
-        ? "Are you sure you want to delete this tag?"
-        : `This will archive ${orphanedPages} page${orphanedPages === 1 ? "" : "s"}. Are you sure?`;
+    setShowDeleteAlert(true); // Show the alert dialog instead of window.confirm
+  };
 
-    if (!window.confirm(message)) {
-      return;
-    }
-
+  const confirmDelete = async () => {
     try {
       const result = await deleteTag({ id: node.id });
       if (!result.success) {
@@ -91,96 +97,120 @@ const TreeNode: React.FC<{
     } catch (error) {
       console.error("Error deleting tag:", error);
       toast.error("Failed to delete tag");
+    } finally {
+      setShowDeleteAlert(false);
     }
   };
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <div className="select-none">
-          <div
-            className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
-            style={{ paddingLeft: `${level * 16}px` }}
-            onClick={() =>
-              (hasChildren || hasPages) && setIsExpanded(!isExpanded)
-            }
-          >
-            {
-              <button
-                className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
-                aria-expanded={isExpanded}
-                aria-label={isExpanded ? "Collapse" : "Expand"}
-              >
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                )}
-              </button>
-            }
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              {node.name}
-            </span>
-          </div>
-          {isExpanded && (
-            <div className="ml-2">
-              {hasChildren &&
-                node.children!.map((child, index) => (
-                  <TreeNode key={child.id} node={child} level={level + 1} />
-                ))}
-              {hasPages &&
-                node.pages.map((page) => (
-                  <ContextMenu key={page.id}>
-                    <ContextMenuTrigger>
-                      <div
-                        className="flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700"
-                        style={{ paddingLeft: `${(level + 1) * 16}px` }}
-                      >
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {page.title}
-                        </span>
-                      </div>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent className="w-64">
-                      <ContextMenuItem
-                        onSelect={async () => {
-                          try {
-                            const result = await deletePage({ id: page.id });
-                            if (!result.success) {
-                              toast.error("Failed to delete page");
-                              throw new Error("Failed to delete page");
-                            }
-                          } catch (error) {
-                            console.error("Error deleting page:", error);
-                          }
-                        }}
-                        className="text-red-600"
-                      >
-                        <Trash className="mr-2 h-4 w-4" />
-                        <span>Delete page</span>
-                      </ContextMenuItem>
-                    </ContextMenuContent>
-                  </ContextMenu>
-                ))}
+    <>
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {node.pages.length === 0
+                ? "Are you sure you want to delete this tag?"
+                : `This will archive ${calculateOrphanedPages(node)} page${
+                    calculateOrphanedPages(node) === 1 ? "" : "s"
+                  }.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <div className="select-none">
+            <div
+              className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
+              style={{ paddingLeft: `${level * 16}px` }}
+              onClick={() =>
+                (hasChildren || hasPages) && setIsExpanded(!isExpanded)
+              }
+            >
+              {
+                <button
+                  className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
+                  aria-expanded={isExpanded}
+                  aria-label={isExpanded ? "Collapse" : "Expand"}
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  )}
+                </button>
+              }
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {node.name}
+              </span>
             </div>
-          )}
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="w-64">
-        <ContextMenuItem
-          onSelect={handleCreatePage}
-          disabled={isLoading}
-          className={isLoading ? "cursor-not-allowed opacity-50" : ""}
-        >
-          <StickyNote className="mr-2 h-4 w-4" />
-          <span>{isLoading ? "Creating..." : "Create  page"}</span>
-        </ContextMenuItem>
-        <ContextMenuItem onSelect={handleDeleteTag} className="text-red-600">
-          <Trash className="mr-2 h-4 w-4" />
-          <span>Delete tag</span>
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+            {isExpanded && (
+              <div className="ml-2">
+                {hasChildren &&
+                  node.children!.map((child, index) => (
+                    <TreeNode key={child.id} node={child} level={level + 1} />
+                  ))}
+                {hasPages &&
+                  node.pages.map((page) => (
+                    <ContextMenu key={page.id}>
+                      <ContextMenuTrigger>
+                        <div
+                          className="flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          style={{ paddingLeft: `${(level + 1) * 16}px` }}
+                        >
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {page.title}
+                          </span>
+                        </div>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent className="w-64">
+                        <ContextMenuItem
+                          onSelect={async () => {
+                            try {
+                              const result = await deletePage({ id: page.id });
+                              if (!result.success) {
+                                toast.error("Failed to delete page");
+                                throw new Error("Failed to delete page");
+                              }
+                            } catch (error) {
+                              console.error("Error deleting page:", error);
+                            }
+                          }}
+                          className="text-red-600"
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          <span>Delete page</span>
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  ))}
+              </div>
+            )}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-64">
+          <ContextMenuItem
+            onSelect={handleCreatePage}
+            disabled={isLoading}
+            className={isLoading ? "cursor-not-allowed opacity-50" : ""}
+          >
+            <StickyNote className="mr-2 h-4 w-4" />
+            <span>{isLoading ? "Creating..." : "Create  page"}</span>
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={handleDeleteTag} className="text-red-600">
+            <Trash className="mr-2 h-4 w-4" />
+            <span>Delete tag</span>
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    </>
   );
 };
 
