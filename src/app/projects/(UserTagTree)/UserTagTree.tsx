@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronRight, ChevronDown, Trash, StickyNote } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronDown,
+  Trash,
+  StickyNote,
+  Replace,
+} from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -22,7 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
-
+import { MoveToDialog } from "./MoveToDialog";
+import { movePagesBetweenTags } from "~/server/actions/usersTags";
 interface TreeProps {
   data: TreeTag[];
 }
@@ -49,12 +56,18 @@ const createUntitledPage = (node: TreeTag) => {
 const TreeNode: React.FC<{
   node: TreeTag;
   level: number;
-}> = ({ node, level }) => {
+  allTags: TreeTag[];
+}> = ({ node, level, allTags }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
   const hasPages = node.pages && node.pages.length > 0;
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [selectedPage, setSelectedPage] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   const handleCreatePage = async () => {
     try {
@@ -101,6 +114,32 @@ const TreeNode: React.FC<{
     }
   };
 
+  const handleMovePage = async (destinationTagId: string) => {
+    if (!selectedPage) return;
+
+    setIsLoading(true);
+    try {
+      const result = await movePagesBetweenTags({
+        pageIds: [selectedPage.id],
+        sourceTagId: node.id,
+        destinationTagId,
+      });
+
+      if (!result.success) {
+        const errorMessage =
+          "error" in result ? result.error : "Failed to move page";
+        throw new Error(errorMessage);
+      }
+
+      toast.success(`Successfully moved "${selectedPage.title}"`);
+    } catch (error) {
+      console.error("Error moving page:", error);
+      toast.error("Failed to move page");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
@@ -123,6 +162,19 @@ const TreeNode: React.FC<{
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <MoveToDialog
+        open={showMoveDialog}
+        onOpenChange={(isOpen) => {
+          setShowMoveDialog(isOpen);
+          if (!isOpen) {
+            setSelectedPage(null);
+          }
+        }}
+        tags={allTags}
+        currentTagId={node.id}
+        onMove={handleMovePage}
+        isLoading={isLoading}
+      />
       <ContextMenu>
         <ContextMenuTrigger>
           <div className="select-none">
@@ -154,7 +206,12 @@ const TreeNode: React.FC<{
               <div className="ml-2">
                 {hasChildren &&
                   node.children!.map((child, index) => (
-                    <TreeNode key={child.id} node={child} level={level + 1} />
+                    <TreeNode
+                      key={child.id}
+                      node={child}
+                      level={level + 1}
+                      allTags={allTags}
+                    />
                   ))}
                 {hasPages &&
                   node.pages.map((page) => (
@@ -170,6 +227,15 @@ const TreeNode: React.FC<{
                         </div>
                       </ContextMenuTrigger>
                       <ContextMenuContent className="w-64">
+                        <ContextMenuItem
+                          onSelect={() => {
+                            setSelectedPage({ id: page.id, title: page.title });
+                            setShowMoveDialog(true);
+                          }}
+                        >
+                          <Replace className="mr-2 h-4 w-4" />
+                          <span>Move to</span>
+                        </ContextMenuItem>
                         <ContextMenuItem
                           onSelect={async () => {
                             try {
@@ -218,7 +284,7 @@ const MinimalistTree: React.FC<TreeProps> = ({ data }) => {
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="custom-scrollbar h-screen overflow-y-auto p-4">
         {data.map((node, index) => (
-          <TreeNode key={index} node={node} level={0} />
+          <TreeNode key={index} node={node} level={0} allTags={data} />
         ))}
       </div>
       <style jsx global>{`
