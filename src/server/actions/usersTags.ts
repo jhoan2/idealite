@@ -5,6 +5,7 @@ import { db } from "../db";
 import { pages, users_pages, pages_tags } from "../db/schema";
 import { revalidatePath } from "next/cache";
 import { auth } from "~/app/auth";
+import { z } from "zod";
 
 export type CreatePageInput = {
   title: string;
@@ -71,5 +72,30 @@ export async function createPage(input: CreatePageInput) {
       success: false,
       error: "Failed to create page",
     };
+  }
+}
+
+const deletePageSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export async function deletePage(input: z.infer<typeof deletePageSchema>) {
+  try {
+    // Validate input
+    const validatedInput = deletePageSchema.parse(input);
+
+    await db
+      .update(pages)
+      .set({
+        deleted: true,
+        updated_at: new Date(),
+      })
+      .where(eq(pages.id, validatedInput.id));
+
+    revalidatePath("/projects");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting page:", error);
+    return { success: false, error: "Failed to delete page" };
   }
 }

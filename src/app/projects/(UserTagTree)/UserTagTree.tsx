@@ -10,7 +10,9 @@ import {
 } from "~/components/ui/context-menu";
 import type { TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
-import { createPage } from "~/server/actions/usersTags";
+import { createPage, deletePage } from "~/server/actions/usersTags";
+import { toast } from "sonner";
+
 interface TreeProps {
   data: TreeTag[];
 }
@@ -95,15 +97,37 @@ const TreeNode: React.FC<{
                 ))}
               {hasPages &&
                 node.pages.map((page) => (
-                  <div
-                    key={page.id}
-                    className="flex items-center py-1"
-                    style={{ paddingLeft: `${(level + 1) * 16}px` }}
-                  >
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {page.title}
-                    </span>
-                  </div>
+                  <ContextMenu key={page.id}>
+                    <ContextMenuTrigger>
+                      <div
+                        className="flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        style={{ paddingLeft: `${(level + 1) * 16}px` }}
+                      >
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          {page.title}
+                        </span>
+                      </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-64">
+                      <ContextMenuItem
+                        onSelect={async () => {
+                          try {
+                            const result = await deletePage({ id: page.id });
+                            if (!result.success) {
+                              toast.error("Failed to delete page");
+                              throw new Error("Failed to delete page");
+                            }
+                          } catch (error) {
+                            console.error("Error deleting page:", error);
+                          }
+                        }}
+                        className="text-red-600"
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        <span>Delete Page</span>
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 ))}
             </div>
           )}
