@@ -1,7 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import {
   index,
   pgTableCreator,
@@ -160,3 +160,51 @@ export const users_pages = createTable(
     };
   },
 );
+
+export const pagesRelations = relations(pages, ({ many }) => ({
+  tags: many(pages_tags),
+  users: many(users_pages),
+}));
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  pages: many(pages_tags),
+  users: many(users_tags),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  pages: many(users_pages),
+  tags: many(users_tags),
+}));
+
+export const pagesTagsRelations = relations(pages_tags, ({ one }) => ({
+  page: one(pages, {
+    fields: [pages_tags.page_id],
+    references: [pages.id],
+  }),
+  tag: one(tags, {
+    fields: [pages_tags.tag_id],
+    references: [tags.id],
+  }),
+}));
+
+export const usersPagesRelations = relations(users_pages, ({ one }) => ({
+  user: one(users, {
+    fields: [users_pages.user_id],
+    references: [users.id],
+  }),
+  page: one(pages, {
+    fields: [users_pages.page_id],
+    references: [pages.id],
+  }),
+}));
+
+export const usersTagsRelations = relations(users_tags, ({ one }) => ({
+  user: one(users, {
+    fields: [users_tags.user_id],
+    references: [users.id],
+  }),
+  tag: one(tags, {
+    fields: [users_tags.tag_id],
+    references: [tags.id],
+  }),
+}));
