@@ -82,11 +82,6 @@ const TreeNode: React.FC<{
     return count;
   };
 
-  const handleDeleteTag = async () => {
-    const orphanedPages = calculateOrphanedPages(node);
-    setShowDeleteAlert(true); // Show the alert dialog instead of window.confirm
-  };
-
   const confirmDelete = async () => {
     try {
       const result = await deleteTag({ id: node.id });
