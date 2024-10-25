@@ -1,6 +1,7 @@
 import UserTagTree from "./(UserTagTree)/UserTagTree";
 import { auth } from "~/app/auth";
 import { getUserTagTree } from "~/server/queries/usersTags";
+import RightSideBar from "./(Page)/RightSideBar";
 
 export default async function UserTagTreeLayout({
   children,
@@ -14,6 +15,8 @@ export default async function UserTagTreeLayout({
   return (
     <div className="flex">
       <UserTagTree userTagTree={userTagTree} />
+      <RightSideBar />
+      {children}
     </div>
   );
 }
