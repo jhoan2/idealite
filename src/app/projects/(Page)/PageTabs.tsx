@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { SidebarTrigger } from "~/components/ui/sidebar";
+import { PageActions } from "./PageActions";
 
 interface TabPage {
   id: string;
@@ -166,7 +167,8 @@ export default function PageTabs() {
             </TabsTrigger>
           ))}
         </div>
-        <div>
+        <div className="flex items-center">
+          <PageActions />
           <SidebarTrigger />
         </div>
       </TabsList>
