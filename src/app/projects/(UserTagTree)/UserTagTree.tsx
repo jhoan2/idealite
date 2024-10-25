@@ -330,9 +330,6 @@ export default function UserTagTree({
       <div className="w-64 overflow-hidden border-r">
         <MinimalistTree data={userTagTree} />
       </div>
-      <div className="flex-1 overflow-hidden p-4">
-        <PageTabs />
-      </div>
     </div>
   );
 }

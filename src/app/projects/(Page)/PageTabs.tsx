@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { X } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { SidebarTrigger } from "~/components/ui/sidebar";
 
 interface TabPage {
   id: string;
@@ -95,12 +96,12 @@ export default function PageTabs() {
         const filtered = prev.filter((tab) => tab.id !== pageId);
         return [
           ...filtered,
-        {
-          id: pageId,
-          title: pageData.title,
-          content: pageData.content || "<p></p>",
+          {
+            id: pageId,
+            title: pageData.title,
+            content: pageData.content || "<p></p>",
             isLoading: false,
-        },
+          },
         ];
       });
     } catch (error) {
@@ -134,36 +135,40 @@ export default function PageTabs() {
     <Tabs value={currentPageId} className="w-full">
       <TabsList className="flex items-center justify-between overflow-x-auto overflow-y-hidden">
         <div>
-        {openTabs.map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            value={tab.id}
-            className="group relative"
-            onClick={() => router.push(`/projects/${tab.id}`)}
-          >
-            <span>{tab.title}</span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpenTabs((prev) => prev.filter((t) => t.id !== tab.id));
-                if (tab.id === currentPageId) {
-                  const remaining = openTabs.filter((t) => t.id !== tab.id);
-                  if (remaining.length > 0) {
-                    const lastTab = remaining[remaining.length - 1];
-                    if (lastTab) {
-                      router.push(`/projects/${lastTab.id}`);
-                    }
-                  } else {
-                    router.push("/");
-                  }
-                }
-              }}
-              className="ml-2 rounded-full p-1 opacity-0 group-hover:opacity-100"
+          {openTabs.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              className="group relative"
+              onClick={() => router.push(`/projects/${tab.id}`)}
             >
-              <X className="h-3 w-3" />
-            </button>
-          </TabsTrigger>
-        ))}
+              <span>{tab.title}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenTabs((prev) => prev.filter((t) => t.id !== tab.id));
+                  if (tab.id === currentPageId) {
+                    const remaining = openTabs.filter((t) => t.id !== tab.id);
+                    if (remaining.length > 0) {
+                      const lastTab = remaining[remaining.length - 1];
+                      if (lastTab) {
+                        router.push(`/projects/${lastTab.id}`);
+                      }
+                    } else {
+                      router.push("/");
+                    }
+                  }
+                }}
+                className="ml-2 rounded-full p-1 opacity-0 group-hover:opacity-100"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </TabsTrigger>
+          ))}
+        </div>
+        <div>
+          <SidebarTrigger />
+        </div>
       </TabsList>
 
       {openTabs.map((tab) => (

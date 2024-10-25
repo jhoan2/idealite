@@ -1,9 +1,11 @@
 import UserTagTree from "./(UserTagTree)/UserTagTree";
 import { auth } from "~/app/auth";
 import { getUserTagTree } from "~/server/queries/usersTags";
-import RightSideBar from "./(Page)/RightSideBar";
+import { SidebarProvider } from "~/components/ui/sidebar";
+import { RightSideBar } from "./(Page)/RightSideBar";
+import PageTabs from "./(Page)/PageTabs";
 
-export default async function UserTagTreeLayout({
+export default async function ProjectsLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -13,10 +15,26 @@ export default async function UserTagTreeLayout({
   const userTagTree = userId ? await getUserTagTree(userId) : [];
 
   return (
-    <div className="flex">
-      <UserTagTree userTagTree={userTagTree} />
-      <RightSideBar />
-      {children}
-    </div>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "24rem",
+        } as React.CSSProperties
+      }
+    >
+      <div className="flex h-screen w-full overflow-hidden">
+        <div>
+          <UserTagTree userTagTree={userTagTree} />{" "}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="w-full">
+            <PageTabs />
+          </div>
+        </div>
+        <div>
+          <RightSideBar />
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
