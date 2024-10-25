@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { X } from "lucide-react";
+import { X, Info } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
+import PageMetadata from "./PageMetadata";
+import { Button } from "~/components/ui/button";
 
 interface TabPage {
   id: string;
@@ -48,6 +50,7 @@ export default function PageTabs() {
   const [openTabs, setOpenTabs] = useState<TabPage[]>([]);
   const currentPageId = pathname.split("/projects/")[1];
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isMetadataOpen, setIsMetadataOpen] = useState(false);
 
   //Fixes the problem with refreshing on the page openTabs is empty, but url state is not.
   useEffect(() => {
@@ -173,9 +176,21 @@ export default function PageTabs() {
           <SidebarTrigger />
         </div>
       </TabsList>
-      <div className="flex items-center justify-center pt-2">
-        <TagCrumbs />
+      <div className="flex items-center justify-between pt-2">
+        <div className="flex-1"></div>
+        <div className="flex flex-1 justify-center">
+          <TagCrumbs />
+        </div>
+        <div className="flex flex-1 justify-end">
+          <Button
+            variant="ghost"
+            onClick={() => setIsMetadataOpen(!isMetadataOpen)}
+          >
+            <Info className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+      {isMetadataOpen && <PageMetadata />}
       {openTabs.map((tab) => (
         <TabsContent key={tab.id} value={tab.id}>
           <TiptapEditor
