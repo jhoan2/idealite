@@ -8,6 +8,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { PageActions } from "./PageActions";
+import { TagCrumbs } from "./TagCrumbs";
 
 interface TabPage {
   id: string;
@@ -172,7 +173,9 @@ export default function PageTabs() {
           <SidebarTrigger />
         </div>
       </TabsList>
-
+      <div className="flex items-center justify-center pt-2">
+        <TagCrumbs />
+      </div>
       {openTabs.map((tab) => (
         <TabsContent key={tab.id} value={tab.id}>
           <TiptapEditor
