@@ -44,15 +44,35 @@ export default function PageTabs() {
   const pathname = usePathname();
   const [openTabs, setOpenTabs] = useState<TabPage[]>([]);
   const currentPageId = pathname.split("/projects/")[1];
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  //Fixes the problem with refreshing on the page openTabs is empty, but url state is not.
+  useEffect(() => {
+    if (isInitialLoad && currentPageId) {
+      fetchPageData(currentPageId, true);
+      setIsInitialLoad(false);
+    }
+  }, [isInitialLoad, currentPageId]);
 
   useEffect(() => {
-    if (currentPageId && !openTabs.find((tab) => tab.id === currentPageId)) {
-      // Fetch page data when a new tab is opened
-      fetchPageData(currentPageId);
+    if (
+      !isInitialLoad &&
+      currentPageId &&
+      !openTabs.find((tab) => tab.id === currentPageId)
+    ) {
+      fetchPageData(currentPageId, false);
     }
-  }, [currentPageId]);
+  }, [currentPageId, isInitialLoad]);
 
-  const fetchPageData = async (pageId: string) => {
+  const fetchPageData = async (pageId: string, isInitial: boolean) => {
+    setOpenTabs((prev) => {
+      if (prev.find((tab) => tab.id === pageId)) return prev;
+      return [
+        ...prev,
+        { id: pageId, title: "Loading...", content: "", isLoading: true },
+      ];
+    });
+
     try {
       const response = await fetch(`/api/pages?pageId=${pageId}`, {
         method: "GET",
@@ -71,16 +91,22 @@ export default function PageTabs() {
         throw new Error(pageData.error);
       }
 
-      setOpenTabs((prev) => [
-        ...prev,
+      setOpenTabs((prev) => {
+        const filtered = prev.filter((tab) => tab.id !== pageId);
+        return [
+          ...filtered,
         {
           id: pageId,
           title: pageData.title,
           content: pageData.content || "<p></p>",
+            isLoading: false,
         },
-      ]);
+        ];
+      });
     } catch (error) {
       console.error("Failed to fetch page data:", error);
+      setOpenTabs((prev) => prev.filter((tab) => tab.id !== pageId));
+      if (isInitial) router.push("/projects");
     }
   };
 
@@ -106,7 +132,8 @@ export default function PageTabs() {
 
   return (
     <Tabs value={currentPageId} className="w-full">
-      <TabsList className="flex overflow-x-auto">
+      <TabsList className="flex items-center justify-between overflow-x-auto overflow-y-hidden">
+        <div>
         {openTabs.map((tab) => (
           <TabsTrigger
             key={tab.id}
