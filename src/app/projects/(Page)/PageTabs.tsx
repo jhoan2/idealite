@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { X, Info } from "lucide-react";
+import { X, Info, Loader2 } from "lucide-react";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
@@ -11,10 +11,12 @@ import PageMetadata from "./PageMetadata";
 import { Button } from "~/components/ui/button";
 import TiptapEditor from "./TiptapEditor";
 import HeadingEditor from "./HeadingEditor";
+
 interface TabPage {
   id: string;
   title: string;
   content: string;
+  isLoading: boolean;
 }
 
 export default function PageTabs() {
@@ -150,8 +152,16 @@ export default function PageTabs() {
           value={tab.id}
           className="mt-10 flex h-full w-full flex-col justify-center"
         >
-          <HeadingEditor initialTitle={tab.title} pageId={tab.id} />
-          <TiptapEditor content={tab.content} />
+          {tab.isLoading ? (
+            <div className="z-10 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+            </div>
+          ) : (
+            <>
+              <HeadingEditor initialTitle={tab.title} pageId={tab.id} />
+              <TiptapEditor content={tab.content} />
+            </>
+          )}
         </TabsContent>
       ))}
     </Tabs>
