@@ -103,7 +103,7 @@ export default function PageTabs() {
               onClick={() => router.push(`/projects/${tab.id}`)}
             >
               <span>{tab.title}</span>
-              <button
+              <span
                 onClick={(e) => {
                   e.stopPropagation();
                   setOpenTabs((prev) => prev.filter((t) => t.id !== tab.id));
@@ -122,7 +122,7 @@ export default function PageTabs() {
                 className="ml-2 rounded-full p-1 opacity-0 group-hover:opacity-100"
               >
                 <X className="h-3 w-3" />
-              </button>
+              </span>
             </TabsTrigger>
           ))}
         </div>
