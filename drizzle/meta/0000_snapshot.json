@@ -1,5 +1,5 @@
 {
-  "id": "015da813-ea98-4fdc-a0fc-d2781ac2d77b",
+  "id": "e7677cd8-5e2a-448d-9177-5c6c90465c86",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -15,21 +15,27 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "title": {
           "name": "title",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "content": {
           "name": "content",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "primary_tag_id": {
+          "name": "primary_tag_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -55,21 +61,6 @@
         }
       },
       "indexes": {
-        "page_name_idx": {
-          "name": "page_name_idx",
-          "columns": [
-            {
-              "expression": "name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "page_created_at_idx": {
           "name": "page_created_at_idx",
           "columns": [
@@ -103,15 +94,7 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "idealite_page_name_unique": {
-          "name": "idealite_page_name_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
-        }
-      }
+      "uniqueConstraints": {}
     },
     "public.idealite_pages_tags": {
       "name": "idealite_pages_tags",

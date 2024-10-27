@@ -1,12 +1,12 @@
 CREATE TABLE IF NOT EXISTS "idealite_page" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" text NOT NULL,
-	"title" text,
+	"title" text NOT NULL,
 	"content" text,
+	"path" text,
+	"primary_tag_id" uuid,
 	"created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"updated_at" timestamp with time zone,
-	"deleted" boolean DEFAULT false,
-	CONSTRAINT "idealite_page_name_unique" UNIQUE("name")
+	"deleted" boolean DEFAULT false
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "idealite_pages_tags" (
@@ -97,7 +97,6 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "page_name_idx" ON "idealite_page" USING btree ("name");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "page_created_at_idx" ON "idealite_page" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "page_deleted_idx" ON "idealite_page" USING btree ("deleted");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "page_id_idx" ON "idealite_pages_tags" USING btree ("page_id");--> statement-breakpoint
