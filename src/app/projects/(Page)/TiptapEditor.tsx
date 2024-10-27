@@ -43,6 +43,12 @@ const TiptapEditor = ({
     onUpdate: ({ editor }) => {
       setEditorContent(editor.getHTML());
     },
+    editorProps: {
+      attributes: {
+        class:
+          "prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl bg-background text-foreground",
+      },
+    },
   });
 
   return (
