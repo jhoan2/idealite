@@ -58,7 +58,7 @@ export default function ChannelConversation() {
     <div className="space-y-4">
       <ConversationList casts={casts} />
       {loading && (
-        <div className="z-10 flex items-center justify-center bg-white bg-opacity-50">
+        <div className="z-10 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
         </div>
       )}
