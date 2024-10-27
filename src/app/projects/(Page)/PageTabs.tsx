@@ -4,45 +4,18 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { X, Info } from "lucide-react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
 import PageMetadata from "./PageMetadata";
 import { Button } from "~/components/ui/button";
+import TiptapEditor from "./TiptapEditor";
 
 interface TabPage {
   id: string;
   title: string;
   content: string;
 }
-
-const TiptapEditor = ({
-  content,
-  onUpdate,
-  immediatelyRender = false,
-}: {
-  content: string;
-  onUpdate: (newContent: string) => void;
-  immediatelyRender?: boolean;
-}) => {
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: content,
-    immediatelyRender: immediatelyRender,
-    onUpdate: ({ editor }) => {
-      onUpdate(editor.getHTML());
-    },
-  });
-
-  return (
-    <EditorContent
-      editor={editor}
-      className="min-h-[200px] rounded-md border p-4"
-    />
-  );
-};
 
 export default function PageTabs() {
   const router = useRouter();
@@ -116,26 +89,6 @@ export default function PageTabs() {
     }
   };
 
-  const updateContent = async (tabId: string, newContent: string) => {
-    try {
-      await fetch(`/api/pages/${tabId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ content: newContent }),
-      });
-
-      setOpenTabs((prev) =>
-        prev.map((tab) =>
-          tab.id === tabId ? { ...tab, content: newContent } : tab,
-        ),
-      );
-    } catch (error) {
-      console.error("Failed to save content:", error);
-    }
-  };
-
   return (
     <Tabs value={currentPageId} className="w-full">
       <TabsList className="flex items-center justify-between overflow-x-auto overflow-y-hidden">
@@ -192,11 +145,12 @@ export default function PageTabs() {
       </div>
       {isMetadataOpen && <PageMetadata />}
       {openTabs.map((tab) => (
-        <TabsContent key={tab.id} value={tab.id}>
-          <TiptapEditor
-            content={tab.content}
-            onUpdate={(newContent) => updateContent(tab.id, newContent)}
-          />
+        <TabsContent
+          key={tab.id}
+          value={tab.id}
+          className="flex justify-center"
+        >
+          <TiptapEditor content={tab.content} title={tab.title} />
         </TabsContent>
       ))}
     </Tabs>
