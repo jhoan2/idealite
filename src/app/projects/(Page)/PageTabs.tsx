@@ -10,7 +10,7 @@ import { TagCrumbs } from "./TagCrumbs";
 import PageMetadata from "./PageMetadata";
 import { Button } from "~/components/ui/button";
 import TiptapEditor from "./TiptapEditor";
-
+import HeadingEditor from "./HeadingEditor";
 interface TabPage {
   id: string;
   title: string;
@@ -148,9 +148,10 @@ export default function PageTabs() {
         <TabsContent
           key={tab.id}
           value={tab.id}
-          className="flex justify-center"
+          className="mt-10 flex h-full w-full flex-col justify-center"
         >
-          <TiptapEditor content={tab.content} title={tab.title} />
+          <HeadingEditor initialTitle={tab.title} pageId={tab.id} />
+          <TiptapEditor content={tab.content} />
         </TabsContent>
       ))}
     </Tabs>
