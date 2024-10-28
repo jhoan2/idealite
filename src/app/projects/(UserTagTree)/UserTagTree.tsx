@@ -123,9 +123,8 @@ const TreeNode: React.FC<{
     setIsLoading(true);
     try {
       const result = await movePagesBetweenTags({
-        pageIds: [selectedPage.id],
-        sourceTagId: node.id,
-        destinationTagId,
+        pageId: selectedPage.id,
+        newTagId: destinationTagId,
       });
 
       if (!result.success) {
