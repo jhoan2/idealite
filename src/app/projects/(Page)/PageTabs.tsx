@@ -11,6 +11,7 @@ import PageMetadata from "./PageMetadata";
 import { Button } from "~/components/ui/button";
 import TiptapEditor from "./TiptapEditor";
 import HeadingEditor from "./HeadingEditor";
+import { TreeTag } from "~/server/queries/usersTags";
 
 interface TabPage {
   id: string;
@@ -19,7 +20,7 @@ interface TabPage {
   isLoading: boolean;
 }
 
-export default function PageTabs() {
+export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const [openTabs, setOpenTabs] = useState<TabPage[]>([]);
@@ -134,7 +135,10 @@ export default function PageTabs() {
       <div className="flex items-center justify-between pt-2">
         <div className="flex-1"></div>
         <div className="flex flex-1 justify-center">
-          <TagCrumbs />
+          <TagCrumbs
+            userTagTree={userTagTree}
+            currentPageId={currentPageId || ""}
+          />
         </div>
         <div className="flex flex-1 justify-end">
           <Button

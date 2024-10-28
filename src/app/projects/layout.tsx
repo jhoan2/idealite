@@ -28,7 +28,7 @@ export default async function ProjectsLayout({
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="w-full">
-            <PageTabs />
+            <PageTabs userTagTree={userTagTree} />
           </div>
         </div>
         <div>
