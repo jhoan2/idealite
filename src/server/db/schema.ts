@@ -109,6 +109,9 @@ export const pages = createTable(
     return {
       created_at_idx: index("page_created_at_idx").on(table.created_at),
       deleted_idx: index("page_deleted_idx").on(table.deleted),
+      primary_tag_id_idx: index("page_primary_tag_id_idx").on(
+        table.primary_tag_id,
+      ),
     };
   },
 );
