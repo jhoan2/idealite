@@ -70,6 +70,10 @@ const HeadingEditor = ({
   const [title, setTitle] = useState(initialTitle);
 
   const debouncedSave = useDebouncedCallback(async (newTitle: string) => {
+    if (!newTitle.trim()) {
+      return;
+    }
+
     try {
       const { isValid } = hasInvalidCharacters(newTitle);
       if (!isValid) {
