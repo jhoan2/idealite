@@ -96,7 +96,6 @@ export const pages = createTable(
       .notNull()
       .$default(() => sql`lower(title)`),
     content: text("content"),
-    path: text("path"),
     primary_tag_id: uuid("primary_tag_id"),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
