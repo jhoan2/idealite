@@ -31,8 +31,7 @@ import {
 import { MoveToDialog } from "./MoveToDialog";
 import { movePagesBetweenTags } from "~/server/actions/usersTags";
 import Link from "next/link";
-import PageTabs from "../(Page)/PageTabs";
-
+import { updateTagCollapsed } from "~/server/actions/usersTags";
 interface TreeProps {
   data: TreeTag[];
 }
@@ -61,7 +60,6 @@ const TreeNode: React.FC<{
   level: number;
   allTags: TreeTag[];
 }> = ({ node, level, allTags }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
   const hasPages = node.pages && node.pages.length > 0;
   const [isLoading, setIsLoading] = useState(false);
@@ -71,6 +69,7 @@ const TreeNode: React.FC<{
     id: string;
     title: string;
   } | null>(null);
+  const [isExpanded, setIsExpanded] = useState(!node.is_collapsed);
 
   const handleCreatePage = async () => {
     try {
@@ -142,6 +141,29 @@ const TreeNode: React.FC<{
     }
   };
 
+  const handleToggleExpand = async () => {
+    if (!hasChildren && !hasPages) return;
+
+    const newIsExpanded = !isExpanded;
+    setIsExpanded(newIsExpanded);
+
+    try {
+      const result = await updateTagCollapsed({
+        tagId: node.id,
+        isCollapsed: !newIsExpanded,
+      });
+
+      if (!result.success) {
+        toast.error("Failed to update tag state");
+        setIsExpanded(!newIsExpanded);
+      }
+    } catch (error) {
+      console.error("Error updating tag state:", error);
+      toast.error("Failed to update tag state");
+      setIsExpanded(!newIsExpanded);
+    }
+  };
+
   return (
     <>
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
@@ -183,9 +205,7 @@ const TreeNode: React.FC<{
             <div
               className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
               style={{ paddingLeft: `${level * 16}px` }}
-              onClick={() =>
-                (hasChildren || hasPages) && setIsExpanded(!isExpanded)
-              }
+              onClick={handleToggleExpand}
             >
               {
                 <button

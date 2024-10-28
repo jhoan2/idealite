@@ -23,6 +23,7 @@ export interface TreeTag {
   id: string;
   name: string;
   children: TreeTag[];
+  is_collapsed: boolean;
   pages: Array<{
     id: string;
     title: string;
@@ -59,6 +60,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       id: tags.id,
       name: tags.name,
       parent_id: tags.parent_id,
+      is_collapsed: users_tags.is_collapsed,
     })
     .from(tags)
     .innerJoin(users_tags, eq(users_tags.tag_id, tags.id))
@@ -96,6 +98,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       id: string;
       name: string;
       parent_id: string | null;
+      is_collapsed: boolean;
     }>
   >();
 
@@ -115,6 +118,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       id: tag.id,
       name: tag.name,
       // Recursively build children's subtrees
+      is_collapsed: tag.is_collapsed,
       children: buildTagTree(tag.id),
       // Get pages for this tag from our Map
       pages: pagesByTag.get(tag.id) || [],

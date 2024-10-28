@@ -230,3 +230,29 @@ export async function movePagesBetweenTags(input: MovePagesInput) {
     return { success: false, error: "Failed to move page" };
   }
 }
+
+export async function updateTagCollapsed({
+  tagId,
+  isCollapsed,
+}: {
+  tagId: string;
+  isCollapsed: boolean;
+}) {
+  const session = await auth();
+  try {
+    await db
+      .update(users_tags)
+      .set({ is_collapsed: isCollapsed })
+      .where(
+        and(
+          eq(users_tags.tag_id, tagId),
+          eq(users_tags.user_id, session?.user?.id ?? ""),
+        ),
+      );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating tag collapsed state:", error);
+    return { success: false, error: "Failed to update tag state" };
+  }
+}

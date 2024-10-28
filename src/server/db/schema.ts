@@ -75,6 +75,7 @@ export const users_tags = createTable(
     tag_id: uuid("tag_id")
       .notNull()
       .references(() => tags.id),
+    is_collapsed: boolean("is_collapsed").default(false).notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
