@@ -21,7 +21,7 @@ import { Badge } from "~/components/ui/badge";
 
 type SaveStatus = "saved" | "saving" | "unsaved";
 
-const TiptapEditor = ({
+const BodyEditor = ({
   content,
   immediatelyRender = false,
 }: {
@@ -63,4 +63,4 @@ const TiptapEditor = ({
   );
 };
 
-export default TiptapEditor;
+export default BodyEditor;

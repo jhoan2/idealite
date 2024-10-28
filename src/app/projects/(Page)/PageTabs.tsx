@@ -9,7 +9,7 @@ import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
 import PageMetadata from "./PageMetadata";
 import { Button } from "~/components/ui/button";
-import TiptapEditor from "./TiptapEditor";
+import BodyEditor from "./BodyEditor";
 import HeadingEditor from "./HeadingEditor";
 import { TreeTag } from "~/server/queries/usersTags";
 
@@ -167,7 +167,7 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
                 pageId={tab.id}
                 userTagTree={userTagTree}
               />
-              <TiptapEditor content={tab.content} />
+              <BodyEditor content={tab.content} />
             </>
           )}
         </TabsContent>
