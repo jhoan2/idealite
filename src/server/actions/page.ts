@@ -3,6 +3,7 @@ import { pages, users_pages } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "~/app/auth";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 
 type Page = typeof pages.$inferSelect;
 type PageInsert = typeof pages.$inferInsert;
@@ -54,6 +55,8 @@ export async function updatePage(
     if (updatedPage.length === 0 || !updatedPage[0]) {
       throw new Error("Failed to update page");
     }
+
+    revalidatePath(`/projects`);
 
     return updatedPage[0];
   } catch (error) {
