@@ -31,6 +31,7 @@ export async function createPage(input: CreatePageInput) {
         .values({
           title: input.title,
           content: "",
+          primary_tag_id: input.tag_id,
         })
         .returning();
 
@@ -152,9 +153,8 @@ export async function deleteTag({ id }: { id: string }) {
 }
 
 const movePagesSchema = z.object({
-  pageIds: z.array(z.string().uuid()),
-  sourceTagId: z.string().uuid(),
-  destinationTagId: z.string().uuid(),
+  pageId: z.string().uuid(),
+  newTagId: z.string().uuid(),
 });
 
 type MovePagesInput = z.infer<typeof movePagesSchema>;
@@ -173,100 +173,60 @@ export async function movePagesBetweenTags(input: MovePagesInput) {
 
     // Validate input
     const validatedInput = movePagesSchema.parse(input);
-    const { pageIds, sourceTagId, destinationTagId } = validatedInput;
-
-    return await db.transaction(async (tx) => {
-      // Verify user has access to both tags
-      const userTagsCount = await tx
-        .select({ count: sql<number>`count(*)` })
-        .from(users_tags)
-        .where(
-          and(
-            eq(users_tags.user_id, session.user?.id ?? ""),
-            inArray(users_tags.tag_id, [sourceTagId, destinationTagId]),
-          ),
-        );
-
-      if (Number(userTagsCount[0]?.count) !== 2) {
-        throw new Error("User doesn't have access to both tags");
-      }
-
-      // Verify user owns all the pages being moved
-      const userPagesCount = await tx
-        .select({ count: sql<number>`count(*)` })
-        .from(users_pages)
-        .where(
-          and(
-            eq(users_pages.user_id, session.user?.id ?? ""),
-            eq(users_pages.role, "owner"),
-            inArray(users_pages.page_id, pageIds),
-          ),
-        );
-
-      if (Number(userPagesCount[0]?.count) !== pageIds.length) {
-        throw new Error("User doesn't own all the specified pages");
-      }
-
-      // Delete existing relationships with source tag
-      await tx.delete(pages_tags).where(
+    const { pageId, newTagId } = validatedInput;
+    // 1. Validate user has access to the page
+    const pageAccess = await db
+      .select({ id: pages.id })
+      .from(pages)
+      .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
+      .where(
         and(
-          eq(pages_tags.tag_id, sourceTagId),
-          inArray(pages_tags.page_id, pageIds),
-          // Additional check to ensure we only modify user's own pages
-          exists(
-            tx
-              .select()
-              .from(users_pages)
-              .where(
-                and(
-                  eq(users_pages.user_id, session.user?.id ?? ""),
-                  eq(users_pages.page_id, pages_tags.page_id),
-                  eq(users_pages.role, "owner"),
-                ),
-              ),
-          ),
+          eq(pages.id, pageId),
+          eq(users_pages.user_id, session.user?.id ?? ""),
+          eq(pages.deleted, false),
         ),
-      );
+      )
+      .limit(1);
 
-      // Create new relationships with destination tag
-      const newRelations = pageIds.map((pageId) => ({
-        page_id: pageId,
-        tag_id: destinationTagId,
-        created_at: new Date(),
-      }));
-
-      await tx.insert(pages_tags).values(newRelations);
-
-      // Revalidate paths
-      revalidatePath("/projects");
-
-      return {
-        success: true,
-        data: {
-          movedPages: pageIds.length,
-          sourceTag: sourceTagId,
-          destinationTag: destinationTagId,
-        },
-      };
-    });
-  } catch (error) {
-    console.error("Error moving pages between tags:", error);
-    if (error instanceof z.ZodError) {
-      return {
-        success: false,
-        error: "Invalid input format",
-        details: error.errors,
-      };
+    if (!pageAccess.length) {
+      return { success: false, error: "Page not found or no access" };
     }
-    if (error instanceof Error) {
-      return {
-        success: false,
-        error: error.message,
-      };
+
+    // 2. Validate user has access to the new tag
+    const tagAccess = await db
+      .select({ id: tags.id })
+      .from(tags)
+      .innerJoin(users_tags, eq(users_tags.tag_id, tags.id))
+      .where(
+        and(
+          eq(tags.id, newTagId),
+          eq(users_tags.user_id, session.user?.id ?? ""),
+          eq(tags.deleted, false),
+        ),
+      )
+      .limit(1);
+
+    if (!tagAccess.length) {
+      return { success: false, error: "Tag not found or no access" };
     }
+
+    // 3. Update the page's tag_id
+    const [updatedPage] = await db
+      .update(pages)
+      .set({
+        primary_tag_id: newTagId,
+        updated_at: new Date(),
+      })
+      .where(eq(pages.id, pageId))
+      .returning();
+
+    revalidatePath("/projects");
     return {
-      success: false,
-      error: "Failed to move pages between tags",
+      success: true,
+      page: updatedPage,
     };
+  } catch (error) {
+    console.error("Error moving page:", error);
+    return { success: false, error: "Failed to move page" };
   }
 }
