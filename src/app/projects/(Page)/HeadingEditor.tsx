@@ -121,7 +121,8 @@ const HeadingEditor = ({
     content: `<h1>${initialTitle}</h1>`,
     editorProps: {
       attributes: {
-        class: "pb-4 prose prose-2xl font-bold focus:outline-none",
+        class:
+          "pb-4 prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl font-bold focus:outline-none bg-background text-foreground",
       },
     },
     immediatelyRender,
@@ -139,7 +140,7 @@ const HeadingEditor = ({
   });
 
   return (
-    <div className="mb-10 flex h-full w-full flex-col justify-center overflow-hidden">
+    <div className="mb-10 flex h-full w-full justify-center overflow-hidden">
       <div className={`w-full max-w-4xl px-4`}>
         <EditorContent editor={editor} />
       </div>
