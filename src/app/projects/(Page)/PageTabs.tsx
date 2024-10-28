@@ -162,7 +162,11 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
             </div>
           ) : (
             <>
-              <HeadingEditor initialTitle={tab.title} pageId={tab.id} />
+              <HeadingEditor
+                initialTitle={tab.title}
+                pageId={tab.id}
+                userTagTree={userTagTree}
+              />
               <TiptapEditor content={tab.content} />
             </>
           )}
