@@ -7,7 +7,7 @@ import {
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
 import { TreeTag } from "~/server/queries/usersTags";
-
+import { Fragment } from "react";
 export function TagCrumbs({
   userTagTree,
   currentPageId,
@@ -75,16 +75,16 @@ export function TagCrumbs({
           </>
         )}
         {truncatedPath?.map((tag, index) => (
-          <>
+          <Fragment key={index}>
             <BreadcrumbSeparator />
-            <BreadcrumbItem key={index}>
+            <BreadcrumbItem>
               {index === truncatedPath.length - 1 ? (
                 <BreadcrumbPage>{tag}</BreadcrumbPage>
               ) : (
                 <BreadcrumbLink href={`/projects/${tag}`}>{tag}</BreadcrumbLink>
               )}
             </BreadcrumbItem>
-          </>
+          </Fragment>
         ))}
       </BreadcrumbList>
     </Breadcrumb>
