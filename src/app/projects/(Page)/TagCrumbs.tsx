@@ -81,7 +81,8 @@ export function TagCrumbs({
               {index === truncatedPath.length - 1 ? (
                 <BreadcrumbPage>{tag}</BreadcrumbPage>
               ) : (
-                <BreadcrumbLink href={`/projects/${tag}`}>{tag}</BreadcrumbLink>
+                // <BreadcrumbLink href={`/projects/${tag}`}>{tag}</BreadcrumbLink>
+                <BreadcrumbLink>{tag}</BreadcrumbLink>
               )}
             </BreadcrumbItem>
           </Fragment>
