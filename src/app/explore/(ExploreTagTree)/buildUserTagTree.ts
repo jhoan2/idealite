@@ -1,4 +1,4 @@
-import { SelectTag } from "~/server/usersTagsQueries";
+import { SelectTag } from "~/server/queries/tag";
 
 export type TreeNode = {
   id: string;
