@@ -64,7 +64,7 @@ const TreeNode: React.FC<{
   handleSaveChanges,
   isSaving,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
 
   const handleDelete = (id: string) => {
