@@ -24,6 +24,7 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_NEYNAR_CLIENT_ID: z.string(),
     NEXT_PUBLIC_GATEWAY_URL: z.string(),
+    NEXT_PUBLIC_ROOT_TAG_ID: z.string(),
   },
 
   /**
@@ -38,6 +39,7 @@ export const env = createEnv({
     NEXT_PUBLIC_NEYNAR_CLIENT_ID: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID,
     PINATA_JWT: process.env.PINATA_JWT,
     NEXT_PUBLIC_GATEWAY_URL: process.env.NEXT_PUBLIC_GATEWAY_URL,
+    NEXT_PUBLIC_ROOT_TAG_ID: process.env.NEXT_PUBLIC_ROOT_TAG_ID,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

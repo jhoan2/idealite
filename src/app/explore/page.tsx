@@ -7,7 +7,9 @@ export default async function Explore() {
   const session = await auth();
   const userId = session?.user?.id;
 
-  const tag = await getTagWithChildren("5a6fa43e-7d62-4e3e-bc46-d0bd9c7997a3");
+  const tag = await getTagWithChildren(
+    process.env.NEXT_PUBLIC_ROOT_TAG_ID ?? "",
+  );
   const userTags = userId ? await getUserTags(userId) : [];
   return <ExploreState tag={tag} userTags={userTags} userId={userId ?? null} />;
 }
