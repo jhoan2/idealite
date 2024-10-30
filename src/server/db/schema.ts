@@ -166,9 +166,116 @@ export const users_pages = createTable(
   },
 );
 
+export const resources = createTable(
+  "resource",
+  {
+    //Authors is a string with multiple authors separated by commas
+    author: text("author"),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    date_published: timestamp("date_published", { withTimezone: true }),
+    description: text("description"),
+    favicon: text("favicon"),
+    id: uuid("id").defaultRandom().primaryKey(),
+    image: text("image"),
+    og_type: text("og_type"),
+    owner_id: uuid("owner_id").references(() => users.id),
+    title: text("title").notNull(),
+    type: text("type", {
+      enum: ["url", "crossref", "open_library"],
+    }).notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+    url: text("url").notNull(),
+  },
+  (table) => {
+    return {
+      url_idx: index("resource_url_idx").on(table.url),
+      created_at_idx: index("resource_created_at_idx").on(table.created_at),
+      title_tsv_idx: index("idx_resource_title_tsv").using(
+        "gin",
+        sql`to_tsvector('english', ${table.title})`,
+      ),
+      url_tsv_idx: index("idx_resource_url_tsv").using(
+        "gin",
+        sql`to_tsvector('english', ${table.url})`,
+      ),
+      author_tsv_idx: index("idx_resource_author_tsv").using(
+        "gin",
+        sql`to_tsvector('english', ${table.author})`,
+      ),
+    };
+  },
+);
+
+export const usersResources = createTable(
+  "users_resources",
+  {
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    resource_id: uuid("resource_id")
+      .notNull()
+      .references(() => resources.id, { onDelete: "cascade" }),
+    isArchived: boolean("is_archived").default(false).notNull(),
+    // isSubscribed: boolean("is_subscribed").default(false).notNull(),
+
+    // notificationPreferences: jsonb("notification_preferences").default({
+    //   updates: false,
+    //   comments: false,
+    // }),
+
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.user_id, table.resource_id] }),
+      user_id_idx: index("users_resources_user_id_idx").on(table.user_id),
+      resource_id_idx: index("users_resources_resource_id_idx").on(
+        table.resource_id,
+      ),
+    };
+  },
+);
+
+export const resourcesPages = createTable(
+  "resources_pages",
+  {
+    resource_id: uuid("resource_id")
+      .notNull()
+      .references(() => resources.id, { onDelete: "cascade" }),
+    page_id: uuid("page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.resource_id, table.page_id] }),
+      resource_id_idx: index("resources_pages_resource_id_idx").on(
+        table.resource_id,
+      ),
+      page_id_idx: index("resources_pages_page_id_idx").on(table.page_id),
+    };
+  },
+);
+
 export const pagesRelations = relations(pages, ({ many }) => ({
   tags: many(pages_tags),
   users: many(users_pages),
+  resources: many(resourcesPages),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({
@@ -177,6 +284,8 @@ export const tagsRelations = relations(tags, ({ many }) => ({
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
+  ownedResources: many(resources),
+  resourceRelations: many(usersResources),
   pages: many(users_pages),
   tags: many(users_tags),
 }));
@@ -211,5 +320,36 @@ export const usersTagsRelations = relations(users_tags, ({ one }) => ({
   tag: one(tags, {
     fields: [users_tags.tag_id],
     references: [tags.id],
+  }),
+}));
+
+export const resourcesRelations = relations(resources, ({ many, one }) => ({
+  owner: one(users, {
+    fields: [resources.owner_id],
+    references: [users.id],
+  }),
+  userRelations: many(usersResources),
+  pages: many(resourcesPages),
+}));
+
+export const usersResourcesRelations = relations(usersResources, ({ one }) => ({
+  user: one(users, {
+    fields: [usersResources.user_id],
+    references: [users.id],
+  }),
+  resource: one(resources, {
+    fields: [usersResources.resource_id],
+    references: [resources.id],
+  }),
+}));
+
+export const resourcesPagesRelations = relations(resourcesPages, ({ one }) => ({
+  resource: one(resources, {
+    fields: [resourcesPages.resource_id],
+    references: [resources.id],
+  }),
+  page: one(pages, {
+    fields: [resourcesPages.page_id],
+    references: [pages.id],
   }),
 }));
