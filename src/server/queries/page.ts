@@ -1,6 +1,11 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "~/server/db";
-import { pages, users_tags, pages_tags } from "~/server/db/schema";
+import {
+  pages,
+  users_tags,
+  pages_tags,
+  resourcesPages,
+} from "~/server/db/schema";
 import { auth } from "~/app/auth";
 
 export async function getPageForUser(pageId: string) {
@@ -11,29 +16,61 @@ export async function getPageForUser(pageId: string) {
     throw new Error("User not authenticated");
   }
 
-  const result = await db
-    .select({
-      id: pages.id,
-      title: pages.title,
-      content: pages.content,
-      created_at: pages.created_at,
-      updated_at: pages.updated_at,
-    })
-    .from(pages)
-    .innerJoin(pages_tags, eq(pages.id, pages_tags.page_id))
-    .innerJoin(users_tags, eq(pages_tags.tag_id, users_tags.tag_id))
-    .where(
-      and(
-        eq(pages.id, pageId),
-        eq(users_tags.user_id, userId),
-        eq(pages.deleted, false),
-      ),
-    )
-    .limit(1);
+  const result = await db.query.pages.findFirst({
+    where: and(eq(pages.id, pageId), eq(pages.deleted, false)),
+    with: {
+      // Get tags through the pages_tags relation
+      tags: {
+        with: {
+          tag: true,
+        },
+        // Only get tags that the user has access to
+        where: (pagesTags, { exists, and, eq }) =>
+          exists(
+            db
+              .select()
+              .from(users_tags)
+              .where(
+                and(
+                  eq(users_tags.tag_id, pagesTags.tag_id),
+                  eq(users_tags.user_id, userId),
+                ),
+              ),
+          ),
+      },
+      // Get resources through the resourcesPages relation
+      resources: {
+        with: {
+          resource: true,
+        },
+      },
+    },
+  });
 
-  if (result.length === 0) {
+  if (!result || result.tags.length === 0) {
     return null;
   }
 
-  return result[0];
+  // Transform the result into the expected format
+  return {
+    id: result.id,
+    title: result.title,
+    content: result.content,
+    created_at: result.created_at,
+    updated_at: result.updated_at,
+    tags: result.tags.map(({ tag }) => ({
+      id: tag.id,
+      name: tag.name,
+    })),
+    resources: result.resources.map(({ resource }) => ({
+      id: resource.id,
+      title: resource.title,
+      url: resource.url,
+      description: resource.description,
+      author: resource.author,
+      date_published: resource.date_published,
+      image: resource.image,
+      type: resource.type,
+    })),
+  };
 }
