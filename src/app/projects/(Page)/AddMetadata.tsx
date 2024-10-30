@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
@@ -21,6 +22,7 @@ import { Button } from "~/components/ui/button";
 import { MetadataDisplay } from "./MetadataDisplay";
 import { cleanUrl } from "~/lib/utils";
 import { createResource, CreateResourceInput } from "~/server/actions/resource";
+import { toast } from "sonner";
 
 interface AddMetadataProps {
   isOpen: boolean;
@@ -96,7 +98,7 @@ export default function AddMetadata({
       handleOpenChange(false);
     } catch (error) {
       console.error("Error creating resource:", error);
-      // You might want to add error handling UI here
+      toast.error("Error creating resource");
     }
   };
 
@@ -106,6 +108,10 @@ export default function AddMetadata({
         <DialogHeader>
           <DialogTitle>Add Resource</DialogTitle>
         </DialogHeader>
+        <DialogDescription>
+          Select the type of resource you want to add and then enter the URL or
+          details.
+        </DialogDescription>
         <div className="flex gap-2">
           <Select value={selectedType} onValueChange={setSelectedType}>
             <SelectTrigger className="w-[180px]">
@@ -118,7 +124,7 @@ export default function AddMetadata({
             </SelectContent>
           </Select>
           <Input
-            placeholder="Field name"
+            placeholder="Enter URL or book details"
             value={newMetadataKey}
             onChange={(e) => setNewMetadataKey(e.target.value)}
             className="flex-1"
