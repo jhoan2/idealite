@@ -95,3 +95,37 @@ export async function addTagToPage(pageId: string, tagId: string) {
     return { error: "Failed to add tag" };
   }
 }
+
+const removeTagFromPageSchema = z.object({
+  pageId: z.string().uuid(),
+  tagId: z.string().uuid(),
+});
+
+export async function removeTagFromPage(pageId: string, tagId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    const { pageId: validatedPageId, tagId: validatedTagId } =
+      removeTagFromPageSchema.parse({ pageId, tagId });
+
+    await db
+      .delete(pages_tags)
+      .where(
+        and(
+          eq(pages_tags.page_id, validatedPageId),
+          eq(pages_tags.tag_id, validatedTagId),
+        ),
+      );
+
+    // Revalidate the page to show the tag was removed
+    revalidatePath(`/projects`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error removing tag:", error);
+    return { error: "Failed to remove tag" };
+  }
+}

@@ -2,14 +2,14 @@
 
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
-import { TagIcon } from "lucide-react";
+import { TagIcon, X } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import { addTagToPage } from "~/server/actions/page";
+import { addTagToPage, removeTagFromPage } from "~/server/actions/page";
 
 interface TagListProps {
   tags: Tag[];
@@ -33,8 +33,21 @@ export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
                 <TagIcon className="h-5 w-5 text-muted-foreground" />
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag: Tag) => (
-                    <Badge key={tag.id} variant="secondary">
+                    <Badge
+                      key={tag.id}
+                      variant="secondary"
+                      className="group relative hover:bg-destructive hover:text-destructive-foreground"
+                    >
                       {tag.name}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          removeTagFromPage(currentPageId, tag.id);
+                        }}
+                        className="ml-1 hidden group-hover:inline-flex"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </Badge>
                   ))}
                 </div>
