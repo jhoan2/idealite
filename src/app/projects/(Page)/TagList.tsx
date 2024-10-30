@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
 import { TagIcon, X } from "lucide-react";
@@ -10,6 +11,7 @@ import {
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
 import { addTagToPage, removeTagFromPage } from "~/server/actions/page";
+import { toast } from "sonner";
 
 interface TagListProps {
   tags: Tag[];
@@ -23,6 +25,32 @@ interface Tag {
 }
 
 export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
+  const [badges, setBadges] = useState<Tag[]>(tags);
+  const handleRemoveTag = async (pageId: string, tagId: string) => {
+    try {
+      await removeTagFromPage(pageId, tagId);
+      setBadges((prev) => prev.filter((tag) => tag.id !== tagId));
+      toast.success("Tag removed successfully");
+    } catch (error) {
+      toast.error("Failed to remove tag");
+      console.error("Error removing tag:", error);
+    }
+  };
+
+  const handleAddTag = async (pageId: string, tagId: string) => {
+    try {
+      await addTagToPage(pageId, tagId);
+      const tagToAdd = availableTags.find((tag) => tag.id === tagId);
+      if (tagToAdd) {
+        setBadges((prev) => [...prev, tagToAdd]);
+        toast.success("Tag added successfully");
+      }
+    } catch (error) {
+      toast.error("Failed to add tag");
+      console.error("Error adding tag:", error);
+    }
+  };
+
   return (
     <div className="mt-4 w-full max-w-2xl">
       <ContextMenu>
@@ -32,7 +60,7 @@ export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
               <div className="flex items-center space-x-2">
                 <TagIcon className="h-5 w-5 text-muted-foreground" />
                 <div className="flex flex-wrap gap-2">
-                  {tags.map((tag: Tag) => (
+                  {badges.map((tag: Tag) => (
                     <Badge
                       key={tag.id}
                       variant="secondary"
@@ -42,7 +70,7 @@ export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          removeTagFromPage(currentPageId, tag.id);
+                          handleRemoveTag(currentPageId, tag.id);
                         }}
                         className="ml-1 hidden group-hover:inline-flex"
                       >
@@ -60,7 +88,7 @@ export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
           {availableTags.map((tag: Tag) => (
             <ContextMenuItem
               key={tag.id}
-              onClick={() => addTagToPage(currentPageId, tag.id)}
+              onClick={() => handleAddTag(currentPageId, tag.id)}
             >
               {tag.name}
             </ContextMenuItem>

@@ -87,8 +87,6 @@ export async function addTagToPage(pageId: string, tagId: string) {
       tag_id: validatedTagId,
     });
 
-    // Revalidate the page to show the new tag
-    revalidatePath(`/projects`);
     return { success: true };
   } catch (error) {
     console.error("Error adding tag:", error);
@@ -121,8 +119,6 @@ export async function removeTagFromPage(pageId: string, tagId: string) {
         ),
       );
 
-    // Revalidate the page to show the tag was removed
-    revalidatePath(`/projects`);
     return { success: true };
   } catch (error) {
     console.error("Error removing tag:", error);
