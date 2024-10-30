@@ -152,7 +152,7 @@ export default function Conversation() {
         </Button>
       </Link>
       {isLoading && (
-        <div className="z-10 flex items-center justify-center bg-white bg-opacity-50">
+        <div className="z-10 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
         </div>
       )}
