@@ -21,7 +21,12 @@ interface TabPage {
   content: string;
   isLoading: boolean;
   resources: Resource[];
-  tags: string[];
+  tags: Tag[];
+}
+
+interface Tag {
+  id: string;
+  name: string;
 }
 
 export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
@@ -186,6 +191,8 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
             openTabs.find((tab) => tab.id === currentPageId)?.resources || []
           }
           tags={openTabs.find((tab) => tab.id === currentPageId)?.tags || []}
+          userTagTree={userTagTree}
+          currentPageId={currentPageId || ""}
         />
       )}
 
