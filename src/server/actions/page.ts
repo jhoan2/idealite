@@ -1,5 +1,7 @@
+"use server";
+
 import { db } from "~/server/db";
-import { pages, users_pages } from "~/server/db/schema";
+import { pages, pages_tags, users_pages } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "~/app/auth";
 import { z } from "zod";
@@ -62,5 +64,34 @@ export async function updatePage(
   } catch (error) {
     console.error("Error updating page:", error);
     throw error;
+  }
+}
+
+const addTagToPageSchema = z.object({
+  pageId: z.string().uuid(),
+  tagId: z.string().uuid(),
+});
+
+export async function addTagToPage(pageId: string, tagId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+  try {
+    const { pageId: validatedPageId, tagId: validatedTagId } =
+      addTagToPageSchema.parse({ pageId, tagId });
+
+    await db.insert(pages_tags).values({
+      page_id: validatedPageId,
+      tag_id: validatedTagId,
+    });
+
+    // Revalidate the page to show the new tag
+    revalidatePath(`/projects`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error adding tag:", error);
+    return { error: "Failed to add tag" };
   }
 }
