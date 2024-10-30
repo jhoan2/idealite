@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { X, Info, Loader2 } from "lucide-react";
+import { X, Info, Loader2, CirclePlus } from "lucide-react";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
@@ -12,12 +12,16 @@ import { Button } from "~/components/ui/button";
 import BodyEditor from "./BodyEditor";
 import HeadingEditor from "./HeadingEditor";
 import { TreeTag } from "~/server/queries/usersTags";
+import AddMetadata from "./AddMetadata";
+import { Resource } from "~/server/queries/resource";
 
 interface TabPage {
   id: string;
   title: string;
   content: string;
   isLoading: boolean;
+  resources: Resource[];
+  tags: string[];
 }
 
 export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
@@ -27,6 +31,7 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
   const currentPageId = pathname.split("/projects/")[1];
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isMetadataOpen, setIsMetadataOpen] = useState(false);
+  const [isAddMetadataOpen, setIsAddMetadataOpen] = useState(false);
 
   //Fixes the problem with refreshing on the page openTabs is empty, but url state is not.
   useEffect(() => {
@@ -51,7 +56,14 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
       if (prev.find((tab) => tab.id === pageId)) return prev;
       return [
         ...prev,
-        { id: pageId, title: "Loading...", content: "", isLoading: true },
+        {
+          id: pageId,
+          title: "Loading...",
+          content: "",
+          isLoading: true,
+          resources: [],
+          tags: [],
+        },
       ];
     });
 
@@ -82,6 +94,8 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
             title: pageData.title,
             content: pageData.content || "<p></p>",
             isLoading: false,
+            resources: pageData.resources,
+            tags: pageData.tags,
           },
         ];
       });
@@ -141,15 +155,40 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
           />
         </div>
         <div className="flex flex-1 justify-end">
+          {isMetadataOpen && (
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => setIsAddMetadataOpen(true)}
+                title="Add metadata"
+              >
+                <CirclePlus className="h-4 w-4" />
+              </Button>
+              <AddMetadata
+                isOpen={isAddMetadataOpen}
+                onOpenChange={setIsAddMetadataOpen}
+                pageId={currentPageId || ""}
+              />
+            </>
+          )}
           <Button
             variant="ghost"
             onClick={() => setIsMetadataOpen(!isMetadataOpen)}
+            title="Metadata tab"
           >
-            <Info className="h-4 w-4" />
+            <Info className="h-4 w-4" aria-label="Metadata tab" />
           </Button>
         </div>
       </div>
-      {isMetadataOpen && <PageMetadata />}
+      {isMetadataOpen && (
+        <PageMetadata
+          resources={
+            openTabs.find((tab) => tab.id === currentPageId)?.resources || []
+          }
+          tags={openTabs.find((tab) => tab.id === currentPageId)?.tags || []}
+        />
+      )}
+
       {openTabs.map((tab) => (
         <TabsContent
           key={tab.id}
