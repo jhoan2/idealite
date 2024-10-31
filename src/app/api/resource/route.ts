@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
           { status: 500 },
         );
       }
+
       const response = {
         author: result.author || "",
         title: result.ogTitle || result.twitterTitle || "",
@@ -60,9 +61,8 @@ export async function GET(request: NextRequest) {
         og_site_name: result.ogSiteName || "",
         og_type: result.ogType || "",
         type: "url",
-        url: result.ogUrl || cleanedUrl,
+        url: result.ogUrl ?? cleanedUrl,
       };
-
       return NextResponse.json(response);
     } catch (error) {
       console.error("Error fetching resource:", error);
