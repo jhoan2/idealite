@@ -26,7 +26,7 @@ export default async function ProjectsLayout({
         <div>
           <UserTagTree userTagTree={userTagTree} />{" "}
         </div>
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="custom-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto">
           <div className="w-full">
             <PageTabs userTagTree={userTagTree} />
           </div>
