@@ -46,7 +46,6 @@ export default function AddMetadata({
       setPreviewData(null);
       return;
     }
-
     setIsLoading(true);
     setError(null);
     try {
@@ -87,7 +86,7 @@ export default function AddMetadata({
     if (!previewData) return;
 
     const resourceInput: CreateResourceInput = {
-      url: newMetadataKey,
+      url: previewData.url,
       type: selectedType as CreateResourceInput["type"],
       title: previewData.title || "",
       description: previewData.description || "",
@@ -128,7 +127,7 @@ export default function AddMetadata({
             <SelectContent>
               <SelectItem value="url">URL</SelectItem>
               <SelectItem value="book">Book</SelectItem>
-              <SelectItem value="research-paper">Research Paper</SelectItem>
+              {/* <SelectItem value="research-paper">Research Paper</SelectItem> */}
             </SelectContent>
           </Select>
           <Input
