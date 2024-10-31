@@ -49,7 +49,7 @@ const BodyEditor = ({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl bg-background text-foreground w-full h-screen focus:outline-none",
+          "prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl bg-background text-foreground w-full min-h-[500px] focus:outline-none ",
       },
     },
   });
