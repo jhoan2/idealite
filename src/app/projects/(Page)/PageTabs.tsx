@@ -7,12 +7,12 @@ import { X, Info, Loader2, CirclePlus } from "lucide-react";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
-import PageMetadata from "./PageMetadata";
+import PageMetadata from "./(AddResource)/PageMetadata";
 import { Button } from "~/components/ui/button";
 import BodyEditor from "./BodyEditor";
 import HeadingEditor from "./HeadingEditor";
 import { TreeTag } from "~/server/queries/usersTags";
-import AddMetadata from "./AddMetadata";
+import AddMetadata from "./(AddResource)/AddMetadata";
 import { Resource } from "~/server/queries/resource";
 
 interface TabPage {

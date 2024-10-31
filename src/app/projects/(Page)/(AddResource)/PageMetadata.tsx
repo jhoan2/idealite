@@ -1,5 +1,5 @@
 import { MetadataDisplay } from "./MetadataDisplay";
-import { TagList } from "./TagList";
+import { TagList } from "../TagList";
 import { Resource } from "~/server/queries/resource";
 import { TreeTag } from "~/server/queries/usersTags";
 
