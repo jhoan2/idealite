@@ -39,6 +39,7 @@ export default function AddMetadata({
   const [selectedType, setSelectedType] = useState("url");
   const [previewData, setPreviewData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPreviewData = useDebouncedCallback(async (value: string) => {
     if (!value) {
@@ -47,15 +48,21 @@ export default function AddMetadata({
     }
 
     setIsLoading(true);
+    setError(null);
     try {
       const cleanedUrl = cleanUrl(value);
       const response = await fetch(
         `/api/resource?type=${selectedType}&query=${encodeURIComponent(cleanedUrl)}`,
       );
       const data = await response.json();
-      setPreviewData(data);
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setPreviewData(data);
+      }
     } catch (error) {
       console.error("Error fetching preview:", error);
+      setError("Error fetching preview");
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +78,7 @@ export default function AddMetadata({
       setSelectedType("url");
       setPreviewData(null);
       setIsLoading(false);
+      setError(null);
     }
     onOpenChange(open);
   };
@@ -137,7 +145,29 @@ export default function AddMetadata({
               <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
             </div>
           )}
-          {previewData && (
+          {error && !isLoading && (
+            <div className="rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          {previewData && !error && (
             <MetadataDisplay
               type={previewData.type}
               title={previewData.title}
