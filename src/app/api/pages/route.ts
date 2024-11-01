@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getPageForUser } from "~/server/queries/page";
 import { updatePage } from "~/server/actions/page";
 
 export async function PUT(request: Request) {
