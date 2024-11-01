@@ -7,7 +7,7 @@ import { X, Info, Loader2, CirclePlus } from "lucide-react";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
-import PageMetadata from "./(AddResource)/PageMetadata";
+import PageMetadata from "./(ResourceInfo)/PageMetadata";
 import { Button } from "~/components/ui/button";
 import BodyEditor from "./BodyEditor";
 import HeadingEditor from "./HeadingEditor";
