@@ -7,7 +7,6 @@ import {
   UserIcon,
   X,
 } from "lucide-react";
-import { Button } from "~/components/ui/button";
 
 export interface MetadataDisplayProps {
   type: string;
