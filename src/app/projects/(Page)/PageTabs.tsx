@@ -14,6 +14,7 @@ import HeadingEditor from "./HeadingEditor";
 import { TreeTag } from "~/server/queries/usersTags";
 import AddMetadata from "./(AddResource)/AddMetadata";
 import { Resource } from "~/server/queries/resource";
+import { getPageForUser } from "~/server/queries/page";
 
 interface TabPage {
   id: string;
@@ -73,21 +74,10 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
     });
 
     try {
-      const response = await fetch(`/api/pages?pageId=${pageId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const pageData = await getPageForUser(pageId);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const pageData = await response.json();
-
-      if (pageData.error) {
-        throw new Error(pageData.error);
+      if (!pageData) {
+        throw new Error("Page not found");
       }
 
       setOpenTabs((prev) => {
@@ -99,8 +89,8 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
             title: pageData.title,
             content: pageData.content || "<p></p>",
             isLoading: false,
-            resources: pageData.resources,
-            tags: pageData.tags,
+            resources: pageData.resources as Resource[],
+            tags: pageData.tags as Tag[],
           },
         ];
       });

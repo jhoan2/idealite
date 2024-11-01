@@ -1,3 +1,5 @@
+"use server";
+
 import { eq, and } from "drizzle-orm";
 import { db } from "~/server/db";
 import {
