@@ -8,13 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+
 import { Button } from "~/components/ui/button";
 import { createResource, CreateResourceInput } from "~/server/actions/resource";
 import { toast } from "sonner";

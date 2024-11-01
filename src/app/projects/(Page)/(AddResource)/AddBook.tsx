@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useDebouncedCallback } from "use-debounce";
-import BookCards from "./BookCards";
+import BookCard from "./BookCard";
 
 interface AddBookProps {
   setPreviewData: (data: any) => void;
@@ -80,7 +80,7 @@ export default function AddBook({ setPreviewData, previewData }: AddBookProps) {
         )}
         <div className="flex max-h-[300px] flex-col gap-2 overflow-y-auto p-4">
           {books.map((book) => (
-            <BookCards
+            <BookCard
               key={book.key}
               author={book.author_name[0] || ""}
               title={book.title}
