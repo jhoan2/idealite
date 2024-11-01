@@ -1,8 +1,11 @@
-import { MetadataDisplay } from "./MetadataDisplay";
+"use client";
+
+import { MetadataDisplay } from "../(AddResource)/MetadataDisplay";
 import { TagList } from "../TagList";
 import { Resource } from "~/server/queries/resource";
 import { TreeTag } from "~/server/queries/usersTags";
-
+import { useState } from "react";
+import InfoCard from "./InfoCard";
 interface PageMetadataProps {
   resources: Resource[];
   tags: Tag[];
@@ -50,7 +53,7 @@ export default function PageMetadata({
   return (
     <div className="flex flex-col items-center justify-center space-y-4">
       {resources.map((resource) => (
-        <MetadataDisplay
+        <InfoCard
           key={resource.id}
           type={resource.type}
           title={resource.title}
@@ -59,6 +62,8 @@ export default function PageMetadata({
           url={resource.url}
           date_published={resource.date_published}
           author={resource.author || ""}
+          resourceId={resource.id}
+          pageId={currentPageId}
         />
       ))}
       <TagList

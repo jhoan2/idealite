@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
-export interface MetadataDisplayProps {
+export interface InfoCardProps {
   type: string;
   title: string;
   image: string;
@@ -17,9 +17,11 @@ export interface MetadataDisplayProps {
   url: string;
   date_published: Date | null;
   author: string | null;
+  resourceId: string;
+  pageId: string;
 }
 
-export function MetadataDisplay({
+export function InfoCard({
   type,
   title,
   image,
@@ -27,7 +29,9 @@ export function MetadataDisplay({
   url,
   date_published,
   author,
-}: MetadataDisplayProps) {
+  resourceId,
+  pageId,
+}: InfoCardProps) {
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
@@ -90,4 +94,4 @@ export function MetadataDisplay({
   );
 }
 
-export default MetadataDisplay;
+export default InfoCard;
