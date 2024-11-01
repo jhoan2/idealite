@@ -7,7 +7,7 @@ import { X, Info, Loader2, CirclePlus } from "lucide-react";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
-import PageMetadata from "./(ResourceInfo)/PageResourceInfo";
+import PageResourceInfo from "./(ResourceInfo)/PageResourceInfo";
 import { Button } from "~/components/ui/button";
 import BodyEditor from "./BodyEditor";
 import HeadingEditor from "./HeadingEditor";
@@ -176,7 +176,7 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
         </div>
       </div>
       {isMetadataOpen && (
-        <PageMetadata
+        <PageResourceInfo
           resources={
             openTabs.find((tab) => tab.id === currentPageId)?.resources || []
           }

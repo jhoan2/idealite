@@ -9,7 +9,7 @@ import { deleteResourcePage } from "~/server/actions/pagesResource";
 import { deleteUserResource } from "~/server/actions/usersResource";
 import { toast } from "sonner";
 
-interface PageMetadataProps {
+interface PageResourceInfoProps {
   resources: Resource[];
   tags: Tag[];
   userTagTree: TreeTag[];
@@ -45,12 +45,12 @@ const flattenTagTree = (tree: TreeTag[], existingTags: Tag[]): Tag[] => {
   return tree.reduce((acc, node) => acc.concat(flatten(node)), [] as Tag[]);
 };
 
-export default function PageMetadata({
+export default function PageResourceInfo({
   resources,
   tags,
   userTagTree,
   currentPageId,
-}: PageMetadataProps) {
+}: PageResourceInfoProps) {
   const availableTags = flattenTagTree(userTagTree, tags);
   const [resourcesArray, setResourcesArray] = useState<Resource[]>(resources);
 
