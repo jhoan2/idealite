@@ -1,11 +1,14 @@
 "use client";
 
-import { MetadataDisplay } from "../(AddResource)/MetadataDisplay";
 import { TagList } from "../TagList";
 import { Resource } from "~/server/queries/resource";
 import { TreeTag } from "~/server/queries/usersTags";
 import { useState } from "react";
 import InfoCard from "./InfoCard";
+import { deleteResourcePage } from "~/server/actions/pagesResource";
+import { deleteUserResource } from "~/server/actions/usersResource";
+import { toast } from "sonner";
+
 interface PageMetadataProps {
   resources: Resource[];
   tags: Tag[];
@@ -49,10 +52,26 @@ export default function PageMetadata({
   currentPageId,
 }: PageMetadataProps) {
   const availableTags = flattenTagTree(userTagTree, tags);
+  const [resourcesArray, setResourcesArray] = useState<Resource[]>(resources);
+
+  const handleDeleteResource = async (resourceId: string, pageId: string) => {
+    try {
+      await deleteResourcePage({ resourceId, pageId });
+
+      await deleteUserResource({ resourceId });
+
+      setResourcesArray((prev) =>
+        prev.filter((resource) => resource.id !== resourceId),
+      );
+    } catch (error) {
+      console.error("Error deleting resource:", error);
+      toast.error("Failed to delete resource");
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center space-y-4">
-      {resources.map((resource) => (
+      {resourcesArray.map((resource) => (
         <InfoCard
           key={resource.id}
           type={resource.type}
@@ -64,6 +83,7 @@ export default function PageMetadata({
           author={resource.author || ""}
           resourceId={resource.id}
           pageId={currentPageId}
+          onDelete={handleDeleteResource}
         />
       ))}
       <TagList

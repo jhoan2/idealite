@@ -19,6 +19,7 @@ export interface InfoCardProps {
   author: string | null;
   resourceId: string;
   pageId: string;
+  onDelete: (resourceId: string, pageId: string) => void;
 }
 
 export function InfoCard({
@@ -31,6 +32,7 @@ export function InfoCard({
   author,
   resourceId,
   pageId,
+  onDelete,
 }: InfoCardProps) {
   return (
     <Card className="w-full max-w-2xl">
@@ -48,6 +50,14 @@ export function InfoCard({
             )}
             <span className="text-sm text-muted-foreground">{type}</span>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(resourceId, pageId)}
+            className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="grid grid-cols-[160px_1fr] gap-4">
