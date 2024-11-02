@@ -176,7 +176,6 @@ export const resources = createTable(
       .notNull(),
     date_published: timestamp("date_published", { withTimezone: true }),
     description: text("description"),
-    favicon: text("favicon"),
     id: uuid("id").defaultRandom().primaryKey(),
     image: text("image"),
     og_type: text("og_type"),
