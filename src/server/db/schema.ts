@@ -179,6 +179,7 @@ export const resources = createTable(
     id: uuid("id").defaultRandom().primaryKey(),
     image: text("image"),
     og_type: text("og_type"),
+    open_library_id: text("open_library_id"),
     owner_id: uuid("owner_id").references(() => users.id),
     title: text("title").notNull(),
     type: text("type", {
@@ -204,6 +205,9 @@ export const resources = createTable(
       author_tsv_idx: index("idx_resource_author_tsv").using(
         "gin",
         sql`to_tsvector('english', ${table.author})`,
+      ),
+      open_library_id_idx: index("idx_resource_open_library_id_idx").on(
+        table.open_library_id,
       ),
     };
   },
