@@ -6,7 +6,7 @@ import { Input } from "~/components/ui/input";
 import { useDebouncedCallback } from "use-debounce";
 import BookCard from "./BookCard";
 import { createBookResource } from "~/server/actions/resource";
-
+import { toast } from "sonner";
 interface BookCardsProps {
   author_name: string;
   title: string;
@@ -91,6 +91,7 @@ export default function AddBook({
       await createBookResource(bookInput);
       setBookTitle("");
       setSelectedBook(null);
+      toast.success("Book resource added successfully");
     } catch (error) {
       console.error("Error creating book resource:", error);
       setError("Failed to create book resource");
