@@ -14,6 +14,8 @@ export const env = createEnv({
     NEXTAUTH_SECRET: z.string(),
     NEYNAR_API_KEY: z.string(),
     PINATA_JWT: z.string(),
+    YOUTUBE_API_KEY: z.string(),
+    APP_URL: z.string(),
   },
 
   /**
@@ -40,6 +42,8 @@ export const env = createEnv({
     PINATA_JWT: process.env.PINATA_JWT,
     NEXT_PUBLIC_GATEWAY_URL: process.env.NEXT_PUBLIC_GATEWAY_URL,
     NEXT_PUBLIC_ROOT_TAG_ID: process.env.NEXT_PUBLIC_ROOT_TAG_ID,
+    APP_URL: process.env.APP_URL,
+    YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
