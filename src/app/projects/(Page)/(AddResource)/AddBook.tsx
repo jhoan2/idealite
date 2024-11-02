@@ -5,35 +5,47 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useDebouncedCallback } from "use-debounce";
 import BookCard from "./BookCard";
-
-interface AddBookProps {
-  setPreviewData: (data: any) => void;
-  previewData: any;
-}
+import { createBookResource } from "~/server/actions/resource";
 
 interface BookCardsProps {
-  author_name: string[];
+  author_name: string;
   title: string;
   key: string;
-  openLibraryKey: string;
+  open_library_id: string;
   first_sentence: string;
   first_publish_year: number;
   coverUrl: string;
   cover_i: string;
+  url: string;
 }
 
-export default function AddBook({ setPreviewData, previewData }: AddBookProps) {
+interface SelectedBook extends BookCardsProps {
+  date_published: string;
+  first_sentence: string;
+  author: string;
+  description: string;
+  image: string;
+}
+
+export default function AddBook({
+  pageId,
+  handleOpenChange,
+}: {
+  pageId: string;
+  handleOpenChange: () => void;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [limit, setLimit] = useState(6);
   const [currentPage, setCurrentPage] = useState(1);
   const [bookTitle, setBookTitle] = useState("");
   const [books, setBooks] = useState<BookCardsProps[]>([]);
+  const [selectedBook, setSelectedBook] = useState<SelectedBook | null>(null);
+  const [isAddingBook, setIsAddingBook] = useState(false);
 
   const fetchPreviewData = useDebouncedCallback(
     async (value: string, page: number) => {
       if (!value) {
-        setPreviewData(null);
         return;
       }
       setIsLoading(true);
@@ -59,6 +71,35 @@ export default function AddBook({ setPreviewData, previewData }: AddBookProps) {
     1000,
   );
 
+  const handleAddBook = async () => {
+    if (!selectedBook) return;
+    setIsAddingBook(true);
+    try {
+      const bookInput = {
+        author: selectedBook.author ?? "",
+        date_published: selectedBook.date_published
+          ? new Date(selectedBook.date_published)
+          : undefined,
+        description: selectedBook.description ?? "",
+        image: selectedBook.image ?? "",
+        open_library_id: selectedBook.open_library_id,
+        title: selectedBook.title,
+        type: "open_library" as const,
+        url: selectedBook.url,
+        page_id: pageId,
+      };
+      await createBookResource(bookInput);
+      setBookTitle("");
+      setSelectedBook(null);
+    } catch (error) {
+      console.error("Error creating book resource:", error);
+      setError("Failed to create book resource");
+    } finally {
+      setIsAddingBook(false);
+      handleOpenChange();
+    }
+  };
+
   useEffect(() => {
     fetchPreviewData(bookTitle, currentPage);
   }, [bookTitle, currentPage]);
@@ -82,14 +123,18 @@ export default function AddBook({ setPreviewData, previewData }: AddBookProps) {
           {books.map((book) => (
             <BookCard
               key={book.key}
-              author={book.author_name[0] || ""}
+              author={
+                Array.isArray(book.author_name)
+                  ? book.author_name
+                  : [book.author_name || ""]
+              }
               title={book.title}
-              openLibraryKey={book.key}
-              firstSentence={book.first_sentence || ""}
+              open_library_id={book.key}
+              description={book.first_sentence?.[0] || ""}
               publishDate={book.first_publish_year.toString()}
               coverUrl={`https://covers.openlibrary.org/b/id/${book?.cover_i}-M.jpg`}
-              setPreviewData={setPreviewData}
-              previewData={previewData}
+              setSelectedBook={setSelectedBook}
+              selectedBook={selectedBook}
             />
           ))}
         </div>
@@ -135,6 +180,22 @@ export default function AddBook({ setPreviewData, previewData }: AddBookProps) {
               </div>
             </div>
           </div>
+        )}
+        {selectedBook && (
+          <Button
+            onClick={() => handleAddBook()}
+            disabled={isAddingBook}
+            className="w-full"
+          >
+            {isAddingBook ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adding Resource...
+              </>
+            ) : (
+              "Add Resource"
+            )}
+          </Button>
         )}
       </div>
     </div>

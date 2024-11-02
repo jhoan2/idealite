@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 
-import { Button } from "~/components/ui/button";
 import { createResource, CreateResourceInput } from "~/server/actions/resource";
 import { toast } from "sonner";
 import AddUrl from "./AddUrl";
@@ -91,20 +90,16 @@ export default function AddMetadata({
               <Label htmlFor="url">URL</Label>
             </div>
           </RadioGroup>
-
           {selectedType === "url" && (
             <AddUrl setPreviewData={setPreviewData} previewData={previewData} />
           )}
           {selectedType === "book" && (
             <AddBook
-              setPreviewData={setPreviewData}
-              previewData={previewData}
+              pageId={pageId}
+              handleOpenChange={() => handleOpenChange(false)}
             />
           )}
         </div>
-        {previewData && (
-          <Button onClick={handleAddResource}>Add Resource</Button>
-        )}
       </DialogContent>
     </Dialog>
   );

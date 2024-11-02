@@ -4,43 +4,45 @@ import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 
 interface BookCardsProps {
-  author: string;
+  author: string[];
   title: string;
-  openLibraryKey: string;
-  firstSentence: string;
+  open_library_id: string;
+  description: string;
   publishDate: string;
   coverUrl: string;
-  setPreviewData: (data: any) => void;
-  previewData: any;
+  setSelectedBook: (data: any) => void;
+  selectedBook: any;
 }
 
 export default function BookCards({
   author,
   title,
-  openLibraryKey,
-  firstSentence,
+  open_library_id,
+  description,
   publishDate,
   coverUrl,
-  setPreviewData,
-  previewData,
+  setSelectedBook,
+  selectedBook,
 }: BookCardsProps) {
+  const authorString = author?.join(", ");
+
   return (
     <Card
-      key={openLibraryKey}
+      key={open_library_id}
       className={cn(
         "cursor-pointer transition-all hover:bg-muted/50",
-        previewData?.id === openLibraryKey && "ring-2 ring-primary",
+        selectedBook?.id === open_library_id && "ring-2 ring-primary",
       )}
       onClick={() =>
-        setPreviewData({
-          id: openLibraryKey,
+        setSelectedBook({
+          open_library_id: open_library_id,
           type: "book",
           title: title,
           image: coverUrl,
-          description: firstSentence,
-          url: `https://openlibrary.org/books/${openLibraryKey}`,
+          description: description,
+          url: `https://openlibrary.org${open_library_id}`,
           date_published: publishDate,
-          author: author,
+          author: authorString,
         })
       }
     >
@@ -51,7 +53,7 @@ export default function BookCards({
             alt={title}
             className="h-[120px] w-[90px] rounded-lg object-cover"
           />
-          {previewData?.id === openLibraryKey && (
+          {selectedBook?.open_library_id === open_library_id && (
             <div className="absolute -right-2 -top-2 rounded-full bg-primary p-1">
               <Check className="h-4 w-4 text-primary-foreground" />
             </div>
@@ -59,10 +61,11 @@ export default function BookCards({
         </div>
         <div className="flex-1">
           <h3 className="font-medium leading-none">{title}</h3>
-          <p className="mt-2 text-sm text-muted-foreground">{author}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{authorString}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Published: {publishDate}
           </p>
+          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
         </div>
       </CardContent>
     </Card>
