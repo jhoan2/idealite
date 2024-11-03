@@ -39,6 +39,7 @@ export default function AddUrl({ pageId, handleOpenChange }: AddUrlProps) {
         );
       }
       const data = await response.json();
+
       if (data.error) {
         setError(data.error);
       } else {
@@ -61,7 +62,6 @@ export default function AddUrl({ pageId, handleOpenChange }: AddUrlProps) {
       title: previewData.title || "",
       description: previewData.description || "",
       image: previewData.image || undefined,
-      favicon: previewData.favicon || undefined,
       author: previewData.author || undefined,
       og_type: previewData.og_type || undefined,
       date_published: previewData.date_published
