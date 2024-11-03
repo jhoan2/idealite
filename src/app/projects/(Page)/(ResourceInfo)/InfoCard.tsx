@@ -6,8 +6,11 @@ import {
   CalendarIcon,
   UserIcon,
   X,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { useState } from "react";
 
 export interface InfoCardProps {
   type: string;
@@ -34,6 +37,7 @@ export function InfoCard({
   pageId,
   onDelete,
 }: InfoCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
@@ -76,7 +80,34 @@ export function InfoCard({
         </a>
         <div className="space-y-2">
           <CardTitle className="text-xl font-bold">{title}</CardTitle>
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <span
+            className={
+              !isExpanded
+                ? "line-clamp-2 text-sm text-muted-foreground"
+                : undefined
+            }
+          >
+            {description}
+          </span>
+          {!isExpanded && "... "}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-auto p-0 text-primary"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? (
+              <>
+                Show less
+                <ChevronUp className="ml-1 h-3 w-3" />
+              </>
+            ) : (
+              <>
+                Show more
+                <ChevronDown className="ml-1 h-3 w-3" />
+              </>
+            )}
+          </Button>
 
           <div className="mt-4 flex flex-wrap gap-4">
             {author && (
