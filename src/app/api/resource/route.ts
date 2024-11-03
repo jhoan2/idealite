@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "~/server/db";
-import { resources } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
 import { cleanUrl } from "~/lib/utils";
 
 export async function GET(request: NextRequest) {
@@ -51,28 +48,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(await youtubeData.json());
     }
 
-    if (query.includes("x.com") || query.includes("twitter.com")) {
-      const xData = await fetch(
-        `${process.env.APP_URL}/api/twitter?url=${query}`,
-      );
-      const twitterData = await xData.json();
-      const tweetText =
-        twitterData.html
-          .split('lang="en">')[1]
-          ?.split("</p>")[0]
-          ?.replace(/<[^>]*>/g, "")
-          .trim() ?? "";
-
-      return NextResponse.json({
-        author: twitterData.author_name,
-        title: "Tweet",
-        description: tweetText,
-        url: twitterData.url,
-        type: "url",
-      });
-    }
-
-    if (!query.includes("youtube.com") && !query.includes("x.com")) {
+    if (!query.includes("youtube.com")) {
       const cleanedUrl = cleanUrl(query);
 
       const openGraphData = await fetch(

@@ -14,7 +14,18 @@ export async function GET(request: NextRequest) {
     );
     const data = await response.json();
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      author: data.author_name,
+      title: data.provider_name,
+      description: data.html
+        .split('lang="en">')[1]
+        ?.split("</p>")[0]
+        ?.replace(/<[^>]*>/g, "")
+        .trim(),
+      url: data.url,
+      type: "url",
+      html: data.html,
+    });
   } catch (error) {
     console.error("Error fetching tweet embed:", error);
     return NextResponse.json(
