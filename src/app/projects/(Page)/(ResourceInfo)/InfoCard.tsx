@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   BookIcon,
@@ -10,7 +13,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { useState } from "react";
+import { TwitterEmbed } from "../TwitterEmbed";
 
 export interface InfoCardProps {
   type: string;
@@ -38,6 +41,71 @@ export function InfoCard({
   onDelete,
 }: InfoCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [twitterHtml, setTwitterHtml] = useState("");
+
+  const isTwitterUrl = (url: string) => {
+    return url.includes("twitter.com") || url.includes("x.com");
+  };
+
+  useEffect(() => {
+    const fetchTwitterEmbed = async () => {
+      if (isTwitterUrl(url)) {
+        setIsLoading(true);
+        try {
+          const response = await fetch(
+            `/api/twitter?url=${encodeURIComponent(url)}`,
+          );
+          const data = await response.json();
+          setTwitterHtml(data.html);
+        } catch (error) {
+          console.error("Error fetching Twitter embed:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchTwitterEmbed();
+  }, [url]);
+
+  if (isTwitterUrl(url)) {
+    if (isLoading) {
+      return <div>Loading tweet...</div>;
+    }
+    return (
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
+          <div className="flex items-center justify-between space-x-2">
+            <div className="flex items-center space-x-2">
+              {type === "url" ? (
+                <LinkIcon className="h-5 w-5 text-primary" />
+              ) : type === "book" ? (
+                <BookIcon className="h-5 w-5 text-primary" />
+              ) : type === "research-paper" ? (
+                <MicroscopeIcon className="h-5 w-5 text-primary" />
+              ) : (
+                <LinkIcon className="h-5 w-5 text-primary" />
+              )}
+              <span className="text-sm text-muted-foreground">{type}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(resourceId, pageId)}
+              className="h-6 w-6 rounded-full hover:bg-muted"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <TwitterEmbed html={twitterHtml || ""} />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
