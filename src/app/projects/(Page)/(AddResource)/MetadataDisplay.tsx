@@ -5,7 +5,6 @@ import {
   MicroscopeIcon,
   CalendarIcon,
   UserIcon,
-  X,
 } from "lucide-react";
 
 export interface MetadataDisplayProps {
@@ -28,7 +27,7 @@ export function MetadataDisplay({
   author,
 }: MetadataDisplayProps) {
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="max-h-[300px] w-full max-w-2xl overflow-y-auto">
       <CardHeader>
         <div className="flex items-center justify-between space-x-2">
           <div className="flex items-center space-x-2">
