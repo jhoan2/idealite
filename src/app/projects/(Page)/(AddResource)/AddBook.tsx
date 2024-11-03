@@ -186,7 +186,7 @@ export default function AddBook({
           <Button
             onClick={() => handleAddBook()}
             disabled={isAddingBook}
-            className="w-full"
+            className="mt-4 w-full"
           >
             {isAddingBook ? (
               <>
