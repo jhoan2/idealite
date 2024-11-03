@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import { createResource } from "~/server/actions/resource";
 import { toast } from "sonner";
 import { CreateResourceInput } from "~/server/actions/resource";
+import { TwitterEmbed } from "../TwitterEmbed";
 
 interface AddUrlProps {
   pageId: string;
@@ -29,9 +30,14 @@ export default function AddUrl({ pageId, handleOpenChange }: AddUrlProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(
-        `/api/resource?type=url&query=${encodeURIComponent(value)}`,
-      );
+      let response;
+      if (value.includes("twitter.com") || value.includes("x.com")) {
+        response = await fetch(`/api/twitter?url=${encodeURIComponent(value)}`);
+      } else {
+        response = await fetch(
+          `/api/resource?type=url&query=${encodeURIComponent(value)}`,
+        );
+      }
       const data = await response.json();
       if (data.error) {
         setError(data.error);
@@ -116,17 +122,21 @@ export default function AddUrl({ pageId, handleOpenChange }: AddUrlProps) {
             </div>
           </div>
         )}
-        {previewData && !error && (
-          <MetadataDisplay
-            type={previewData.type}
-            title={previewData.title}
-            image={previewData.image}
-            description={previewData.description}
-            url={previewData.url}
-            date_published={previewData.date_published}
-            author={previewData.author}
-          />
-        )}
+        {previewData &&
+          !error &&
+          (previewData.url.includes("twitter.com") ? (
+            <TwitterEmbed html={previewData.html} />
+          ) : (
+            <MetadataDisplay
+              type={previewData.type}
+              title={previewData.title}
+              image={previewData.image}
+              description={previewData.description}
+              url={previewData.url}
+              date_published={previewData.date_published}
+              author={previewData.author}
+            />
+          ))}
         {previewData && (
           <Button
             onClick={handleAddResource}
