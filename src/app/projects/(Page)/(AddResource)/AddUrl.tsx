@@ -3,20 +3,24 @@
 import { useState, useEffect } from "react";
 import { Input } from "~/components/ui/input";
 import { useDebouncedCallback } from "use-debounce";
-import { cleanUrl } from "~/lib/utils";
 import MetadataDisplay from "./MetadataDisplay";
 import { Loader2 } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { createResource } from "~/server/actions/resource";
+import { toast } from "sonner";
+import { CreateResourceInput } from "~/server/actions/resource";
 
 interface AddUrlProps {
-  setPreviewData: (data: any) => void;
-  previewData: any;
+  pageId: string;
+  handleOpenChange: () => void;
 }
 
-export default function AddUrl({ setPreviewData, previewData }: AddUrlProps) {
+export default function AddUrl({ pageId, handleOpenChange }: AddUrlProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [newMetadataKey, setNewMetadataKey] = useState("");
-
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const fetchPreviewData = useDebouncedCallback(async (value: string) => {
     if (!value) {
       setPreviewData(null);
@@ -25,12 +29,10 @@ export default function AddUrl({ setPreviewData, previewData }: AddUrlProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const cleanedUrl = cleanUrl(value);
       const response = await fetch(
-        `/api/resource?type=url&query=${encodeURIComponent(cleanedUrl)}`,
+        `/api/resource?type=url&query=${encodeURIComponent(value)}`,
       );
       const data = await response.json();
-      console.log("data", data);
       if (data.error) {
         setError(data.error);
       } else {
@@ -44,9 +46,39 @@ export default function AddUrl({ setPreviewData, previewData }: AddUrlProps) {
     }
   }, 1000);
 
+  const handleAddResource = async () => {
+    if (!previewData) return;
+    setIsCreating(true);
+    const resourceInput: CreateResourceInput = {
+      url: previewData.url,
+      type: "url",
+      title: previewData.title || "",
+      description: previewData.description || "",
+      image: previewData.image || undefined,
+      favicon: previewData.favicon || undefined,
+      author: previewData.author || undefined,
+      og_type: previewData.og_type || undefined,
+      date_published: previewData.date_published
+        ? new Date(previewData.date_published)
+        : undefined,
+      page_id: pageId,
+    };
+
+    try {
+      await createResource(resourceInput);
+      handleOpenChange();
+    } catch (error) {
+      console.error("Error creating resource:", error);
+      toast.error("Error creating resource");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   useEffect(() => {
     fetchPreviewData(newMetadataKey);
   }, [newMetadataKey]);
+
   return (
     <>
       <Input
@@ -94,6 +126,22 @@ export default function AddUrl({ setPreviewData, previewData }: AddUrlProps) {
             date_published={previewData.date_published}
             author={previewData.author}
           />
+        )}
+        {previewData && (
+          <Button
+            onClick={handleAddResource}
+            className="mt-4 w-full"
+            disabled={isCreating}
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adding Resource...
+              </>
+            ) : (
+              "Add Resource"
+            )}
+          </Button>
         )}
       </div>
     </>
