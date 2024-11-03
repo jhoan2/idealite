@@ -58,7 +58,7 @@ export function InfoCard({
             variant="ghost"
             size="icon"
             onClick={() => onDelete(resourceId, pageId)}
-            className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+            className="h-6 w-6 rounded-full hover:bg-muted"
           >
             <X className="h-4 w-4" />
           </Button>
