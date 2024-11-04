@@ -125,3 +125,45 @@ export async function removeTagFromPage(pageId: string, tagId: string) {
     return { error: "Failed to remove tag" };
   }
 }
+
+export async function savePageContent(pageId: string, content: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+
+    // Check if the user has access to the page
+    const userPage = await db.query.users_pages.findFirst({
+      where: and(
+        eq(users_pages.user_id, session.user.id),
+        eq(users_pages.page_id, pageId),
+      ),
+    });
+
+    if (!userPage) {
+      throw new Error("Page not found or user doesn't have access");
+    }
+
+    const updatedPage = await db
+      .update(pages)
+      .set({
+        content,
+        updated_at: new Date(),
+      })
+      .where(eq(pages.id, pageId))
+      .returning();
+
+    if (updatedPage.length === 0 || !updatedPage[0]) {
+      throw new Error("Failed to save page");
+    }
+
+    revalidatePath(`/projects`);
+
+    return updatedPage[0];
+  } catch (error) {
+    console.error("Error saving page:", error);
+    throw error;
+  }
+}

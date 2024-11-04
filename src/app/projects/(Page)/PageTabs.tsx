@@ -23,6 +23,7 @@ interface TabPage {
   isLoading: boolean;
   resources: Resource[];
   tags: Tag[];
+  isSaving: boolean;
 }
 
 interface Tag {
@@ -67,6 +68,7 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
           title: "Loading...",
           content: "",
           isLoading: true,
+          isSaving: false,
           resources: [],
           tags: [],
         },
@@ -91,6 +93,7 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
             isLoading: false,
             resources: pageData.resources as Resource[],
             tags: pageData.tags as Tag[],
+            isSaving: false,
           },
         ];
       });
@@ -99,6 +102,12 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
       setOpenTabs((prev) => prev.filter((tab) => tab.id !== pageId));
       if (isInitial) router.push("/projects");
     }
+  };
+
+  const setSavingState = (pageId: string, isSaving: boolean) => {
+    setOpenTabs((prev) =>
+      prev.map((tab) => (tab.id === pageId ? { ...tab, isSaving } : tab)),
+    );
   };
 
   return (
@@ -113,26 +122,32 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
               onClick={() => router.push(`/projects/${tab.id}`)}
             >
               <span>{tab.title}</span>
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenTabs((prev) => prev.filter((t) => t.id !== tab.id));
-                  if (tab.id === currentPageId) {
-                    const remaining = openTabs.filter((t) => t.id !== tab.id);
-                    if (remaining.length > 0) {
-                      const lastTab = remaining[remaining.length - 1];
-                      if (lastTab) {
-                        router.push(`/projects/${lastTab.id}`);
+              {tab.isSaving ? (
+                <span className="o ml-2 rounded-full p-1">
+                  <Loader2 className="h-3 w-3 animate-spin text-purple-500" />
+                </span>
+              ) : (
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenTabs((prev) => prev.filter((t) => t.id !== tab.id));
+                    if (tab.id === currentPageId) {
+                      const remaining = openTabs.filter((t) => t.id !== tab.id);
+                      if (remaining.length > 0) {
+                        const lastTab = remaining[remaining.length - 1];
+                        if (lastTab) {
+                          router.push(`/projects/${lastTab.id}`);
+                        }
+                      } else {
+                        router.push("/");
                       }
-                    } else {
-                      router.push("/");
                     }
-                  }
-                }}
-                className="ml-2 rounded-full p-1 opacity-0 group-hover:opacity-100"
-              >
-                <X className="h-3 w-3" />
-              </span>
+                  }}
+                  className="ml-2 rounded-full p-1 opacity-0 group-hover:opacity-100"
+                >
+                  <X className="h-3 w-3" />
+                </span>
+              )}
             </TabsTrigger>
           ))}
         </div>
@@ -203,7 +218,13 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
                 pageId={tab.id}
                 userTagTree={userTagTree}
               />
-              <BodyEditor content={tab.content} />
+              <BodyEditor
+                content={tab.content}
+                pageId={tab.id}
+                onSavingStateChange={(isSaving) =>
+                  setSavingState(tab.id, isSaving)
+                }
+              />
             </>
           )}
         </TabsContent>

@@ -1,37 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
 import Focus from "@tiptap/extension-focus";
-import { Badge } from "~/components/ui/badge";
-
-type SaveStatus = "saved" | "saving" | "unsaved";
+import { savePageContent } from "~/server/actions/page";
 
 const BodyEditor = ({
   content,
   immediatelyRender = false,
+  onSavingStateChange,
+  pageId,
 }: {
   content: string;
   immediatelyRender?: boolean;
+  onSavingStateChange: (isSaving: boolean) => void;
+  pageId: string;
 }) => {
-  const router = useRouter();
   const [editorContent, setEditorContent] = useState(content);
-  const [isPending, startTransition] = useTransition();
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
+
+  const debouncedSave = useDebouncedCallback(async (content: string) => {
+    try {
+      onSavingStateChange(true);
+      await savePageContent(pageId, content);
+    } catch (error) {
+      toast.error("Failed to save changes");
+    } finally {
+      onSavingStateChange(false);
+    }
+  }, 1000);
 
   const editor = useEditor({
     extensions: [
@@ -44,7 +43,9 @@ const BodyEditor = ({
     content: content,
     immediatelyRender: immediatelyRender,
     onUpdate: ({ editor }) => {
-      setEditorContent(editor.getHTML());
+      const newContent = editor.getHTML();
+      setEditorContent(newContent);
+      debouncedSave(newContent);
     },
     editorProps: {
       attributes: {
