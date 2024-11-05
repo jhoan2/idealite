@@ -6,7 +6,7 @@ import CirclePack from "./CirclePack";
 import { SelectTag } from "~/server/queries/tag";
 import { buildUserTagTree } from "./buildUserTagTree";
 import { toast } from "sonner";
-
+import { updateUserTags } from "~/server/actions/usersTags";
 interface ExploreStateProps {
   tag: SelectTag[];
   userTags: SelectTag[];
@@ -62,34 +62,16 @@ export default function ExploreState({
     [flatUserTags],
   );
 
-  async function updateUserTags(
+  async function handleUpdateUserTags(
     userId: string,
     addedTags: SelectTag[],
     removedTags: SelectTag[],
   ) {
-    try {
-      const response = await fetch("/api/usersTags", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId,
-          addedTags,
-          removedTags,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update user tags");
-      }
-
-      const result = await response.json();
-      return result;
-    } catch (error) {
-      console.error("Error updating user tags:", error);
-      throw error;
+    const result = await updateUserTags({ userId, addedTags, removedTags });
+    if (!result.success) {
+      throw new Error(result.error || "Failed to update user tags");
     }
+    return result;
   }
 
   const hasChanged = useMemo(() => {
@@ -114,7 +96,7 @@ export default function ExploreState({
     if (!userId) return;
     setIsSaving(true);
     try {
-      await updateUserTags(userId, newlyAddedTags, removedTags);
+      await handleUpdateUserTags(userId, newlyAddedTags, removedTags);
       setInitialUserTags([...flatUserTags]);
       setNewlyAddedTags([]);
       setRemovedTags([]);

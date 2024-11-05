@@ -256,3 +256,54 @@ export async function updateTagCollapsed({
     return { success: false, error: "Failed to update tag state" };
   }
 }
+
+export async function updateUserTags({
+  userId,
+  addedTags,
+  removedTags,
+}: {
+  userId: string;
+  addedTags: { id: string }[];
+  removedTags: { id: string }[];
+}) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
+
+  try {
+    await db.transaction(async (tx) => {
+      if (addedTags.length > 0) {
+        await tx.insert(users_tags).values(
+          addedTags.map((tag) => ({
+            user_id: userId,
+            tag_id: typeof tag === "string" ? tag : tag.id,
+          })),
+        );
+      }
+
+      if (removedTags.length > 0) {
+        await tx.delete(users_tags).where(
+          and(
+            eq(users_tags.user_id, userId),
+            inArray(
+              users_tags.tag_id,
+              removedTags.map((tag) =>
+                typeof tag === "string" ? tag : tag.id,
+              ),
+            ),
+          ),
+        );
+      }
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating user tags:", error);
+    return { success: false, error: "Failed to update user tags" };
+  }
+}
