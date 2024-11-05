@@ -1,7 +1,8 @@
-import "server-only";
+"use server";
+
 import { db } from "~/server/db";
 import { tags } from "~/server/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 export type SelectTag = typeof tags.$inferSelect;
 
