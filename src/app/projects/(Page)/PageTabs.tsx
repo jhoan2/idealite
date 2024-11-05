@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { X, Info, Loader2, CirclePlus } from "lucide-react";
+import { X, Info, Loader2, CirclePlus, RefreshCw } from "lucide-react";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
@@ -179,6 +179,23 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
                 onOpenChange={setIsAddMetadataOpen}
                 pageId={currentPageId || ""}
               />
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  if (currentPageId) {
+                    setIsMetadataOpen(false);
+                    setOpenTabs((prev) =>
+                      prev.filter((tab) => tab.id !== currentPageId),
+                    );
+                    fetchPageData(currentPageId, false).then(() => {
+                      setIsMetadataOpen(true);
+                    });
+                  }
+                }}
+                title="Refresh page"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </>
           )}
           <Button
