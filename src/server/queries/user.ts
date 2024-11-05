@@ -1,8 +1,8 @@
-import "server-only";
+"use server";
+
 import { db } from "~/server/db";
 import { users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
-
 type SelectUser = typeof users.$inferSelect;
 type InsertUser = typeof users.$inferInsert;
 
