@@ -207,29 +207,26 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
           </Button>
         </div>
       </div>
-      {isMetadataOpen && (
-        <PageResourceInfo
-          resources={
-            openTabs.find((tab) => tab.id === currentPageId)?.resources || []
-          }
-          tags={openTabs.find((tab) => tab.id === currentPageId)?.tags || []}
-          userTagTree={userTagTree}
-          currentPageId={currentPageId || ""}
-        />
-      )}
-
       {openTabs.map((tab) => (
         <TabsContent
           key={tab.id}
           value={tab.id}
-          className="mt-10 flex h-full w-full flex-col justify-center"
+          className="flex h-full w-full flex-col justify-center"
         >
+          {isMetadataOpen && (
+            <PageResourceInfo
+              resources={tab.resources}
+              tags={tab.tags}
+              userTagTree={userTagTree}
+              currentPageId={tab.id}
+            />
+          )}
           {tab.isLoading ? (
             <div className="z-10 flex items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
             </div>
           ) : (
-            <>
+            <div className="mt-10">
               <HeadingEditor
                 initialTitle={tab.title}
                 pageId={tab.id}
@@ -242,7 +239,7 @@ export default function PageTabs({ userTagTree }: { userTagTree: TreeTag[] }) {
                   setSavingState(tab.id, isSaving)
                 }
               />
-            </>
+            </div>
           )}
         </TabsContent>
       ))}
