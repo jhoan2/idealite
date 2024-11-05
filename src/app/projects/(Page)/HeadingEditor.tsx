@@ -7,7 +7,7 @@ import Focus from "@tiptap/extension-focus";
 import { useDebouncedCallback } from "use-debounce";
 import { toast } from "sonner";
 import { TreeTag } from "~/server/queries/usersTags";
-
+import { updatePage } from "~/server/actions/page";
 interface HeadingEditorProps {
   initialTitle: string;
   pageId: string;
@@ -93,12 +93,9 @@ const HeadingEditor = ({
         return;
       }
 
-      const response = await fetch(`/api/pages?pageId=${pageId}`, {
-        method: "PUT",
-        body: JSON.stringify({ title: newTitle }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to save title");
+      const updatedPage = await updatePage(pageId, { title: newTitle });
+      if (!updatedPage) {
+        throw new Error("Failed to update page title");
       }
     } catch (error) {
       console.error("Failed to save title:", error);
