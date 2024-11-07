@@ -32,6 +32,37 @@ export async function createResource(input: CreateResourceInput) {
   try {
     const validatedInput = createResourceSchema.parse(input);
 
+    // Check if resource already exists
+    const existingResource = await db.query.resources.findFirst({
+      where: (resources, { and, eq }) =>
+        and(
+          eq(resources.url, validatedInput.url),
+          eq(resources.type, validatedInput.type),
+        ),
+    });
+
+    if (existingResource) {
+      // Create relations if they don't exist
+      await db
+        .insert(usersResources)
+        .values({
+          user_id: session.user.id,
+          resource_id: existingResource.id,
+        })
+        .onConflictDoNothing();
+
+      await db
+        .insert(resourcesPages)
+        .values({
+          page_id: validatedInput.page_id,
+          resource_id: existingResource.id,
+        })
+        .onConflictDoNothing();
+
+      return existingResource;
+    }
+
+    // Create new resource if it doesn't exist
     const [resource] = await db
       .insert(resources)
       .values({
