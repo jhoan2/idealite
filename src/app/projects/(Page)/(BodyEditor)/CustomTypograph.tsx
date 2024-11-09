@@ -127,6 +127,38 @@ export const CustomTypography = Typography.extend({
           .run();
         return true;
       },
+      "`": ({ editor }) => {
+        const { selection } = editor.state;
+        const { empty, from, to } = selection;
+
+        const beforeText = editor.state.doc.textBetween(
+          Math.max(0, from - 20),
+          from,
+        );
+
+        if (empty) {
+          const isClosingBacktick = beforeText.split("`").length % 2 === 0;
+
+          if (isClosingBacktick) {
+            editor.chain().insertContent("`").run();
+          } else {
+            // Insert backticks and position cursor between them
+            const pos = editor.state.selection.$head.pos;
+            editor
+              .chain()
+              .insertContent("``")
+              .setTextSelection(pos + 1)
+              .run();
+          }
+          return true;
+        }
+
+        editor
+          .chain()
+          .insertContent(`\`${editor.state.doc.textBetween(from, to)}\``)
+          .run();
+        return true;
+      },
     };
   },
 });
