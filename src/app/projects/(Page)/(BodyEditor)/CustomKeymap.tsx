@@ -8,19 +8,19 @@ export const CustomKeymap = Extension.create({
     return {
       "Mod-x": ({ editor }: { editor: Editor }) => {
         const { selection } = editor.state;
-        const { from, to } = selection;
+        const { from } = selection;
 
-        // Get the positions of the current line
-        const line = editor.state.doc.resolve(from).blockRange();
+        // Get the positions of the current block
+        const $pos = editor.state.doc.resolve(from);
 
-        if (line) {
-          // Delete the entire line
-          editor.chain().deleteRange({ from: line.start, to: line.end }).run();
+        // Find the deepest block that contains our position
+        const textBlockDepth = $pos.depth;
+        const startPos = $pos.before(textBlockDepth);
+        const endPos = $pos.after(textBlockDepth);
 
-          return true;
-        }
-
-        return false;
+        // Delete the entire block
+        editor.chain().deleteRange({ from: startPos, to: endPos }).run();
+        return true;
       },
     };
   },
