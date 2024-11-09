@@ -9,7 +9,7 @@ import { PageActions } from "./PageActions";
 import { TagCrumbs } from "./TagCrumbs";
 import PageResourceInfo from "./(ResourceInfo)/PageResourceInfo";
 import { Button } from "~/components/ui/button";
-import BodyEditor from "./BodyEditor";
+import BodyEditor from "./(BodyEditor)/BodyEditor";
 import HeadingEditor from "./HeadingEditor";
 import { TreeTag } from "~/server/queries/usersTags";
 import AddMetadata from "./(AddResource)/AddMetadata";
