@@ -10,6 +10,9 @@ import { savePageContent } from "~/server/actions/page";
 import { BubbleMenu } from "@tiptap/react";
 import { CustomTypography } from "./CustomTypograph";
 import { CustomKeymap } from "./CustomKeymap";
+import { TaskList } from "@tiptap/extension-task-list";
+import { TaskItem } from "@tiptap/extension-task-item";
+
 const BodyEditor = ({
   content,
   immediatelyRender = false,
@@ -58,6 +61,10 @@ const BodyEditor = ({
       StarterKit,
       CustomTypography,
       CustomKeymap,
+      TaskList,
+      TaskItem.configure({
+        nested: true, // Enable nested task lists
+      }),
       Focus.configure({
         className: "has-focus",
         mode: "all",
