@@ -9,7 +9,7 @@ import Focus from "@tiptap/extension-focus";
 import { savePageContent } from "~/server/actions/page";
 import { BubbleMenu } from "@tiptap/react";
 import { CustomTypography } from "./CustomTypograph";
-
+import { CustomKeymap } from "./CustomKeymap";
 const BodyEditor = ({
   content,
   immediatelyRender = false,
@@ -57,6 +57,7 @@ const BodyEditor = ({
     extensions: [
       StarterKit,
       CustomTypography,
+      CustomKeymap,
       Focus.configure({
         className: "has-focus",
         mode: "all",
