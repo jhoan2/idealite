@@ -122,7 +122,7 @@ export const pages_tags = createTable(
   {
     page_id: uuid("page_id")
       .notNull()
-      .references(() => pages.id),
+      .references(() => pages.id, { onDelete: "cascade" }),
     tag_id: uuid("tag_id")
       .notNull()
       .references(() => tags.id),
@@ -147,7 +147,7 @@ export const users_pages = createTable(
       .references(() => users.id),
     page_id: uuid("page_id")
       .notNull()
-      .references(() => pages.id),
+      .references(() => pages.id, { onDelete: "cascade" }),
     role: varchar("role", { length: 50 }).default("owner").notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
