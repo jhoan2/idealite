@@ -63,9 +63,10 @@ export const CustomTypography = Typography.extend({
           Math.min(editor.state.doc.content.size, to + 20),
         );
 
-        const isBeforeWord = /[a-zA-Z]$/.test(beforeText);
+        const isBeforeWord = /\w+$/.test(beforeText);
         const isAfterWord = /^[a-zA-Z]/.test(afterText);
         const isPotentialContraction = isBeforeWord && isAfterWord;
+        console.log(isPotentialContraction, beforeText, afterText);
 
         if (isPotentialContraction) {
           return false;
