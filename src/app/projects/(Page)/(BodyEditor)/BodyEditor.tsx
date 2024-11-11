@@ -170,7 +170,9 @@ const BodyEditor = ({
     <div className="flex h-full w-full justify-center overflow-auto">
       {isUploadingImage && <LoadingOverlay />}
       <div className={`w-full max-w-4xl px-4`}>
-        <EditorContent editor={editor} className="w-full" />
+        <div className="pb-[50vh]">
+          <EditorContent editor={editor} className="w-full" />
+        </div>
         {editor && (
           <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
             <div className="bubble-menu">
