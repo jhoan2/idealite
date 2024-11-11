@@ -54,44 +54,26 @@ export const CustomTypography = Typography.extend({
         const { selection } = editor.state;
         const { empty, from, to } = selection;
 
-        const beforeText = editor.state.doc.textBetween(
-          Math.max(0, from - 20),
+        // Only handle single cursor cases (not selections)
+        if (!empty) return false;
+
+        const textBefore = editor.state.doc.textBetween(
+          Math.max(0, from - 1),
           from,
         );
-        const afterText = editor.state.doc.textBetween(
-          to,
-          Math.min(editor.state.doc.content.size, to + 20),
-        );
 
-        const isBeforeWord = /\w+$/.test(beforeText);
-        const isAfterWord = /^[a-zA-Z]/.test(afterText);
-        const isPotentialContraction = isBeforeWord && isAfterWord;
-        console.log(isPotentialContraction, beforeText, afterText);
-
-        if (isPotentialContraction) {
-          return false;
-        }
-
-        if (empty) {
-          const isClosingQuote = beforeText.split("'").length % 2 === 0;
-
-          if (isClosingQuote) {
-            editor.chain().insertContent("'").run();
-          } else {
-            // Insert quotes and position cursor between them
-            const pos = editor.state.selection.$head.pos;
-            editor
-              .chain()
-              .insertContent("''")
-              .setTextSelection(pos + 1)
-              .run();
-          }
+        // If there's a letter or number before the cursor, it's likely a contraction/possessive
+        if (/[\w\d]/.test(textBefore)) {
+          editor.chain().insertContent("'").run();
           return true;
         }
 
+        // Otherwise, insert smart quotes and place cursor between them
+        const pos = editor.state.selection.$head.pos;
         editor
           .chain()
-          .insertContent(`'${editor.state.doc.textBetween(from, to)}'`)
+          .insertContent("''")
+          .setTextSelection(pos + 1)
           .run();
         return true;
       },
