@@ -35,9 +35,24 @@ export const users = createTable("user", {
   created_at: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
+  storage_used: integer("storage_used").notNull().default(0),
+  storage_limit: integer("storage_limit").notNull().default(1073741824),
   updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
     () => new Date(),
   ),
+});
+
+export const images = createTable("images", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  filename: varchar("filename", { length: 256 }).notNull(),
+  url: varchar("url", { length: 1024 }).notNull(),
+  size: integer("size").notNull(),
+  created_at: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
 });
 
 export const tags = createTable(
@@ -291,6 +306,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   resourceRelations: many(usersResources),
   pages: many(users_pages),
   tags: many(users_tags),
+  images: many(images),
 }));
 
 export const pagesTagsRelations = relations(pages_tags, ({ one }) => ({
@@ -354,5 +370,12 @@ export const resourcesPagesRelations = relations(resourcesPages, ({ one }) => ({
   page: one(pages, {
     fields: [resourcesPages.page_id],
     references: [pages.id],
+  }),
+}));
+
+export const imagesRelations = relations(images, ({ one }) => ({
+  user: one(users, {
+    fields: [images.user_id],
+    references: [users.id],
   }),
 }));
