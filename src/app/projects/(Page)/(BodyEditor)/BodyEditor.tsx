@@ -13,6 +13,7 @@ import { CustomKeymap } from "./CustomKeymap";
 import { TaskList } from "@tiptap/extension-task-list";
 import { TaskItem } from "@tiptap/extension-task-item";
 import Image from "@tiptap/extension-image";
+import LoadingOverlay from "./LoadingOverlay";
 
 const BodyEditor = ({
   content,
@@ -167,6 +168,7 @@ const BodyEditor = ({
 
   return (
     <div className="flex h-full w-full justify-center overflow-auto">
+      {isUploadingImage && <LoadingOverlay />}
       <div className={`w-full max-w-4xl px-4`}>
         <EditorContent editor={editor} className="w-full" />
         {editor && (
