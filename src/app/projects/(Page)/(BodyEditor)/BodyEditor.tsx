@@ -12,6 +12,7 @@ import { CustomTypography } from "./CustomTypograph";
 import { CustomKeymap } from "./CustomKeymap";
 import { TaskList } from "@tiptap/extension-task-list";
 import { TaskItem } from "@tiptap/extension-task-item";
+import Image from "@tiptap/extension-image";
 
 const BodyEditor = ({
   content,
@@ -25,7 +26,7 @@ const BodyEditor = ({
   pageId: string;
 }) => {
   const [editorContent, setEditorContent] = useState(content);
-
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const debouncedSave = useDebouncedCallback(async (content: string) => {
     try {
       onSavingStateChange(true);
@@ -36,6 +37,59 @@ const BodyEditor = ({
       onSavingStateChange(false);
     }
   }, 1000);
+
+  const handleImageUpload = async (file: File, editor: Editor) => {
+    try {
+      setIsUploadingImage(true);
+
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast.error("Only image files are allowed");
+        return;
+      }
+
+      // Validate file size
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to upload image");
+      }
+
+      const data = await response.json();
+      const privateGateway = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
+
+      // Insert image at cursor position
+      editor
+        .chain()
+        .focus()
+        .setImage({
+          src: privateGateway + data.image.url,
+          alt: data.image.filename,
+          title: data.image.filename,
+        })
+        .run();
+    } catch (error) {
+      console.error("Image upload error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload image",
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleCopy = (editor: Editor) => {
     if (!editor) return;
@@ -61,6 +115,7 @@ const BodyEditor = ({
       StarterKit,
       CustomTypography,
       CustomKeymap,
+      Image,
       TaskList,
       TaskItem.configure({
         nested: true, // Enable nested task lists
@@ -81,6 +136,31 @@ const BodyEditor = ({
       attributes: {
         class:
           "prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl bg-background text-foreground w-full min-h-[500px] focus:outline-none ",
+      },
+      handlePaste: (view, event, slice) => {
+        const items = Array.from(event.clipboardData?.items || []);
+        const imageItem = items.find((item) => item.type.startsWith("image/"));
+
+        if (imageItem) {
+          event.preventDefault();
+          const file = imageItem.getAsFile();
+          if (file && editor) {
+            handleImageUpload(file, editor);
+          }
+          return true;
+        }
+        return false;
+      },
+      handleDrop: (view, event, slice, moved) => {
+        const files = Array.from(event.dataTransfer?.files || []);
+        const imageFile = files.find((file) => file.type.startsWith("image/"));
+
+        if (imageFile && !moved && editor) {
+          event.preventDefault();
+          handleImageUpload(imageFile, editor);
+          return true;
+        }
+        return false;
       },
     },
   });
