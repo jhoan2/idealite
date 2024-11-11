@@ -15,6 +15,14 @@ export const CustomKeymap = Extension.create({
 
         // Find the deepest block that contains our position
         const textBlockDepth = $pos.depth;
+
+        // Handle top-level node case
+        if (textBlockDepth === 0) {
+          // If at top level, just delete the current selection
+          editor.chain().deleteSelection().run();
+          return true;
+        }
+
         const startPos = $pos.before(textBlockDepth);
         const endPos = $pos.after(textBlockDepth);
 
