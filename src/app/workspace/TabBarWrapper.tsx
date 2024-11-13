@@ -22,7 +22,7 @@ export function TabBarWrapper({ tabs, activeTabId }: TabBarWrapperProps) {
 
   const handleTabClick = async (tab: Tab) => {
     await setActiveTab(tab.id);
-    router.push(`/workspace/${tab.path}?tabId=${tab.id}`);
+    router.prefetch(`/workspace/${tab.path}?tabId=${tab.id}`);
   };
 
   const handleTabClose = async (tabId: string) => {
