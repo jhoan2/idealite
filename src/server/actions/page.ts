@@ -58,7 +58,7 @@ export async function updatePage(
       throw new Error("Failed to update page");
     }
 
-    revalidatePath(`/projects`);
+    revalidatePath(`/workspace/${validatedPageId}`);
 
     return updatedPage[0];
   } catch (error) {
