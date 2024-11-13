@@ -30,7 +30,7 @@ export default function SideNav() {
 
   const menuItems = [
     { icon: Home, label: "Home", href: "/home" },
-    { icon: Folder, label: "Projects", href: "/projects" },
+    { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Compass, label: "Explore", href: "/explore" },
     { icon: UserRound, label: "Profile", href: "/profile" },
   ];
