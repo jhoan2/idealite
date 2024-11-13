@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
-
+import Link from "next/link";
 interface Tab {
   id: string;
   title: string;
@@ -16,16 +16,10 @@ interface Tab {
 interface TabBarProps {
   tabs: Tab[];
   activeTabId: string | null;
-  onTabClick: (tab: Tab) => void;
   onTabClose: (tabId: string) => void;
 }
 
-export function TabBar({
-  tabs,
-  activeTabId,
-  onTabClick,
-  onTabClose,
-}: TabBarProps) {
+export function TabBar({ tabs, activeTabId, onTabClose }: TabBarProps) {
   if (tabs.length === 0) {
     return null;
   }
@@ -44,14 +38,14 @@ export function TabBar({
                   activeTabId !== tab.id && "hover:bg-accent",
                 )}
               >
-                <button
-                  onClick={() => onTabClick(tab)}
+                <Link
+                  href={`/workspace/${tab.path}?tabId=${tab.id}`}
                   className="flex-1 truncate text-left"
                   title={tab.title}
                 >
                   {tab.title.slice(0, 10) +
                     (tab.title.length > 10 ? "..." : "")}
-                </button>
+                </Link>
                 <Button
                   variant="ghost"
                   size="icon"

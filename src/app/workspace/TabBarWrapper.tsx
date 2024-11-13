@@ -20,11 +20,6 @@ interface TabBarWrapperProps {
 export function TabBarWrapper({ tabs, activeTabId }: TabBarWrapperProps) {
   const router = useRouter();
 
-  const handleTabClick = async (tab: Tab) => {
-    await setActiveTab(tab.id);
-    router.prefetch(`/workspace/${tab.path}?tabId=${tab.id}`);
-  };
-
   const handleTabClose = async (tabId: string) => {
     try {
       await closeTab(tabId);
@@ -53,7 +48,6 @@ export function TabBarWrapper({ tabs, activeTabId }: TabBarWrapperProps) {
     <TabBar
       tabs={tabs}
       activeTabId={activeTabId ?? null}
-      onTabClick={handleTabClick}
       onTabClose={handleTabClose}
     />
   );
