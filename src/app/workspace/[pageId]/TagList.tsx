@@ -30,7 +30,6 @@ export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
     try {
       await removeTagFromPage(pageId, tagId);
       setBadges((prev) => prev.filter((tag) => tag.id !== tagId));
-      toast.success("Tag removed successfully");
     } catch (error) {
       toast.error("Failed to remove tag");
       console.error("Error removing tag:", error);
@@ -43,7 +42,6 @@ export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
       const tagToAdd = availableTags.find((tag) => tag.id === tagId);
       if (tagToAdd) {
         setBadges((prev) => [...prev, tagToAdd]);
-        toast.success("Tag added successfully");
       }
     } catch (error) {
       toast.error("Failed to add tag");

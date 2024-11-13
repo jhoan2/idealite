@@ -87,6 +87,7 @@ export async function addTagToPage(pageId: string, tagId: string) {
       tag_id: validatedTagId,
     });
 
+    revalidatePath(`/workspace/${validatedPageId}`);
     return { success: true };
   } catch (error) {
     console.error("Error adding tag:", error);
@@ -119,6 +120,7 @@ export async function removeTagFromPage(pageId: string, tagId: string) {
         ),
       );
 
+    revalidatePath(`/workspace/${validatedPageId}`);
     return { success: true };
   } catch (error) {
     console.error("Error removing tag:", error);
