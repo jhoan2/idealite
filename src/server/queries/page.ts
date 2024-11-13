@@ -7,6 +7,9 @@ import {
   users_tags,
   pages_tags,
   resourcesPages,
+  tags,
+  Tag,
+  users_pages,
 } from "~/server/db/schema";
 import { auth } from "~/app/auth";
 
@@ -75,4 +78,105 @@ export async function getPageForUser(pageId: string) {
       type: resource.type,
     })),
   };
+}
+
+export async function getPageTagHierarchy(pageId: string) {
+  try {
+    // First, get all tags for this page
+    const pageTags = await db.query.pages_tags.findMany({
+      where: eq(pages_tags.page_id, pageId),
+      with: {
+        tag: true,
+      },
+    });
+
+    // Function to recursively get parent tags
+    async function getParentChain(tagId: string | null): Promise<Tag[]> {
+      if (!tagId) return [];
+
+      const tag = await db.query.tags.findFirst({
+        where: eq(tags.id, tagId),
+      });
+
+      if (!tag) return [];
+
+      const parents = await getParentChain(tag.parent_id);
+      return [...parents, tag];
+    }
+
+    // Get parent chains for each tag
+    const hierarchies = await Promise.all(
+      pageTags.map(async ({ tag }) => {
+        const chain = await getParentChain(tag.id);
+        return chain;
+      }),
+    );
+
+    // Filter out empty chains and sort by length (optional)
+    const nonEmptyHierarchies = hierarchies.filter((chain) => chain.length > 0);
+
+    // Sort hierarchies by length (optional)
+    nonEmptyHierarchies.sort((a, b) => b.length - a.length);
+
+    return nonEmptyHierarchies;
+  } catch (error) {
+    console.error("Error fetching tag hierarchy:", error);
+    return [];
+  }
+}
+
+export async function getPageContent(pageId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  // Check if the user has access to the page
+  const userPage = await db.query.users_pages.findFirst({
+    where: and(
+      eq(users_pages.user_id, session.user.id),
+      eq(users_pages.page_id, pageId),
+    ),
+  });
+
+  if (!userPage) {
+    throw new Error("Page not found or user doesn't have access");
+  }
+
+  const result = await db.query.pages.findFirst({
+    where: and(eq(pages.id, pageId), eq(pages.deleted, false)),
+    columns: {
+      content: true,
+    },
+  });
+
+  return result?.content ?? null;
+}
+
+export async function getPageTitle(pageId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  // Check if the user has access to the page
+  const userPage = await db.query.users_pages.findFirst({
+    where: and(
+      eq(users_pages.user_id, session.user.id),
+      eq(users_pages.page_id, pageId),
+    ),
+  });
+
+  if (!userPage) {
+    throw new Error("Page not found or user doesn't have access");
+  }
+
+  const result = await db.query.pages.findFirst({
+    where: and(eq(pages.id, pageId), eq(pages.deleted, false)),
+    columns: {
+      title: true,
+    },
+  });
+
+  return result?.title ?? null;
 }
