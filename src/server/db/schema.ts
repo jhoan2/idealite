@@ -55,6 +55,7 @@ export const images = createTable("images", {
     .notNull(),
 });
 
+export type Tag = typeof tags.$inferSelect;
 export const tags = createTable(
   "tag",
   {
@@ -104,6 +105,7 @@ export const users_tags = createTable(
   },
 );
 
+export type Page = typeof pages.$inferSelect;
 export const pages = createTable(
   "page",
   {
@@ -290,6 +292,32 @@ export const resourcesPages = createTable(
   },
 );
 
+export const tabs = createTable(
+  "tabs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 255 }).notNull(),
+    path: text("path").notNull(),
+    position: integer("position").notNull(),
+    is_active: boolean("is_active").default(false),
+    is_pinned: boolean("is_pinned").default(false),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (table) => ({
+    user_idx: index("tabs_user_idx").on(table.user_id),
+    position_idx: index("tabs_position_idx").on(table.position),
+    path_idx: index("tabs_path_idx").on(table.path),
+  }),
+);
+
 export const pagesRelations = relations(pages, ({ many }) => ({
   tags: many(pages_tags),
   users: many(users_pages),
@@ -307,6 +335,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   pages: many(users_pages),
   tags: many(users_tags),
   images: many(images),
+  tabs: many(tabs),
 }));
 
 export const pagesTagsRelations = relations(pages_tags, ({ one }) => ({
@@ -376,6 +405,13 @@ export const resourcesPagesRelations = relations(resourcesPages, ({ one }) => ({
 export const imagesRelations = relations(images, ({ one }) => ({
   user: one(users, {
     fields: [images.user_id],
+    references: [users.id],
+  }),
+}));
+
+export const tabsRelations = relations(tabs, ({ one }) => ({
+  user: one(users, {
+    fields: [tabs.user_id],
     references: [users.id],
   }),
 }));
