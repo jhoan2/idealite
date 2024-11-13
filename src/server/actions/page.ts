@@ -159,7 +159,7 @@ export async function savePageContent(pageId: string, content: string) {
       throw new Error("Failed to save page");
     }
 
-    revalidatePath(`/projects`);
+    revalidatePath(`/workspace/${pageId}`);
 
     return updatedPage[0];
   } catch (error) {
