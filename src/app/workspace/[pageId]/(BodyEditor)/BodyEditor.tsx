@@ -37,7 +37,7 @@ const BodyEditor = ({
     } finally {
       onSavingStateChange(false);
     }
-  }, 1000);
+  }, 2500);
 
   const handleImageUpload = async (file: File, editor: Editor) => {
     try {
