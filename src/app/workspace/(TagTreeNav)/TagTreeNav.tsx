@@ -32,7 +32,7 @@ import { movePagesBetweenTags } from "~/server/actions/usersTags";
 import Link from "next/link";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
 import { useRouter } from "next/navigation";
-import { createTab } from "~/server/actions/tabs";
+import { createTab, deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { MoveToDialog } from "./MoveToDialog";
 
 interface TreeProps {
@@ -297,10 +297,18 @@ const TreeNode: React.FC<{
                         <ContextMenuItem
                           onSelect={async () => {
                             try {
-                              const result = await deletePage({ id: page.id });
-                              if (!result.success) {
-                                toast.error("Failed to delete page");
-                                throw new Error("Failed to delete page");
+                              const [pageResult, tabResult] = await Promise.all(
+                                [
+                                  deletePage({ id: page.id }),
+                                  deleteTabMatchingPageTitle(page.title),
+                                ],
+                              );
+
+                              if (!pageResult.success || !tabResult.success) {
+                                toast.error(
+                                  "Failed to delete page and associated tabs",
+                                );
+                                return;
                               }
                             } catch (error) {
                               console.error("Error deleting page:", error);

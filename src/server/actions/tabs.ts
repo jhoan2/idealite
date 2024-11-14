@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "~/server/db";
-import { tabs } from "~/server/db/schema";
-import { and, eq } from "drizzle-orm";
+import { pages, tabs, users_pages } from "~/server/db/schema";
+import { and, eq, sql } from "drizzle-orm";
 import { auth } from "~/app/auth";
 import { revalidatePath } from "next/cache";
 
@@ -103,4 +103,46 @@ export async function updateTabTitle(tabId: string, title: string) {
   revalidatePath(`/workspace/${updatedTab[0]?.path}`);
 
   return { success: true, tab: updatedTab[0] };
+}
+
+export async function deleteTabMatchingPageTitle(title: string) {
+  console.log(title, "title");
+  const session = await auth();
+  const user_id = session?.user?.id;
+
+  if (!user_id) {
+    return { success: false, error: "User not authenticated" };
+  }
+
+  try {
+    // First check if the tab exists
+    const existingTab = await db.query.tabs.findFirst({
+      where: and(eq(tabs.title, title), eq(tabs.user_id, user_id)),
+    });
+
+    // If no tab exists, return success since the desired state is achieved
+    if (!existingTab) {
+      return {
+        success: true,
+        message: "No tab found with this title",
+      };
+    }
+
+    // Delete the tab if it exists
+    await db
+      .delete(tabs)
+      .where(and(eq(tabs.title, title), eq(tabs.user_id, user_id)));
+
+    revalidatePath("/workspace");
+    return {
+      success: true,
+      message: "Tab successfully deleted",
+    };
+  } catch (error) {
+    console.error("Error in deleteTabMatchingPageTitle:", error);
+    return {
+      success: false,
+      error: "Failed to process tab deletion request",
+    };
+  }
 }
