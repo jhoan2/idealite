@@ -14,17 +14,20 @@ export async function createTab(data: { title: string; path: string }) {
     return { success: false, error: "User not authenticated" };
   }
 
-  await db.insert(tabs).values({
-    user_id: user_id,
-    title: data.title,
-    path: data.path,
-    is_active: true,
-    position: 0,
-  });
+  const newTab = await db
+    .insert(tabs)
+    .values({
+      user_id: user_id,
+      title: data.title,
+      path: data.path,
+      is_active: true,
+      position: 0,
+    })
+    .returning();
 
   revalidatePath(`/workspace/${data.path}`);
 
-  return { success: true };
+  return { success: true, id: newTab[0]?.id };
 }
 
 export async function setActiveTab(tabId: string) {

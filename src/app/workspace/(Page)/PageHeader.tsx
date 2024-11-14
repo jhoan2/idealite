@@ -23,7 +23,7 @@ export function PageHeader({ tags, userTagTree, resources }: PageHeaderProps) {
   const [isMetadataOpen, setIsMetadataOpen] = useState(false);
   const [isAddMetadataOpen, setIsAddMetadataOpen] = useState(false);
   const pathname = usePathname();
-  const currentPageId = pathname.split("/projects/")[1];
+  const currentPageId = pathname.split("/workspace/")[1];
 
   return (
     <div className="p-4">
