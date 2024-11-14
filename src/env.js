@@ -16,6 +16,8 @@ export const env = createEnv({
     PINATA_JWT: z.string(),
     YOUTUBE_API_KEY: z.string(),
     APP_URL: z.string(),
+    UPSTASH_REDIS_REST_URL: z.string(),
+    UPSTASH_REDIS_REST_TOKEN: z.string(),
   },
 
   /**
@@ -46,6 +48,8 @@ export const env = createEnv({
     APP_URL: process.env.APP_URL,
     YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
     NEXT_PUBLIC_PINATA_GATEWAY: process.env.NEXT_PUBLIC_PINATA_GATEWAY,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
