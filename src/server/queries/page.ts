@@ -180,3 +180,31 @@ export async function getPageTitle(pageId: string) {
 
   return result?.title ?? null;
 }
+
+export async function getPageTags(pageId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  // Check if the user has access to the page
+  const userPage = await db.query.users_pages.findFirst({
+    where: and(
+      eq(users_pages.user_id, session.user.id),
+      eq(users_pages.page_id, pageId),
+    ),
+  });
+
+  if (!userPage) {
+    throw new Error("Page not found or user doesn't have access");
+  }
+
+  const result = await db.query.pages_tags.findMany({
+    where: eq(pages_tags.page_id, pageId),
+    with: {
+      tag: true,
+    },
+  });
+
+  return result.map(({ tag }) => tag);
+}
