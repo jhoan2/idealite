@@ -93,7 +93,7 @@ export async function deletePage(input: z.infer<typeof deletePageSchema>) {
       })
       .where(eq(pages.id, validatedInput.id));
 
-    revalidatePath("/projects");
+    revalidatePath("/workspace");
     return { success: true };
   } catch (error) {
     console.error("Error deleting page:", error);
@@ -143,7 +143,7 @@ export async function deleteTag({ id }: { id: string }) {
         ),
       );
 
-      revalidatePath("/projects");
+      revalidatePath("/workspace");
       return { success: true };
     });
   } catch (error) {
@@ -220,7 +220,7 @@ export async function movePagesBetweenTags(input: MovePagesInput) {
       .where(eq(pages.id, pageId))
       .returning();
 
-    revalidatePath("/projects");
+    revalidatePath("/workspace");
     return {
       success: true,
       page: updatedPage,
