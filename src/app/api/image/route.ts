@@ -7,6 +7,7 @@ import { db } from "~/server/db";
 import { images, users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { updateStorageUsed } from "~/server/actions/storage";
+import { ratelimit } from "~/server/ratelimit";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -15,6 +16,14 @@ export async function POST(request: NextRequest) {
   if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
+    });
+  }
+
+  const { success } = await ratelimit.limit(userId);
+
+  if (!success) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+      status: 429,
     });
   }
 
