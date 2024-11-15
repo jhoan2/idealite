@@ -20,10 +20,10 @@ export const LinkPreviewEmbed: React.FC<LinkPreviewEmbedProps> = ({
   url,
 }) => {
   const imageUrl =
-    metadata.html.ogImage?.[0]?.url || metadata.html.twitterImage?.[0]?.url;
-  const title = metadata.html.ogTitle || "";
-  const favicon = metadata.html.favicon || "";
-  const linkUrl = metadata.html.ogUrl || url || "";
+    metadata.html?.ogImage?.[0]?.url || metadata.html?.twitterImage?.[0]?.url;
+  const title = metadata.html?.ogTitle || "";
+  const favicon = metadata.html?.favicon || "";
+  const linkUrl = metadata.html?.ogUrl || url || "";
   const hostname = getHostname(linkUrl);
 
   if (!linkUrl) return null;

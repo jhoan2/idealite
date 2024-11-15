@@ -45,10 +45,6 @@ const ChannelFeedCard: React.FC<ChannelFeedCardProps> = ({ cast }) => {
   const { user } = useNeynarContext();
   const [likes, setLikes] = useState(reactions.likes_count);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
-  const framesUrls = frames.map((frame) => frame.frames_url);
-  const filteredEmbeds = embeds.filter(
-    (embed) => !framesUrls.includes(embed.url),
-  );
   const timeAgo = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
 
   const deleteCast = async () => {
