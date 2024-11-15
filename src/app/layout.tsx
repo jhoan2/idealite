@@ -17,24 +17,24 @@ export default function RootLayout({
       className={`${inter.className} antialiased`}
     >
       <body suppressHydrationWarning={true}>
-        <PHProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <NeynarProvider>
-              <SessionProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <NeynarProvider>
+            <SessionProvider>
+              <PHProvider>
                 <div className="flex h-screen">
                   <SideNav />
                   <div className="flex-1 overflow-y-auto">{children}</div>
                   <Toaster />
                 </div>
-              </SessionProvider>
-            </NeynarProvider>
-          </ThemeProvider>
-        </PHProvider>
+              </PHProvider>
+            </SessionProvider>
+          </NeynarProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
