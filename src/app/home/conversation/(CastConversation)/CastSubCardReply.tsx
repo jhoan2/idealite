@@ -96,7 +96,7 @@ export default function CastSubCardReply({
   const fetchWarpcastData = async (url: string) => {
     try {
       const response = await fetch(
-        `/api/eventCard?url=${encodeURIComponent(url)}`,
+        `/api/castCard?url=${encodeURIComponent(url)}`,
         {
           method: "GET",
           headers: {
@@ -202,8 +202,6 @@ export default function CastSubCardReply({
       embeds: Array<{
         cast_id?: { fid: number; hash: string };
         url?: string;
-        type?: string;
-        metadata?: { _status: string };
       }>;
       parent: string;
       parent_author_fid: number;
@@ -220,9 +218,6 @@ export default function CastSubCardReply({
     if (IpfsHash) {
       replyContent.embeds.push({
         url: `${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${IpfsHash}`,
-        metadata: {
-          _status: "PENDING",
-        },
       });
     }
 

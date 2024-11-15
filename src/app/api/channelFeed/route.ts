@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     method: "POST",
     headers: {
       accept: "application/json",
-      api_key: process.env.NEYNAR_API_KEY!,
+      "x-api-key": process.env.NEYNAR_API_KEY!,
       "content-type": "application/json",
     },
     body: JSON.stringify({

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   const { signer_uuid, text, embeds, parent, parent_author_fid } =
     await req.json();
 
-  if (!signer_uuid || !text) {
+  if (!signer_uuid) {
     return NextResponse.json(
       { error: "Missing required fields in request body" },
       { status: 400 },
@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
     method: "POST",
     headers: {
       accept: "application/json",
-      api_key: process.env.NEYNAR_API_KEY!,
       "content-type": "application/json",
+      "x-api-key": process.env.NEYNAR_API_KEY!,
     },
     body: JSON.stringify({
       embeds,
