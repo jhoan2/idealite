@@ -44,7 +44,7 @@ const EmbedCard: React.FC<EmbedCardProps> = ({ embeds }) => {
     if (!url) return null;
 
     return (
-      <Card key={embed.url} className="overflow-hidden">
+      <Card key={embed.url} className="max-w-[30rem] overflow-hidden">
         <a
           href={url}
           target="_blank"
