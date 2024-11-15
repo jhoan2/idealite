@@ -77,6 +77,7 @@ export default function CastSubCardReply({
   const [loadingReply, setLoadingReply] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [embeds, setEmbeds] = useState<EmbedForPost[]>([]);
+  const [isProcessingUrls, setIsProcessingUrls] = useState(false);
   const urlCache = useRef(new Map());
 
   const fetchData = async (
@@ -267,6 +268,7 @@ export default function CastSubCardReply({
 
   const processUrls = useCallback(
     debounce(async (urls: string[]) => {
+      setIsProcessingUrls(true);
       const newEmbeds = await Promise.all(
         urls.map(async (url: string) => {
           if (url.includes("warpcast.com")) {
@@ -276,7 +278,7 @@ export default function CastSubCardReply({
           }
         }),
       );
-
+      setIsProcessingUrls(false);
       setEmbeds(newEmbeds.filter((embed) => embed !== null));
     }, 500),
     [],
@@ -447,10 +449,14 @@ export default function CastSubCardReply({
               </span>
               <Button
                 className="bg-blue-500 text-white hover:bg-blue-600"
-                disabled={loadingReply}
+                disabled={loadingReply || isProcessingUrls}
                 onClick={() => submitReply()}
               >
-                {loadingReply ? "Submitting..." : "Reply"}
+                {loadingReply
+                  ? "Submitting..."
+                  : isProcessingUrls
+                    ? "Processing URLs..."
+                    : "Reply"}
               </Button>
             </div>
           </div>
