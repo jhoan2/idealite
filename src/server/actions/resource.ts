@@ -4,6 +4,7 @@ import { db } from "~/server/db";
 import { resources, resourcesPages, usersResources } from "~/server/db/schema";
 import { auth } from "~/app/auth";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 
 const createResourceSchema = z.object({
   author: z.string().optional(),
@@ -80,6 +81,7 @@ export async function createResource(input: CreateResourceInput) {
       resource_id: resource?.id || "",
     });
 
+    revalidatePath(`/workspace/${validatedInput.page_id}`);
     return resource;
   } catch (error) {
     console.error("Error creating resource:", error);
@@ -144,6 +146,7 @@ export async function createBookResource(input: CreateResourceInput) {
       resource_id: resourceId,
     });
 
+    revalidatePath(`/workspace/${validatedInput.page_id}`);
     return (
       existingBook ||
       (await db.query.resources.findFirst({
