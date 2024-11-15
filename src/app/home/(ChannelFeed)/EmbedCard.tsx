@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { ExternalLink, Link } from "lucide-react";
 import { Embed } from "~/types/cast";
-
+import { TwitterEmbed } from "~/app/workspace/[pageId]/(ResourceInfo)/TwitterEmbed";
 interface EmbedCardProps {
   embeds: Embed[];
 }
@@ -26,9 +26,21 @@ const EmbedCard: React.FC<EmbedCardProps> = ({ embeds }) => {
     }
   };
 
+  const isTwitterUrl = (url: string): boolean => {
+    const hostname = getHostname(url);
+    return hostname.includes("twitter.com") || hostname.includes("x.com");
+  };
+
   const renderEmbed = (embed: Embed) => {
     const metadata = embed.metadata?.html;
     if (!metadata) return null;
+
+    if (isTwitterUrl(embed.url || "")) {
+      const twitterHtml = metadata.oembed?.html;
+      if (twitterHtml && typeof twitterHtml === "string") {
+        return <TwitterEmbed html={twitterHtml} />;
+      }
+    }
 
     // Get the main image URL from og:image or twitter:image
     const imageUrl =
