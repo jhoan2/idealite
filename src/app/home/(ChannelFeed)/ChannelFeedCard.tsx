@@ -10,7 +10,6 @@ import {
   Trash,
   Check,
 } from "lucide-react";
-import { Cast } from "~/types/cast";
 import { useNeynarContext } from "@neynar/react";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -24,9 +23,10 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import CastRenderEmbed from "./CastRenderEmbed";
-import { Embed } from "~/types/cast";
 import Link from "next/link";
+import type { Cast } from "~/types/cast";
+import EmbedCard from "./EmbedCard";
+
 interface ChannelFeedCardProps {
   cast: Cast;
 }
@@ -194,11 +194,9 @@ const ChannelFeedCard: React.FC<ChannelFeedCardProps> = ({ cast }) => {
                 </DropdownMenu>
               </div>
               <p className="mt-2">{parseTextWithLinks(text)}</p>
-              {filteredEmbeds.length > 0 && (
-                <div className="mt-2">
-                  {filteredEmbeds.map((embed, index) => (
-                    <CastRenderEmbed key={index} embed={embed as Embed} />
-                  ))}
+              {embeds && embeds.length > 0 && (
+                <div className="mt-3">
+                  <EmbedCard embeds={embeds} />
                 </div>
               )}
             </div>
