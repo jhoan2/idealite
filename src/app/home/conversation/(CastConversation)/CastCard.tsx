@@ -215,6 +215,7 @@ const CastCard: React.FC<CastCardProps> = ({
                 timeAgo={timeAgo}
                 text={text}
                 hash={hash}
+                castEmbeds={embeds}
               />
               <Button
                 disabled={

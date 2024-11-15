@@ -56,6 +56,7 @@ export default function CastSubCardReply({
   timeAgo,
   text,
   hash,
+  castEmbeds,
 }: {
   author: {
     fid: number;
@@ -67,6 +68,7 @@ export default function CastSubCardReply({
   timeAgo: string;
   text: string;
   hash: string;
+  castEmbeds: Embed[];
 }) {
   const { user } = useNeynarContext();
   const [isOpen, setIsOpen] = useState(false);
@@ -335,6 +337,12 @@ export default function CastSubCardReply({
                 @{author.username} · {timeAgo}
               </p>
               <p className="mt-2">{text}</p>
+              {castEmbeds &&
+                castEmbeds.map((embed, index) => (
+                  <div key={index} className="mt-2 rounded border shadow-sm">
+                    <CastRenderEmbed embed={embed} />
+                  </div>
+                ))}
             </div>
           </div>
           <Textarea
