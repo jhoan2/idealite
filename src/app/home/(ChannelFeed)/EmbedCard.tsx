@@ -3,6 +3,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { ExternalLink, Link } from "lucide-react";
 import { Embed } from "~/types/cast";
 import { TwitterEmbed } from "~/app/workspace/[pageId]/(ResourceInfo)/TwitterEmbed";
+import { YouTubeEmbed } from "./YoutubeEmbed";
 interface EmbedCardProps {
   embeds: Embed[];
 }
@@ -15,6 +16,11 @@ const EmbedCard: React.FC<EmbedCardProps> = ({ embeds }) => {
     } catch (e) {
       return false;
     }
+  };
+
+  const isYouTubeUrl = (url: string): boolean => {
+    const hostname = new URL(url).hostname;
+    return hostname.includes("youtube.com") || hostname.includes("youtu.be");
   };
 
   const getHostname = (url: string): string => {
@@ -40,6 +46,15 @@ const EmbedCard: React.FC<EmbedCardProps> = ({ embeds }) => {
       if (twitterHtml && typeof twitterHtml === "string") {
         return <TwitterEmbed html={twitterHtml} />;
       }
+    }
+
+    if (isYouTubeUrl(embed.url || "") && metadata.oembed?.html) {
+      return (
+        <YouTubeEmbed
+          html={metadata.oembed.html}
+          title={metadata.oembed.title || "YouTube video"}
+        />
+      );
     }
 
     // Get the main image URL from og:image or twitter:image

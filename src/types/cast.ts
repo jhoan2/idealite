@@ -76,6 +76,10 @@ export interface Embed {
       twitterCard?: string;
       twitterImage?: Array<{ url: string }>;
       ogDescription?: string;
+      oembed?: {
+        html: string;
+        title: string;
+      };
     };
   };
   cast_id?: {
