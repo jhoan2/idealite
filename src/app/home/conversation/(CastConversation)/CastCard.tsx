@@ -1,16 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "~/components/ui/card";
+import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { Heart, Share, Check, Trash, ChevronDown } from "lucide-react";
-import { Cast } from "~/types/cast";
+import { Cast, Embed } from "~/types/cast";
 import { formatDistanceToNow } from "date-fns";
 import { useNeynarContext } from "@neynar/react";
 import { toast } from "sonner";
@@ -23,10 +17,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "~/components/ui/dropdown-menu";
-import CastRenderEmbed from "../../(ChannelFeed)/CastRenderEmbed";
 import { v4 as uuidv4 } from "uuid";
 import CastMainCardReply from "./CastMainCardReply";
 import CastSubCardReply from "./CastSubCardReply";
+import { CastHeader } from "./CastHeader";
+import { CastEmbed } from "./CastEmbed";
 
 interface CastCardProps {
   cast: Cast;
@@ -56,9 +51,10 @@ const CastCard: React.FC<CastCardProps> = ({
   const [likes, setLikes] = useState(cast.reactions.likes_count);
   const { user } = useNeynarContext();
   const framesUrls = frames.map((frame) => frame.frames_url);
-  const filteredEmbeds = embeds.filter(
+  const filteredEmbeds: Embed[] = embeds.filter(
     (embed) => !framesUrls.includes(embed.url),
   );
+
   const timeAgo = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
 
   const deleteCast = async () => {
@@ -149,19 +145,11 @@ const CastCard: React.FC<CastCardProps> = ({
     <div>
       <Card className="mx-auto max-w-xl">
         <div className="flex">
-          <CardHeader className="flex flex-col items-start space-x-4 p-0">
-            <div className="pl-4 pt-4">
-              <Avatar>
-                <AvatarImage src={author.pfp_url} alt={author.display_name} />
-                <AvatarFallback>{author.display_name.charAt(0)}</AvatarFallback>
-              </Avatar>
-            </div>
-            {!isLastInBranch && !isTopLevel && (
-              <div className="h-full pl-3">
-                <div className="mx-2 h-full w-[2px] self-stretch bg-gray-300"></div>
-              </div>
-            )}
-          </CardHeader>
+          <CastHeader
+            author={author}
+            isLastInBranch={isLastInBranch}
+            isTopLevel={isTopLevel}
+          />
           <div className="flex-grow flex-col">
             <CardContent className="p-2">
               <div className="flex">
@@ -211,10 +199,10 @@ const CastCard: React.FC<CastCardProps> = ({
                   </div>
                   <p className="mt-2">{parseTextWithLinks(text)}</p>
                   {filteredEmbeds.length > 0 && (
-                    <div className="mt-2">
-                      {filteredEmbeds.map((embed, index) => (
-                        <CastRenderEmbed key={index} embed={embed} />
-                      ))}
+                    <div className="mt-2 space-y-2">
+                      {filteredEmbeds.map((embed, index) => {
+                        return <CastEmbed embed={embed} key={index} />;
+                      })}
                     </div>
                   )}
                 </div>
