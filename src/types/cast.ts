@@ -85,6 +85,37 @@ export interface Embed {
   cast_id?: {
     hash: string;
   };
+  cast?: {
+    object: string;
+    hash: string;
+    author: {
+      object: string;
+      fid: number;
+      username: string;
+      display_name: string;
+      pfp_url: string;
+    };
+    thread_hash: string;
+    parent_hash: string | null;
+    parent_url: string | null;
+    root_parent_url: string;
+    parent_author: {
+      fid: number | null;
+    };
+    text: string;
+    timestamp: string;
+    embeds: any[];
+    channel?: {
+      object: string;
+      id: string;
+      name: string;
+      image_url: string;
+      viewer_context?: {
+        role: string;
+        following: boolean;
+      };
+    };
+  };
 }
 
 export interface CastConversation {
