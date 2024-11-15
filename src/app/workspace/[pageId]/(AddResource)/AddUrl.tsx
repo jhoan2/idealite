@@ -38,6 +38,12 @@ export default function AddUrl({ pageId, handleOpenChange }: AddUrlProps) {
           `/api/resource?type=url&query=${encodeURIComponent(value)}`,
         );
       }
+
+      if (!response.ok) {
+        console.log(response, "response");
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.error) {
@@ -124,7 +130,7 @@ export default function AddUrl({ pageId, handleOpenChange }: AddUrlProps) {
         )}
         {previewData &&
           !error &&
-          (previewData.url.includes("twitter.com") ? (
+          (previewData.url && previewData.url.includes("twitter.com") ? (
             <TwitterEmbed html={previewData.html} />
           ) : (
             <MetadataDisplay
