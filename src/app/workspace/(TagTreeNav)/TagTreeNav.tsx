@@ -39,7 +39,7 @@ interface TreeProps {
   data: TreeTag[];
 }
 
-const createUntitledPage = (node: TreeTag) => {
+const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
   // Get all untitled pages
   const untitledPages = node.pages.filter((page) =>
     page.title.toLowerCase().startsWith("untitled"),
@@ -51,10 +51,37 @@ const createUntitledPage = (node: TreeTag) => {
       ? "untitled"
       : `untitled ${untitledPages.length}`;
 
+  // Get tag hierarchy
+  const getTagHierarchy = (currentNode: TreeTag): string[] => {
+    const hierarchy: string[] = [currentNode.id];
+
+    const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
+      for (const tag of tags) {
+        if (tag.children?.some((child) => child.id === targetId)) {
+          return tag;
+        }
+        if (tag.children) {
+          const found = findParent(tag.children, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    let parentTag = findParent(allTags, currentNode.id);
+    while (parentTag) {
+      hierarchy.unshift(parentTag.id);
+      parentTag = findParent(allTags, parentTag.id);
+    }
+
+    return hierarchy;
+  };
+
   return {
     id: uuidv4(),
     title: newTitle,
     tag_id: node.id,
+    hierarchy: getTagHierarchy(node),
   };
 };
 
@@ -105,7 +132,7 @@ const TreeNode: React.FC<{
   const handleCreatePage = async () => {
     try {
       setIsLoading(true);
-      const pageInput = createUntitledPage(node);
+      const pageInput = createUntitledPage(node, allTags);
       const result = await createPage(pageInput);
 
       if (!result.success) {

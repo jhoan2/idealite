@@ -10,6 +10,7 @@ import { z } from "zod";
 export type CreatePageInput = {
   title: string;
   tag_id: string;
+  hierarchy: string[];
 };
 
 export async function createPage(input: CreatePageInput) {
@@ -40,10 +41,12 @@ export async function createPage(input: CreatePageInput) {
       }
 
       // 2. Create the page-tag relationship
-      await tx.insert(pages_tags).values({
-        page_id: newPage.id,
-        tag_id: input.tag_id,
-      });
+      await tx.insert(pages_tags).values(
+        input.hierarchy.map((tagId) => ({
+          page_id: newPage.id,
+          tag_id: tagId,
+        })),
+      );
 
       // 3. Create the user-page relationship (as owner)
       await tx.insert(users_pages).values({
