@@ -5,7 +5,7 @@ import { resourcesPages } from "~/server/db/schema";
 import { auth } from "~/app/auth";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
-
+import { revalidatePath } from "next/cache";
 const deleteResourcePageSchema = z.object({
   resourceId: z.string().uuid(),
   pageId: z.string().uuid(),
@@ -29,6 +29,7 @@ export async function deleteResourcePage(
         sql`${resourcesPages.resource_id} = ${resourceId} AND ${resourcesPages.page_id} = ${pageId}`,
       );
 
+    revalidatePath(`/workspace/${pageId}`);
     return { success: true };
   } catch (error) {
     console.error("Error deleting resource page relation:", error);
