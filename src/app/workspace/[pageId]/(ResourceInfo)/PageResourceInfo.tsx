@@ -52,17 +52,12 @@ export default function PageResourceInfo({
   currentPageId,
 }: PageResourceInfoProps) {
   const availableTags = flattenTagTree(userTagTree, tags);
-  const [resourcesArray, setResourcesArray] = useState<Resource[]>(resources);
 
   const handleDeleteResource = async (resourceId: string, pageId: string) => {
     try {
       await deleteResourcePage({ resourceId, pageId });
 
       await deleteUserResource({ resourceId });
-
-      setResourcesArray((prev) =>
-        prev.filter((resource) => resource.id !== resourceId),
-      );
     } catch (error) {
       console.error("Error deleting resource:", error);
       toast.error("Failed to delete resource");
@@ -71,7 +66,7 @@ export default function PageResourceInfo({
 
   return (
     <div className="flex flex-col items-center justify-center space-y-4">
-      {resourcesArray.map((resource) => (
+      {resources.map((resource) => (
         <InfoCard
           key={resource.id}
           type={resource.type}
