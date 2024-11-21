@@ -114,6 +114,9 @@ export const pages = createTable(
       .notNull()
       .$default(() => sql`lower(title)`),
     content: text("content"),
+    content_type: varchar("content_type", { enum: ["page", "canvas"] })
+      .notNull()
+      .default("page"),
     primary_tag_id: uuid("primary_tag_id"),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
