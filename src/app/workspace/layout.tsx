@@ -24,6 +24,7 @@ export default async function WorkspaceLayout({
           "--sidebar-width": "24rem",
         } as React.CSSProperties
       }
+      defaultOpen={false}
     >
       <div className="flex h-screen w-full overflow-hidden">
         <div>
