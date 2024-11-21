@@ -13,7 +13,10 @@ export default function PageEditors({
   userTagTree,
 }: {
   title: string;
-  content: string;
+  content: {
+    content: string;
+    content_type: "page" | "canvas";
+  };
   userTagTree: TreeTag[];
 }) {
   const pageId = useParams().pageId as string;
@@ -31,7 +34,7 @@ export default function PageEditors({
         userTagTree={userTagTree}
       />
       <BodyEditor
-        content={content}
+        content={content.content}
         pageId={pageId}
         onSavingStateChange={setIsSavingContent}
       />

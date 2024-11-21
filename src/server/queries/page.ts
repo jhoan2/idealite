@@ -147,10 +147,19 @@ export async function getPageContent(pageId: string) {
     where: and(eq(pages.id, pageId), eq(pages.deleted, false)),
     columns: {
       content: true,
+      content_type: true,
     },
   });
 
-  return result?.content ?? null;
+  return result
+    ? {
+        content: result.content ?? "",
+        content_type: result.content_type,
+      }
+    : {
+        content: "",
+        content_type: "page" as const,
+      };
 }
 
 export async function getPageTitle(pageId: string) {
