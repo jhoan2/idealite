@@ -7,6 +7,7 @@ import {
   Trash,
   StickyNote,
   Replace,
+  PanelTop,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -129,11 +130,11 @@ const TreeNode: React.FC<{
     }
   };
 
-  const handleCreatePage = async () => {
+  const handleCreatePage = async (type: "page" | "canvas") => {
     try {
       setIsLoading(true);
       const pageInput = createUntitledPage(node, allTags);
-      const result = await createPage(pageInput);
+      const result = await createPage(pageInput, type);
 
       if (!result.success) {
         throw new Error("Failed to create page");
@@ -355,12 +356,20 @@ const TreeNode: React.FC<{
         </ContextMenuTrigger>
         <ContextMenuContent className="w-64">
           <ContextMenuItem
-            onSelect={handleCreatePage}
+            onSelect={() => handleCreatePage("page")}
             disabled={isLoading}
             className={isLoading ? "cursor-not-allowed opacity-50" : ""}
           >
             <StickyNote className="mr-2 h-4 w-4" />
             <span>{isLoading ? "Creating..." : "Create  page"}</span>
+          </ContextMenuItem>
+          <ContextMenuItem
+            onSelect={() => handleCreatePage("canvas")}
+            disabled={isLoading}
+            className={isLoading ? "cursor-not-allowed opacity-50" : ""}
+          >
+            <PanelTop className="mr-2 h-4 w-4" />
+            <span>{isLoading ? "Creating..." : "Create canvas"}</span>
           </ContextMenuItem>
           <ContextMenuItem onSelect={handleDeleteTag} className="text-red-600">
             <Trash className="mr-2 h-4 w-4" />

@@ -13,7 +13,10 @@ export type CreatePageInput = {
   hierarchy: string[];
 };
 
-export async function createPage(input: CreatePageInput) {
+export async function createPage(
+  input: CreatePageInput,
+  type: "page" | "canvas",
+) {
   try {
     const session = await auth();
 
@@ -32,6 +35,7 @@ export async function createPage(input: CreatePageInput) {
         .values({
           title: input.title,
           content: "",
+          content_type: type,
           primary_tag_id: input.tag_id,
         })
         .returning();
