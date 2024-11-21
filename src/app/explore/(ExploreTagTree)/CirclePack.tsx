@@ -2,7 +2,7 @@ import { useState } from "react";
 import { stopEventPropagation, Tldraw } from "tldraw";
 import "tldraw/tldraw.css";
 import * as d3 from "d3";
-import { SelectTag } from "~/server/usersTagsQueries";
+import { SelectTag } from "~/server/queries/usersTags";
 
 interface TreeNodeData {
   id: string;
