@@ -18,7 +18,7 @@ export default async function WorkspacePage({
   return (
     <div>
       {content.content_type === "canvas" ? (
-        <CanvasEditor />
+        <CanvasEditor title={title} content={content} pageId={params.pageId} />
       ) : (
         <PageEditors
           title={title}
