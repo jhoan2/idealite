@@ -185,3 +185,17 @@
     }
   }
 }
+
+.tlui-input__wrapper {
+  border: 1px solid black;
+  white-space: text-wrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  font-size: 16px;
+  line-height: 1.4;
+  min-height: 1em;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 4px;
+}
