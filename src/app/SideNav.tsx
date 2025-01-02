@@ -20,6 +20,11 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 
 export default function SideNav() {
   const pathname = usePathname();
+
+  if (pathname.includes("/channelFrame")) {
+    return null;
+  }
+
   const [isCollapsed, setIsCollapsed] = useState(
     pathname === "/home" ? false : true,
   );
