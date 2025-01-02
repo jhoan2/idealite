@@ -21,7 +21,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 export default function SideNav() {
   const pathname = usePathname();
 
-  if (pathname.includes("/channelFrame")) {
+  if (pathname.includes("/channelFrame") || pathname === "/") {
     return null;
   }
 
