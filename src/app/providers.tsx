@@ -21,7 +21,9 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
   return (
     <PostHogProvider client={posthog}>
       <PostHogAuthWrapper>
-        <WagmiProvider>{children}</WagmiProvider>
+        {/* <WagmiProvider> */}
+        {children}
+        {/* </WagmiProvider> */}
       </PostHogAuthWrapper>
     </PostHogProvider>
   );
