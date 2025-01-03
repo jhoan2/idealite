@@ -91,50 +91,54 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
       },
       async authorize(credentials, req) {
-        const request = req as Request;
-        const formData = await request.formData();
+        try {
+          const request = req as Request;
+          const formData = await request.formData();
 
-        // Get the JSON string that's being used as the key
-        const jsonKey = Array.from(formData.keys())[0];
+          // Get the JSON string that's being used as the key
+          const jsonKey = Array.from(formData.keys())[0];
 
-        // Parse the JSON string to get the actual data
-        const parsedData = JSON.parse(jsonKey as string);
-        const csrfToken = parsedData.csrfToken;
+          // Parse the JSON string to get the actual data
+          const parsedData = JSON.parse(jsonKey as string);
+          const csrfToken = parsedData.csrfToken;
 
-        const appClient = createAppClient({
-          ethereum: viemConnector(),
-        });
-        const verifyResponse = await appClient.verifySignInMessage({
-          message: credentials?.message as string,
-          signature: credentials?.signature as `0x${string}`,
-          domain:
-            process.env.NEXTAUTH_URL ??
-            "e6c3-2601-646-8900-8b60-b826-17b0-c233-7c57.ngrok-free.app",
-          nonce: csrfToken as string,
-        });
-        const { success, fid } = verifyResponse;
-        if (!success) {
+          const appClient = createAppClient({
+            ethereum: viemConnector(),
+          });
+          const verifyResponse = await appClient.verifySignInMessage({
+            message: credentials?.message as string,
+            signature: credentials?.signature as `0x${string}`,
+            domain:
+              process.env.NEXTAUTH_URL ??
+              "2bcd-2601-646-8900-8b60-d422-2508-865d-21d2.ngrok-free.app",
+            nonce: csrfToken as string,
+          });
+          const { success, fid } = verifyResponse;
+          if (!success) {
+            return null;
+          }
+          const user = await findUserByFid(fid as number);
+
+          if (!user) {
+            const fidString = fid.toString();
+            const data = await getFarcasterUser(fidString);
+            const farcasterUser = data.users[0];
+            const newUser = await createUser({
+              fid: farcasterUser.fid,
+              custody_address: farcasterUser.custody_address,
+              username: farcasterUser.username,
+              display_name: farcasterUser.display_name,
+              pfp_url: farcasterUser.pfp_url,
+              bio: farcasterUser.profile.bio,
+            });
+            return newUser;
+          }
+
+          return user;
+        } catch (e) {
+          console.error("error:", e);
           return null;
         }
-        const user = await findUserByFid(fid as number);
-
-        if (!user) {
-          const fidString = fid.toString();
-          const data = await getFarcasterUser(fidString);
-          const farcasterUser = data.users[0];
-          await createUser({
-            fid: farcasterUser.fid,
-            custody_address: farcasterUser.custody_address,
-            username: farcasterUser.username,
-            display_name: farcasterUser.display_name,
-            pfp_url: farcasterUser.pfp_url,
-            bio: farcasterUser.profile.bio,
-          });
-        }
-
-        return {
-          id: fid.toString(),
-        };
       },
     }),
   ],
