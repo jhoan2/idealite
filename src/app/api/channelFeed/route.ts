@@ -3,7 +3,7 @@ import { channelId } from "../../constants";
 
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY;
 const NEYNAR_API_URL =
-  "https://api.neynar.com/v2/farcaster/feed/channels?channel_ids=dailylearning";
+  "https://api.neynar.com/v2/farcaster/feed/channels?channel_ids=idealite";
 
 async function fetchNeynarAPI(url: string) {
   const response = await fetch(url, {

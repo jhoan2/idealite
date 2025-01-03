@@ -1,2 +1,2 @@
-export const channelId = "dailylearning";
-export const castParentUrl = "https://warpcast.com/~/channel/dailylearning";
+export const channelId = "idealite";
+export const castParentUrl = "https://warpcast.com/~/channel/idealite";

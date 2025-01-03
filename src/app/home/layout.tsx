@@ -8,8 +8,8 @@ export default async function HomeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const channelDetails = await getChannelDetails("dailylearning");
-  const { users } = await getNewMembers("dailylearning");
+  const channelDetails = await getChannelDetails("idealite");
+  const { users } = await getNewMembers("idealite");
 
   return (
     <div className="min-h-screen bg-background">
