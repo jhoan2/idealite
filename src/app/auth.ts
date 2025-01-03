@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import credentialsProvider from "next-auth/providers/credentials";
 import { findUserByFid, createUser } from "~/server/queries/user";
 import { createAppClient, viemConnector } from "@farcaster/auth-client";
+import { getFarcasterUser } from "~/server/farcaster";
 
 declare module "next-auth" {
   interface Session {
@@ -88,19 +89,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           type: "text",
           placeholder: "0x0",
         },
-        // In a production app with a server, these should be fetched from
-        // your Farcaster data indexer rather than have them accepted as part
-        // of credentials.
-        name: {
-          label: "Name",
-          type: "text",
-          placeholder: "0x0",
-        },
-        pfp: {
-          label: "Pfp",
-          type: "text",
-          placeholder: "0x0",
-        },
       },
       async authorize(credentials, req) {
         const request = req as Request;
@@ -113,7 +101,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const parsedData = JSON.parse(jsonKey as string);
         const csrfToken = parsedData.csrfToken;
 
-        console.log("Parsed CSRF Token:", csrfToken);
         const appClient = createAppClient({
           ethereum: viemConnector(),
         });
@@ -122,16 +109,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           signature: credentials?.signature as `0x${string}`,
           domain:
             process.env.NEXTAUTH_URL ??
-            "9d65-2601-646-8900-8b60-bc28-307b-dae5-950f.ngrok-free.app",
+            "e6c3-2601-646-8900-8b60-b826-17b0-c233-7c57.ngrok-free.app",
           nonce: csrfToken as string,
         });
-        console.log("verifyResponse", verifyResponse);
         const { success, fid } = verifyResponse;
-        console.log("success", success);
-        console.log("fid", fid);
         if (!success) {
           return null;
         }
+        const user = await findUserByFid(fid as number);
+
+        if (!user) {
+          const fidString = fid.toString();
+          const data = await getFarcasterUser(fidString);
+          const farcasterUser = data.users[0];
+          await createUser({
+            fid: farcasterUser.fid,
+            custody_address: farcasterUser.custody_address,
+            username: farcasterUser.username,
+            display_name: farcasterUser.display_name,
+            pfp_url: farcasterUser.pfp_url,
+            bio: farcasterUser.profile.bio,
+          });
+        }
+
         return {
           id: fid.toString(),
         };
