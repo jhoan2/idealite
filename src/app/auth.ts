@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import credentialsProvider from "next-auth/providers/credentials";
 import { findUserByFid, createUser } from "~/server/queries/user";
+import { createAppClient, viemConnector } from "@farcaster/auth-client";
 
 declare module "next-auth" {
   interface Session {
@@ -20,6 +21,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     credentialsProvider({
+      id: "neynar",
+      credentials: {
+        signer_uuid: { type: "text" },
+        fid: { type: "number" },
+        custody_address: { type: "text" },
+        username: { type: "text" },
+        display_name: { type: "text" },
+        pfp_url: { type: "text" },
+        bio: { type: "text" },
+      },
       async authorize(credentials) {
         try {
           if (!credentials?.signer_uuid) {
@@ -61,6 +72,69 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           console.error("error:", e);
           return null;
         }
+      },
+    }),
+    credentialsProvider({
+      id: "channelFrame",
+      name: "Sign in with Farcaster",
+      credentials: {
+        message: {
+          label: "Message",
+          type: "text",
+          placeholder: "0x0",
+        },
+        signature: {
+          label: "Signature",
+          type: "text",
+          placeholder: "0x0",
+        },
+        // In a production app with a server, these should be fetched from
+        // your Farcaster data indexer rather than have them accepted as part
+        // of credentials.
+        name: {
+          label: "Name",
+          type: "text",
+          placeholder: "0x0",
+        },
+        pfp: {
+          label: "Pfp",
+          type: "text",
+          placeholder: "0x0",
+        },
+      },
+      async authorize(credentials, req) {
+        const request = req as Request;
+        const formData = await request.formData();
+
+        // Get the JSON string that's being used as the key
+        const jsonKey = Array.from(formData.keys())[0];
+
+        // Parse the JSON string to get the actual data
+        const parsedData = JSON.parse(jsonKey as string);
+        const csrfToken = parsedData.csrfToken;
+
+        console.log("Parsed CSRF Token:", csrfToken);
+        const appClient = createAppClient({
+          ethereum: viemConnector(),
+        });
+        const verifyResponse = await appClient.verifySignInMessage({
+          message: credentials?.message as string,
+          signature: credentials?.signature as `0x${string}`,
+          domain:
+            process.env.NEXTAUTH_URL ??
+            "9d65-2601-646-8900-8b60-bc28-307b-dae5-950f.ngrok-free.app",
+          nonce: csrfToken as string,
+        });
+        console.log("verifyResponse", verifyResponse);
+        const { success, fid } = verifyResponse;
+        console.log("success", success);
+        console.log("fid", fid);
+        if (!success) {
+          return null;
+        }
+        return {
+          id: fid.toString(),
+        };
       },
     }),
   ],

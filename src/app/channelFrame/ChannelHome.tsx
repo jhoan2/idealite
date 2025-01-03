@@ -2,15 +2,16 @@
 
 import { useEffect, useCallback, useState } from "react";
 import sdk, { type FrameContext } from "@farcaster/frame-sdk";
+import { signIn, signOut, getCsrfToken } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { SignInResult } from "@farcaster/frame-core/dist/actions/signIn";
+import { Button } from "~/components/ui/button";
 
 export default function ChannelHome() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [context, setContext] = useState<FrameContext>();
-  const [isContextOpen, setIsContextOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      setContext(await sdk.context);
       sdk.actions.ready();
     };
     if (sdk && !isSDKLoaded) {
@@ -19,10 +20,6 @@ export default function ChannelHome() {
     }
   }, [isSDKLoaded]);
 
-  const toggleContext = useCallback(() => {
-    setIsContextOpen((prev) => !prev);
-  }, []);
-
   if (!isSDKLoaded) {
     return <div>Loading...</div>;
   }
@@ -30,31 +27,88 @@ export default function ChannelHome() {
   return (
     <div className="mx-auto w-[300px] px-2 py-4">
       <h1 className="mb-4 text-center text-2xl font-bold">Frames v2 Demo</h1>
-
       <div className="mb-4">
-        <h2 className="font-2xl font-bold">Context</h2>
-        <button
-          onClick={toggleContext}
-          className="flex items-center gap-2 transition-colors"
-        >
-          <span
-            className={`transform transition-transform ${
-              isContextOpen ? "rotate-90" : ""
-            }`}
-          >
-            ➤
-          </span>
-          Tap to expand
-        </button>
-
-        {isContextOpen && (
-          <div className="mt-2 rounded-lg bg-gray-100 p-4 dark:bg-gray-800">
-            <pre className="overflow-x- max-w-[260px] whitespace-pre-wrap break-words font-mono text-xs">
-              {JSON.stringify(context, null, 2)}
-            </pre>
-          </div>
-        )}
+        <div className="my-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-800">
+          <pre className="overflow-x- max-w-[260px] whitespace-pre-wrap break-words font-mono text-xs">
+            sdk.actions.signIn
+          </pre>
+        </div>
+        <SignIn />
       </div>
     </div>
+  );
+}
+
+function SignIn() {
+  const [signingIn, setSigningIn] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signInResult, setSignInResult] = useState<SignInResult>();
+  const { data: session, status } = useSession();
+  const [nonce, setNonce] = useState<string | null>(null);
+
+  const getNonce = useCallback(async () => {
+    const nonce = await getCsrfToken();
+    if (!nonce) throw new Error("Unable to generate nonce");
+    setNonce(nonce);
+    return nonce;
+  }, []);
+
+  const handleSignIn = useCallback(async () => {
+    try {
+      setSigningIn(true);
+      const nonce = await getNonce();
+      const result = await sdk.actions.signIn({ nonce });
+      setSignInResult(result);
+      await signIn("channelFrame", {
+        message: result.message,
+        signature: result.signature,
+        redirect: false,
+      });
+    } finally {
+      setSigningIn(false);
+    }
+  }, [getNonce]);
+
+  const handleSignOut = useCallback(async () => {
+    try {
+      setSigningOut(true);
+      await signOut({ redirect: false });
+      setSignInResult(undefined);
+    } finally {
+      setSigningOut(false);
+    }
+  }, []);
+  return (
+    <>
+      {status !== "authenticated" && (
+        <Button onClick={handleSignIn} disabled={signingIn}>
+          Sign In with Farcaster
+        </Button>
+      )}
+      {status === "authenticated" && (
+        <Button onClick={handleSignOut} disabled={signingOut}>
+          Sign out
+        </Button>
+      )}
+      {session && (
+        <div className="my-2 overflow-x-scroll rounded-lg bg-gray-100 p-2 font-mono text-xs">
+          <div className="mb-1 font-semibold text-gray-500">Session</div>
+          <div className="whitespace-pre text-black">
+            {JSON.stringify(session, null, 2)}
+          </div>
+        </div>
+      )}
+      {signInResult && !signingIn && (
+        <div className="my-2 overflow-x-scroll rounded-lg bg-gray-100 p-2 font-mono text-xs">
+          <div className="mb-1 font-semibold text-black">SIWF Result</div>
+          <div className="whitespace-pre text-black">
+            {JSON.stringify(signInResult, null, 2)}
+          </div>
+          <div className="whitespace-pre text-black">
+            {JSON.stringify(nonce, null, 2)}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
