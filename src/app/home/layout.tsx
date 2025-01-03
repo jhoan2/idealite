@@ -16,7 +16,7 @@ export default async function HomeLayout({
       <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-lg md:w-2/3">
         <div className="relative h-64">
           <img
-            src={channelDetails.channel.image_url}
+            src={channelDetails.channel.header_image_url}
             alt="Group banner"
             className="h-full w-full object-cover"
           />
