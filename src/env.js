@@ -20,6 +20,7 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_TOKEN: z.string(),
     BLACK_FOREST_API_KEY: z.string(),
     GOOGLE_GEMINI_API_KEY: z.string(),
+    PERSONAL_NEYNAR_SIGNER_UUID: z.string(),
   },
 
   /**
@@ -54,6 +55,7 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     BLACK_FOREST_API_KEY: process.env.BLACK_FOREST_API_KEY,
     GOOGLE_GEMINI_API_KEY: process.env.GOOGLE_GEMINI_API_KEY,
+    PERSONAL_NEYNAR_SIGNER_UUID: process.env.PERSONAL_NEYNAR_SIGNER_UUID,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
