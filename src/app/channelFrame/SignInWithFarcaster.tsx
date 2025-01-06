@@ -6,7 +6,6 @@ import { Button } from "~/components/ui/button";
 export default function SignInWithFarcaster({ status }: { status: string }) {
   const [signingIn, setSigningIn] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-
   const getNonce = useCallback(async () => {
     const nonce = await getCsrfToken();
     if (!nonce) throw new Error("Unable to generate nonce");
@@ -23,6 +22,7 @@ export default function SignInWithFarcaster({ status }: { status: string }) {
         signature: result.signature,
         redirect: false,
       });
+      window.location.reload();
     } finally {
       setSigningIn(false);
     }
@@ -32,6 +32,7 @@ export default function SignInWithFarcaster({ status }: { status: string }) {
     try {
       setSigningOut(true);
       await signOut({ redirect: false });
+      window.location.reload();
     } finally {
       setSigningOut(false);
     }
