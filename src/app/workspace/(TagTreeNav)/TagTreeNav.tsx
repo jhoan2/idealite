@@ -17,7 +17,8 @@ import {
 } from "~/components/ui/context-menu";
 import type { TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
-import { createPage, deletePage, deleteTag } from "~/server/actions/usersTags";
+import { deleteTag } from "~/server/actions/usersTags";
+import { createPage, deletePage } from "~/server/actions/page";
 import { toast } from "sonner";
 import {
   AlertDialog,
