@@ -1,5 +1,9 @@
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
+import { auth } from "~/app/auth";
+import { getTagWithChildren } from "~/server/queries/tag";
+import { getUserTags } from "~/server/queries/usersTags";
+import { checkIfMember } from "~/server/farcaster";
 
 const ChannelHome = dynamic(() => import("./ChannelHome"), { ssr: false });
 const BASE_URL = process.env.DEPLOYMENT_URL || process.env.VERCEL_URL;
@@ -36,5 +40,20 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Page() {
-  return <ChannelHome />;
+  const session = await auth();
+  const userId = session?.user?.id;
+  const userFid = session?.user?.fid;
+  const tag = await getTagWithChildren(
+    process.env.NEXT_PUBLIC_ROOT_TAG_ID ?? "",
+  );
+  const userTags = userId ? await getUserTags(userId) : [];
+  const isMember = userFid ? await checkIfMember(userFid.toString()) : false;
+  return (
+    <ChannelHome
+      tag={tag}
+      userTags={userTags}
+      userId={userId ?? null}
+      isMember={isMember}
+    />
+  );
 }

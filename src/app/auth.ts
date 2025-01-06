@@ -110,7 +110,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             signature: credentials?.signature as `0x${string}`,
             domain:
               process.env.NEXTAUTH_URL ??
-              "2bcd-2601-646-8900-8b60-d422-2508-865d-21d2.ngrok-free.app",
+              "9145-2601-646-8900-8b60-d422-2508-865d-21d2.ngrok-free.app",
             nonce: csrfToken as string,
           });
           const { success, fid } = verifyResponse;

@@ -8,10 +8,36 @@ import SignInWithFarcaster from "./SignInWithFarcaster";
 import { Button } from "~/components/ui/button";
 import ChannelFrameTags from "./ChannelFrameTags";
 import { toast } from "sonner";
+import { SelectTag } from "~/server/queries/tag";
 
-export default function ChannelHome() {
+interface ExploreStateProps {
+  tag: SelectTag[];
+  userTags: SelectTag[];
+  userId: string | null;
+  isMember: boolean;
+}
+
+export default function ChannelHome({
+  tag,
+  userTags,
+  userId,
+  isMember,
+}: ExploreStateProps) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const { data: session, status } = useSession();
+
+  const handleJoinChannel = async () => {
+    const response = await fetch("/api/channelMembership", {
+      method: "POST",
+      body: JSON.stringify({ fid: session?.user?.fid }),
+    });
+    const data = await response.json();
+    if (data.error) {
+      toast.error(data.error);
+    } else {
+      toast.success("You are now a member of the channel");
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -26,19 +52,6 @@ export default function ChannelHome() {
   if (!isSDKLoaded) {
     return <div>Loading...</div>;
   }
-
-  const handleJoinChannel = async () => {
-    const response = await fetch("/api/channelMembership", {
-      method: "POST",
-      body: JSON.stringify({ fid: session?.user?.fid }),
-    });
-    const data = await response.json();
-    if (data.error) {
-      toast.error(data.error);
-    } else {
-      toast.success("You are now a member of the channel");
-    }
-  };
 
   return (
     <>
@@ -55,11 +68,18 @@ export default function ChannelHome() {
           </div>
           <div className="flex space-x-2">
             <SignInWithFarcaster status={status} />
-            <Button onClick={handleJoinChannel}>Join Channel</Button>
+            {!isMember && (
+              <Button onClick={handleJoinChannel}>Join Channel</Button>
+            )}
           </div>
         </div>
       </nav>
-      <ChannelFrameTags />
+      <ChannelFrameTags
+        tag={tag}
+        userTags={userTags}
+        userId={userId}
+        status={status}
+      />
     </>
   );
 }
