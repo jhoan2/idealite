@@ -1,11 +1,5 @@
 import { db } from "~/server/db";
-import {
-  users_tags,
-  tags,
-  pages,
-  pages_tags,
-  users_pages,
-} from "~/server/db/schema";
+import { users_tags, tags, pages, users_pages } from "~/server/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 export type SelectTag = typeof tags.$inferSelect;
