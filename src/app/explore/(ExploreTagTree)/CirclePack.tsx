@@ -164,7 +164,7 @@ function CirclePack({
       return (
         <g
           key={node.data.name}
-          onClick={(event) => handleCircleClick(event, node)}
+          onClick={node.data.isInBoth ? undefined : (event) => handleCircleClick(event, node)}
           onPointerDown={stopEventPropagation}
         >
           <circle
