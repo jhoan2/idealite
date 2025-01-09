@@ -3,10 +3,10 @@
  * for Docker builds.
  */
 await import("./src/env.js");
-
-const withBundleAnalyzer = require("@next/bundle-analyzer")({
-  enabled: process.env.ANALYZE === "true",
-});
+// import bundleAnalyzer from '@next/bundle-analyzer';
+// const withBundleAnalyzer = bundleAnalyzer({
+//   enabled: process.env.ANALYZE === "true",
+// });
 
 /** @type {import("next").NextConfig} */
 const coreConfig = {
@@ -44,7 +44,7 @@ const coreConfig = {
     ],
   },
 };
-module.exports = withBundleAnalyzer(coreConfig);
+// module.exports = withBundleAnalyzer(coreConfig);
 
 import { withSentryConfig } from "@sentry/nextjs";
 
