@@ -112,3 +112,25 @@ export async function inviteToChannel(fid: number) {
     throw err;
   }
 }
+
+export async function crawlUrl(url: string) {
+  const options = {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      api_key: process.env.NEYNAR_API_KEY!,
+    },
+  };
+
+  try {
+    const encodedUrl = encodeURIComponent(url);
+    const response = await fetch(
+      `https://api.neynar.com/v2/farcaster/cast/embed/crawl?url=${encodedUrl}`,
+      options,
+    );
+    const data = await response.json();
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}

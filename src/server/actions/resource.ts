@@ -158,3 +158,35 @@ export async function createBookResource(input: CreateResourceInput) {
     throw new Error("Failed to create book resource");
   }
 }
+
+export async function createResourceFromWebhook(payload: {
+  title: string;
+  url: string;
+  og_type?: string;
+  description?: string;
+  author?: string;
+  image?: string;
+  date_published?: Date;
+}) {
+  try {
+    // Create new resource
+    const [newResource] = await db
+      .insert(resources)
+      .values({
+        title: payload.title,
+        url: payload.url,
+        type: "url",
+        og_type: payload.og_type,
+        description: payload.description,
+        author: payload.author,
+        image: payload.image,
+        date_published: payload.date_published,
+      })
+      .returning();
+
+    return newResource;
+  } catch (error) {
+    console.error("Error creating resource from webhook:", error);
+    throw new Error("Failed to create resource from webhook");
+  }
+}

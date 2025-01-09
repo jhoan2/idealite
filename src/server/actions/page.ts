@@ -1,7 +1,12 @@
 "use server";
 
 import { db } from "~/server/db";
-import { pages, pages_tags, users_pages } from "~/server/db/schema";
+import {
+  pages,
+  pages_tags,
+  resourcesPages,
+  users_pages,
+} from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "~/app/auth";
 import { z } from "zod";
@@ -268,5 +273,69 @@ export async function deletePage(input: z.infer<typeof deletePageSchema>) {
   } catch (error) {
     console.error("Error deleting page:", error);
     return { success: false, error: "Failed to delete page" };
+  }
+}
+
+export type CreatePageFromWebhookInput = {
+  title: string;
+  content: string;
+  content_type: "page" | "canvas";
+  resource_id?: string;
+  user_id?: string;
+  primary_tag_id?: string;
+};
+
+export async function createPageWithRelationsFromWebhook(
+  input: CreatePageFromWebhookInput,
+) {
+  try {
+    return await db.transaction(async (tx) => {
+      // 1. Create the page
+      const [newPage] = await tx
+        .insert(pages)
+        .values({
+          title: input.title,
+          content: input.content,
+          content_type: input.content_type,
+          primary_tag_id: input.primary_tag_id,
+        })
+        .returning();
+      if (!newPage) {
+        throw new Error("Failed to create page");
+      }
+      // 2. Create user relation if userId exists
+      if (input.user_id) {
+        await tx.insert(users_pages).values({
+          user_id: input.user_id,
+          page_id: newPage.id,
+          role: "owner",
+        });
+      }
+
+      // 3. Create resource relation if resourceId exists
+      if (input.resource_id) {
+        await tx.insert(resourcesPages).values({
+          resource_id: input.resource_id,
+          page_id: newPage.id,
+        });
+      }
+
+      // 4. Create page-tag relation
+      await tx.insert(pages_tags).values({
+        page_id: newPage.id,
+        tag_id: input.primary_tag_id || "",
+      });
+
+      return {
+        success: true,
+        page: newPage,
+      };
+    });
+  } catch (error) {
+    console.error("Failed to create page with relations:", error);
+    return {
+      success: false,
+      error: "Failed to create page with relations",
+    };
   }
 }

@@ -32,3 +32,10 @@ export async function getResourcesForPage(pageId: string) {
     type: resource.type,
   }));
 }
+
+export async function findResourceByUrl(url: string) {
+  const resource = await db.query.resources.findFirst({
+    where: eq(resources.url, url),
+  });
+  return resource;
+}

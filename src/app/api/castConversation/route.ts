@@ -36,7 +36,6 @@ export async function GET(req: NextRequest) {
 
     const response = await fetch(url, options);
     const data = await response.json();
-
     return NextResponse.json(data);
   } catch (err) {
     console.error(err);
