@@ -17,6 +17,7 @@
     "@farcaster/auth-client": "^0.3.0",
     "@farcaster/frame-core": "^0.0.21",
     "@farcaster/frame-sdk": "^0.0.22",
+    "@next/bundle-analyzer": "^15.1.4",
     "@neynar/nodejs-sdk": "^1.54.1",
     "@neynar/react": "^0.9.5",
     "@radix-ui/react-alert-dialog": "^1.1.2",
