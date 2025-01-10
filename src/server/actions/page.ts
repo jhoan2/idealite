@@ -290,7 +290,31 @@ export async function createPageWithRelationsFromWebhook(
 ) {
   try {
     return await db.transaction(async (tx) => {
-      // 1. Create the page
+      // 1. Check for duplicate titles if user_id exists
+      if (input.user_id) {
+        const existingPages = await tx
+          .select({ title: pages.title })
+          .from(pages)
+          .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
+          .where(
+            and(
+              eq(users_pages.user_id, input.user_id),
+              eq(pages.deleted, false),
+            ),
+          );
+
+        let newTitle = input.title;
+        let counter = 1;
+
+        while (existingPages.some((page) => page.title === newTitle)) {
+          newTitle = `${input.title} (${counter})`;
+          counter++;
+        }
+
+        input.title = newTitle;
+      }
+
+      // 2. Create the page
       const [newPage] = await tx
         .insert(pages)
         .values({
@@ -303,7 +327,8 @@ export async function createPageWithRelationsFromWebhook(
       if (!newPage) {
         throw new Error("Failed to create page");
       }
-      // 2. Create user relation if userId exists
+
+      // 3. Create user relation if userId exists
       if (input.user_id) {
         await tx.insert(users_pages).values({
           user_id: input.user_id,
@@ -312,7 +337,7 @@ export async function createPageWithRelationsFromWebhook(
         });
       }
 
-      // 3. Create resource relation if resourceId exists
+      // 4. Create resource relation if resourceId exists
       if (input.resource_id) {
         await tx.insert(resourcesPages).values({
           resource_id: input.resource_id,
