@@ -9,10 +9,8 @@ export default async function HomeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [channelDetails, { users }] = await Promise.all([
-    getChannelDetails("idealite"),
-    getNewMembers("idealite"),
-  ]);
+  const channelDetails = await getChannelDetails("idealite");
+  const { users } = await getNewMembers("idealite");
 
   return (
     <div className="min-h-screen bg-background">
@@ -24,6 +22,7 @@ export default async function HomeLayout({
             fill
             className="object-cover"
             priority
+            sizes="(max-width: 768px) 100vw, 66vw"
           />
         </div>
         <div className="p-6">
