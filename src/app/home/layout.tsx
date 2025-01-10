@@ -2,6 +2,7 @@ import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { getChannelDetails, getNewMembers } from "~/server/farcaster";
 import PostButton from "./PostButton";
+import Image from "next/image";
 
 export default async function HomeLayout({
   children,
@@ -15,10 +16,12 @@ export default async function HomeLayout({
     <div className="min-h-screen bg-background">
       <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-lg md:w-2/3">
         <div className="relative h-64">
-          <img
+          <Image
             src={channelDetails.channel.header_image_url}
             alt="Group banner"
-            className="h-full w-full object-cover"
+            fill
+            className="object-cover"
+            priority
           />
         </div>
         <div className="p-6">

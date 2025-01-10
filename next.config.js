@@ -41,6 +41,12 @@ const coreConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "imagedelivery.net",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };
