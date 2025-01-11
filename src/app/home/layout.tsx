@@ -28,9 +28,19 @@ export default async function HomeLayout({
         <div className="p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                {channelDetails.channel.name}
-              </h1>
+              <div className="flex items-center gap-2">
+                <Image
+                  src={channelDetails.channel.image_url}
+                  alt="Channel logo"
+                  width={48}
+                  height={48}
+                  className="mb-2 rounded-lg"
+                  priority
+                />
+                <h1 className="text-2xl font-bold text-foreground">
+                  {channelDetails.channel.name}
+                </h1>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Farcaster · {channelDetails.channel.follower_count} members
               </p>

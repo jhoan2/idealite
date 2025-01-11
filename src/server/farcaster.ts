@@ -6,6 +6,7 @@ export async function getChannelDetails(id: string) {
     headers: {
       accept: "application/json",
       api_key: process.env.NEYNAR_API_KEY!,
+      "Cache-Control": "no-cache, no-store, must-revalidate",
     },
   };
 
@@ -28,6 +29,7 @@ export async function getNewMembers(id: string) {
     headers: {
       accept: "application/json",
       api_key: process.env.NEYNAR_API_KEY!,
+      "Cache-Control": "no-cache, no-store, must-revalidate",
     },
   };
 
