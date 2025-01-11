@@ -52,6 +52,7 @@ export default function SideNav() {
               alt="idealite logo"
               width={32}
               height={32}
+              priority
             />
             {!isCollapsed && (
               <h1 className="text-xl font-semibold text-amber-400">Idealite</h1>
