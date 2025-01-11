@@ -50,8 +50,8 @@ export default function SideNav() {
             <Image
               src="/icon48.png"
               alt="idealite logo"
-              width={32}
-              height={32}
+              width={48}
+              height={48}
               priority
             />
             {!isCollapsed && (
