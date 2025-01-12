@@ -104,6 +104,8 @@ const TreeNode: React.FC<{
   } | null>(null);
   const [isExpanded, setIsExpanded] = useState(!node.is_collapsed);
   const router = useRouter();
+
+  // Change the color of the page if it is the current page
   const pathname = usePathname();
   const currentPageId = pathname?.split("/workspace/")?.[1]?.split("?")?.[0];
   const hasCurrentPage = node.pages.some((page) => page.id === currentPageId);
