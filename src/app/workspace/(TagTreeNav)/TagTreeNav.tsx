@@ -33,7 +33,7 @@ import {
 import { movePagesBetweenTags } from "~/server/actions/usersTags";
 import Link from "next/link";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createTab, deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { MoveToDialog } from "./MoveToDialog";
 
@@ -104,6 +104,9 @@ const TreeNode: React.FC<{
   } | null>(null);
   const [isExpanded, setIsExpanded] = useState(!node.is_collapsed);
   const router = useRouter();
+  const pathname = usePathname();
+  const currentPageId = pathname?.split("/workspace/")?.[1]?.split("?")?.[0];
+  const hasCurrentPage = node.pages.some((page) => page.id === currentPageId);
 
   const handleItemClick = async (
     e: React.MouseEvent,
@@ -305,7 +308,11 @@ const TreeNode: React.FC<{
                           onClick={(e) =>
                             handleItemClick(e, page.id, page.title)
                           }
-                          className="flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                            hasCurrentPage
+                              ? "bg-gray-50/80 dark:bg-gray-700/30"
+                              : ""
+                          }`}
                           style={{ paddingLeft: `${(level + 1) * 16}px` }}
                         >
                           <span className="text-sm text-gray-600 dark:text-gray-400">
