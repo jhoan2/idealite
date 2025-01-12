@@ -6,9 +6,10 @@ import { getUserTags } from "~/server/queries/usersTags";
 import { checkIfMember } from "~/server/farcaster";
 
 const ChannelHome = dynamic(() => import("./ChannelHome"), { ssr: false });
-const BASE_URL = process.env.DEPLOYMENT_URL || process.env.VERCEL_URL;
+const BASE_URL =
+  process.env.NEXT_PUBLIC_DEPLOYMENT_URL || process.env.VERCEL_URL;
 const domain = BASE_URL ? `https://${BASE_URL}` : "http://localhost:3000";
-const route = `${domain}/framesV2`;
+const route = `${domain}/channelFrame`;
 const frame = {
   version: "next",
   imageUrl: `${route}/opengraph-image`,

@@ -35,6 +35,7 @@ export const env = createEnv({
     NEXT_PUBLIC_GATEWAY_URL: z.string(),
     NEXT_PUBLIC_ROOT_TAG_ID: z.string(),
     NEXT_PUBLIC_PINATA_GATEWAY: z.string(),
+    NEXT_PUBLIC_DEPLOYMENT_URL: z.string(),
   },
 
   /**
@@ -60,6 +61,7 @@ export const env = createEnv({
     PERSONAL_NEYNAR_SIGNER_UUID: process.env.PERSONAL_NEYNAR_SIGNER_UUID,
     NEYNAR_WEBHOOK_SECRET: process.env.NEYNAR_WEBHOOK_SECRET,
     ROOT_TAG_ID: process.env.ROOT_TAG_ID,
+    NEXT_PUBLIC_DEPLOYMENT_URL: process.env.NEXT_PUBLIC_DEPLOYMENT_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
