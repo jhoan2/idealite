@@ -14,7 +14,7 @@ const frame = {
   version: "next",
   imageUrl: `${route}/opengraph-image`,
   button: {
-    title: "Check this out",
+    title: "Become a member",
     action: {
       type: "launch_frame",
       name: "idealite",
