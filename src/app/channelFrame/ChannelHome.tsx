@@ -68,7 +68,7 @@ export default function ChannelHome({
           </div>
           <div className="flex space-x-2">
             <SignInWithFarcaster status={status} />
-            {!isMember && (
+            {!isMember && status === "authenticated" && (
               <Button onClick={handleJoinChannel}>Join Channel</Button>
             )}
           </div>
