@@ -8,5 +8,5 @@ export default {
   dbCredentials: {
     url: env.POSTGRES_URL,
   },
-  tablesFilter: ["idealite-new_*"],
+  tablesFilter: ["idealite_*"],
 } satisfies Config;

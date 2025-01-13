@@ -55,8 +55,60 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
       },
+      typography: ({ theme }: { theme: any }) => ({
+        DEFAULT: {
+          css: {
+            "--tw-prose-headings": "inherit",
+            "--tw-prose-body": "inherit",
+            "--tw-prose-bold": "inherit",
+            "--tw-prose-quotes": "inherit",
+            "--tw-prose-quote-borders": theme("colors.gray[300]"),
+            "--tw-prose-counters": "inherit",
+            "--tw-prose-bullets": "inherit",
+            "--tw-prose-hr": theme("colors.gray[200]"),
+            "--tw-prose-links": "inherit",
+            // Dark mode
+            "--tw-prose-invert-headings": "inherit",
+            "--tw-prose-invert-body": "inherit",
+            "--tw-prose-invert-bold": "inherit",
+            "--tw-prose-invert-quotes": "inherit",
+            "--tw-prose-invert-quote-borders": theme("colors.gray[700]"),
+            "--tw-prose-invert-counters": "inherit",
+            "--tw-prose-invert-bullets": "inherit",
+            "--tw-prose-invert-hr": theme("colors.gray[800]"),
+            "--tw-prose-invert-links": "inherit",
+            // Headers
+            h1: {
+              color: "inherit",
+            },
+            h2: {
+              color: "inherit",
+            },
+            h3: {
+              color: "inherit",
+            },
+            h4: {
+              color: "inherit",
+            },
+            // Make sure all text inherits the text-foreground color
+            "h1, h2, h3, h4, h5, h6, p, li, strong, em": {
+              color: "inherit",
+            },
+          },
+        },
+      }),
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;

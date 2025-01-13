@@ -1,8 +1,10 @@
 // app/providers.tsx
-'use client'
-import posthog from 'posthog-js'
-import { PostHogProvider } from 'posthog-js/react'
+"use client";
+import posthog from "posthog-js";
+import { PostHogProvider } from "posthog-js/react";
 import { useEffect } from "react";
+import { useNeynarContext } from "@neynar/react";
+import dynamic from "next/dynamic";
 
 // if (typeof window !== "undefined") {
 //     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
@@ -11,27 +13,31 @@ import { useEffect } from "react";
 //     });
 //   }
 
-export function PHProvider({
-    children,
-}: {
-    children: React.ReactNode
-}) {
-    return <PostHogProvider client={posthog}>
-        <PostHogAuthWrapper>{children}</PostHogAuthWrapper>
+const WagmiProvider = dynamic(() => import("~/app/WagmiProvider"), {
+  ssr: false,
+});
+
+export function PHProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <PostHogProvider client={posthog}>
+      <PostHogAuthWrapper>
+        <WagmiProvider>{children}</WagmiProvider>
+      </PostHogAuthWrapper>
     </PostHogProvider>
+  );
 }
 
 function PostHogAuthWrapper({ children }: { children: React.ReactNode }) {
-    // useEffect(() => {
-    //     if (walletInfo.address) {
-    //         posthog.identify(userInfo.user.id, {
-    //             email: userInfo.user.emailAddresses[0]?.emailAddress,
-    //             name: userInfo.user.fullName,
-    //         });
-    //     } else if (!auth.isSignedIn) {
-    //         posthog.reset();
-    //     }
-    // }, [auth, userInfo]);
+  const { user } = useNeynarContext();
+  useEffect(() => {
+    if (user) {
+      posthog.identify(user.fid.toString(), {
+        name: user.username,
+      });
+    } else if (!user) {
+      posthog.reset();
+    }
+  }, [user]);
 
-    return children;
+  return children;
 }
