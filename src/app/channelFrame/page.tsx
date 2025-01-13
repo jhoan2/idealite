@@ -12,7 +12,7 @@ const domain = BASE_URL ? `https://${BASE_URL}` : "http://localhost:3000";
 const route = `${domain}/channelFrame`;
 const frame = {
   version: "next",
-  imageUrl: `${route}/channel-frame-og-img.png`,
+  imageUrl: `${route}/opengraph-image`,
   button: {
     title: "Check this out",
     action: {
