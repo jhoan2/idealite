@@ -19,7 +19,7 @@ export default async function Image() {
           backgroundImage:
             "url(https://gateway.pinata.cloud/ipfs/bafkreifcxtpzwappwtqn4lp2kupefzcqh4szk7kluky4abg6ywaew4chyy)",
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: "center center",
         }}
       ></div>
     ),
