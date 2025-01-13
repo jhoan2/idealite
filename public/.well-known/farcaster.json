@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjIwNzAsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhFM2I4ZDQ5Mzg5MEE3MkRmNzg2NTEyMkMwY0JjZDA1NGJkMTYyNzk4In0",
+    "payload": "eyJkb21haW4iOiJpZGVhbGl0ZS54eXoifQ",
+    "signature": "MHgwNjNhZTM2ZThjYTgwZWIxOTNjMTQ0ZjMxNzU2YjQ0OTI2ZDQyZWE1ZjJmOTNiMjE5MTE3NDllYjE4NWVhNWZmMTMyYTRiZDAyNzA3MTdkZmZlY2VkZDUyOTZhOTQyZDdjNWM1MDkxNmQxOTk3OTQ5MTAzZjAyMzI4MGFmNTgyMDFi"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Channel Frame",
+    "iconUrl": "https://idealite.xyz/icon48.png",
+    "homeUrl": "https://idealite.xyz/channelFrame/",
+    "imageUrl": "https://idealite.xyz/channelFrame/channel-frame-og-img.png",
+    "buttonTitle": "Check this out",
+    "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+    "splashBackgroundColor": "#f7f7f7",
+    "webhookUrl": "https://idealite.xyz/api/webhook"
+  }
+}
