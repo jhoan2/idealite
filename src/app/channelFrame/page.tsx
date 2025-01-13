@@ -20,7 +20,7 @@ const frame = {
       name: "idealite",
       url: route,
       splashImageUrl:
-        "https://gateway.pinata.cloud/ipfs/bafkreiablfjyp7felottl6c2wpnspib7ww2ynnyuwxkodqwsq7pvyjo5ge",
+        "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
       splashBackgroundColor: "#f7f7f7",
     },
   },
