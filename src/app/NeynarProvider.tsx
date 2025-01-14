@@ -17,7 +17,8 @@ export default function NeynarProvider({
         eventsCallbacks: {
           onAuthSuccess: ({ user }) => {
             signIn("neynar", {
-              redirect: false,
+              redirect: true,
+              redirectTo: "/home",
               custody_address: user.custody_address,
               fid: user.fid,
               pfp_url: user.pfp_url,
