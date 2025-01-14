@@ -41,6 +41,7 @@ import { MoveToDialog } from "./MoveToDialog";
 import {
   deleteFolder,
   updateFolderCollapsed,
+  createFolder,
 } from "~/server/actions/usersFolders";
 
 interface TreeProps {
@@ -274,6 +275,25 @@ const TreeNode: React.FC<{
     } catch (error) {
       console.error("Error updating folder state:", error);
       toast.error("Failed to update folder state");
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    try {
+      setIsLoading(true);
+      const result = await createFolder({
+        tagId: node.id,
+      });
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to create folder");
+        return;
+      }
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      toast.error("Failed to create folder");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -570,7 +590,10 @@ const TreeNode: React.FC<{
             <PanelTop className="mr-2 h-4 w-4" />
             <span>{isLoading ? "Creating..." : "Create canvas"}</span>
           </ContextMenuItem>
-          <ContextMenuItem onSelect={async () => {}} disabled={isLoading}>
+          <ContextMenuItem
+            onSelect={() => handleCreateFolder()}
+            disabled={isLoading}
+          >
             <FolderPlus className="mr-2 h-4 w-4" />
             <span>Create folder</span>
           </ContextMenuItem>
