@@ -38,7 +38,10 @@ import { updateTagCollapsed } from "~/server/actions/usersTags";
 import { usePathname, useRouter } from "next/navigation";
 import { createTab, deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { MoveToDialog } from "./MoveToDialog";
-import { updateFolderCollapsed } from "~/server/actions/usersFolders";
+import {
+  deleteFolder,
+  updateFolderCollapsed,
+} from "~/server/actions/usersFolders";
 
 interface TreeProps {
   data: TreeTag[];
@@ -513,7 +516,17 @@ const TreeNode: React.FC<{
                         <ContextMenuContent className="w-64">
                           <ContextMenuItem
                             onSelect={async () => {
-                              // Add folder deletion logic
+                              try {
+                                const result = await deleteFolder({
+                                  id: folder.id,
+                                });
+                                if (!result.success) {
+                                  toast.error("Failed to delete folder");
+                                }
+                              } catch (error) {
+                                console.error("Error deleting folder:", error);
+                                toast.error("Failed to delete folder");
+                              }
                             }}
                             className="text-red-600"
                           >
