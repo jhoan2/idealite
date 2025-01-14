@@ -578,9 +578,9 @@ const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="custom-scrollbar h-screen overflow-y-auto p-4">
-        {data.map((node, index) => (
+        {data.map((node) => (
           <TreeNode
-            key={index}
+            key={node.id}
             node={node}
             level={0}
             allTags={data}
