@@ -1,5 +1,12 @@
 import { db } from "~/server/db";
-import { users_tags, tags, pages, users_pages } from "~/server/db/schema";
+import {
+  users_tags,
+  tags,
+  pages,
+  users_pages,
+  folders,
+  users_folders,
+} from "~/server/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 export type SelectTag = typeof tags.$inferSelect;
@@ -16,18 +23,15 @@ export interface TreePage {
 export interface TreeTag {
   id: string;
   name: string;
-  children: TreeTag[];
   is_collapsed: boolean;
-  pages: Array<{
+  children: TreeTag[];
+  folders: Array<{
     id: string;
-    title: string;
+    name: string;
+    is_collapsed: boolean;
+    pages: Array<{ id: string; title: string }>;
   }>;
-}
-
-interface RawTag {
-  id: string;
-  name: string;
-  parent_id: string | null;
+  pages: Array<{ id: string; title: string }>;
 }
 
 export async function getUserTags(userId: string): Promise<SelectTag[]> {
@@ -60,32 +64,87 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
     .innerJoin(users_tags, eq(users_tags.tag_id, tags.id))
     .where(and(eq(users_tags.user_id, userId), eq(tags.deleted, false)));
 
-  // 2. Get all pages the user has access to
+  // 2. Get all folders
+  const userFolders = await db
+    .select({
+      id: folders.id,
+      name: folders.name,
+      tag_id: folders.tag_id,
+      is_collapsed: users_folders.is_collapsed,
+    })
+    .from(folders)
+    .leftJoin(
+      users_folders,
+      and(
+        eq(users_folders.folder_id, folders.id),
+        eq(users_folders.user_id, userId),
+      ),
+    )
+    .where(eq(folders.user_id, userId));
+
+  // 3. Get all pages (both in folders and unfoldered)
   const userPages = await db
     .select({
       id: pages.id,
       title: pages.title,
       primary_tag_id: pages.primary_tag_id,
+      folder_id: pages.folder_id,
     })
     .from(pages)
     .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
     .where(and(eq(users_pages.user_id, userId), eq(pages.deleted, false)));
 
-  // Create a Map for O(1) lookups of pages by tag
-  const pagesByTag = new Map<string, Array<{ id: string; title: string }>>();
+  // Create Maps for O(1) lookups
+  const foldersByTag = new Map<
+    string,
+    Array<{
+      id: string;
+      name: string;
+      pages: Array<{ id: string; title: string }>;
+    }>
+  >();
+  const pagesByFolder = new Map<string, Array<{ id: string; title: string }>>();
+  const unfolderedPagesByTag = new Map<
+    string,
+    Array<{ id: string; title: string }>
+  >();
+
+  // Organize pages by folder and tag
   userPages.forEach((page) => {
-    if (page.primary_tag_id) {
-      if (!pagesByTag.has(page.primary_tag_id)) {
-        pagesByTag.set(page.primary_tag_id, []);
+    if (page.folder_id) {
+      // Page is in a folder
+      if (!pagesByFolder.has(page.folder_id)) {
+        pagesByFolder.set(page.folder_id, []);
       }
-      pagesByTag.get(page.primary_tag_id)?.push({
+      pagesByFolder.get(page.folder_id)?.push({
+        id: page.id,
+        title: page.title,
+      });
+    } else if (page.primary_tag_id) {
+      // Unfoldered page
+      if (!unfolderedPagesByTag.has(page.primary_tag_id)) {
+        unfolderedPagesByTag.set(page.primary_tag_id, []);
+      }
+      unfolderedPagesByTag.get(page.primary_tag_id)?.push({
         id: page.id,
         title: page.title,
       });
     }
   });
 
-  // Create a Map for O(1) lookups of child tags
+  // Organize folders by tag
+  userFolders.forEach((folder) => {
+    if (!foldersByTag.has(folder.tag_id)) {
+      foldersByTag.set(folder.tag_id, []);
+    }
+    foldersByTag.get(folder.tag_id)?.push({
+      id: folder.id,
+      name: folder.name,
+      pages: pagesByFolder.get(folder.id) || [],
+    });
+  });
+
+  // Create child tags map
   const childrenByParent = new Map<
     string | null,
     Array<{
@@ -105,20 +164,22 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
   });
 
   function buildTagTree(parentId: string | null): TreeTag[] {
-    // Get children for this parent
     const children = childrenByParent.get(parentId) || [];
 
     return children.map((tag) => ({
       id: tag.id,
       name: tag.name,
-      // Recursively build children's subtrees
       is_collapsed: tag.is_collapsed,
       children: buildTagTree(tag.id),
-      // Get pages for this tag from our Map
-      pages: pagesByTag.get(tag.id) || [],
+      folders:
+        foldersByTag.get(tag.id)?.map((folder) => ({
+          ...folder,
+          is_collapsed:
+            userFolders.find((f) => f.id === folder.id)?.is_collapsed ?? false,
+        })) || [],
+      pages: unfolderedPagesByTag.get(tag.id) || [],
     }));
   }
 
-  // Start with root level tags (those with no parent)
   return buildTagTree(null);
 }

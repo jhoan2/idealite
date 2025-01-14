@@ -118,6 +118,7 @@ export const pages = createTable(
       .notNull()
       .default("page"),
     primary_tag_id: uuid("primary_tag_id"),
+    folder_id: uuid("folder_id").references(() => folders.id),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -321,10 +322,63 @@ export const tabs = createTable(
   }),
 );
 
-export const pagesRelations = relations(pages, ({ many }) => ({
+export const folders = createTable(
+  "folder",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    tag_id: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (table) => {
+    return {
+      tag_id_idx: index("folder_tag_id_idx").on(table.tag_id),
+      user_id_idx: index("folder_user_id_idx").on(table.user_id),
+    };
+  },
+);
+
+export const users_folders = createTable(
+  "users_folders",
+  {
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    folder_id: uuid("folder_id")
+      .notNull()
+      .references(() => folders.id),
+    is_collapsed: boolean("is_collapsed").default(false).notNull(),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.user_id, table.folder_id] }),
+      user_id_idx: index("users_folders_user_id_idx").on(table.user_id),
+      folder_id_idx: index("users_folders_folder_id_idx").on(table.folder_id),
+    };
+  },
+);
+
+export const pagesRelations = relations(pages, ({ many, one }) => ({
   tags: many(pages_tags),
   users: many(users_pages),
   resources: many(resourcesPages),
+  folder: one(folders, {
+    fields: [pages.folder_id],
+    references: [folders.id],
+  }),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({
@@ -339,6 +393,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   tags: many(users_tags),
   images: many(images),
   tabs: many(tabs),
+  folders: many(folders),
 }));
 
 export const pagesTagsRelations = relations(pages_tags, ({ one }) => ({
@@ -416,5 +471,28 @@ export const tabsRelations = relations(tabs, ({ one }) => ({
   user: one(users, {
     fields: [tabs.user_id],
     references: [users.id],
+  }),
+}));
+
+export const foldersRelations = relations(folders, ({ one, many }) => ({
+  tag: one(tags, {
+    fields: [folders.tag_id],
+    references: [tags.id],
+  }),
+  owner: one(users, {
+    fields: [folders.user_id],
+    references: [users.id],
+  }),
+  pages: many(pages),
+}));
+
+export const usersFoldersRelations = relations(users_folders, ({ one }) => ({
+  user: one(users, {
+    fields: [users_folders.user_id],
+    references: [users.id],
+  }),
+  folder: one(folders, {
+    fields: [users_folders.folder_id],
+    references: [folders.id],
   }),
 }));

@@ -8,6 +8,8 @@ import {
   StickyNote,
   Replace,
   PanelTop,
+  Folder,
+  FolderPlus,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -36,6 +38,7 @@ import { updateTagCollapsed } from "~/server/actions/usersTags";
 import { usePathname, useRouter } from "next/navigation";
 import { createTab, deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { MoveToDialog } from "./MoveToDialog";
+import { updateFolderCollapsed } from "~/server/actions/usersFolders";
 
 interface TreeProps {
   data: TreeTag[];
@@ -59,7 +62,7 @@ const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
 
     const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
       for (const tag of tags) {
-        if (tag.children?.some((child) => child.id === targetId)) {
+        if (tag.children?.some((child: TreeTag) => child.id === targetId)) {
           return tag;
         }
         if (tag.children) {
@@ -95,6 +98,7 @@ const TreeNode: React.FC<{
 }> = ({ node, level, allTags, userId }) => {
   const hasChildren = node.children && node.children.length > 0;
   const hasPages = node.pages && node.pages.length > 0;
+  const hasFolders = node.folders && node.folders.length > 0;
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
@@ -105,10 +109,13 @@ const TreeNode: React.FC<{
   const [isExpanded, setIsExpanded] = useState(!node.is_collapsed);
   const router = useRouter();
 
-  // Change the color of the page if it is the current page
   const pathname = usePathname();
   const currentPageId = pathname?.split("/workspace/")?.[1]?.split("?")?.[0];
-  const hasCurrentPage = node.pages.some((page) => page.id === currentPageId);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
+    new Set(
+      node.folders?.filter((f) => !f.is_collapsed).map((f) => f.id) ?? [],
+    ),
+  );
 
   const handleItemClick = async (
     e: React.MouseEvent,
@@ -207,7 +214,7 @@ const TreeNode: React.FC<{
   };
 
   const handleToggleExpand = async () => {
-    if (!hasChildren && !hasPages) return;
+    if (!hasChildren && !hasPages && !hasFolders) return;
 
     const newIsExpanded = !isExpanded;
     setIsExpanded(newIsExpanded);
@@ -226,6 +233,44 @@ const TreeNode: React.FC<{
       console.error("Error updating tag state:", error);
       toast.error("Failed to update tag state");
       setIsExpanded(!newIsExpanded);
+    }
+  };
+
+  const handleFolderToggle = async (folderId: string) => {
+    const newExpandedState = !expandedFolders.has(folderId);
+
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (newExpandedState) {
+        next.add(folderId);
+      } else {
+        next.delete(folderId);
+      }
+      return next;
+    });
+
+    try {
+      const result = await updateFolderCollapsed({
+        folderId,
+        isCollapsed: !newExpandedState,
+      });
+
+      if (!result.success) {
+        toast.error("Failed to update folder state");
+        // Revert the state
+        setExpandedFolders((prev) => {
+          const next = new Set(prev);
+          if (!newExpandedState) {
+            next.add(folderId);
+          } else {
+            next.delete(folderId);
+          }
+          return next;
+        });
+      }
+    } catch (error) {
+      console.error("Error updating folder state:", error);
+      toast.error("Failed to update folder state");
     }
   };
 
@@ -289,18 +334,10 @@ const TreeNode: React.FC<{
                 {node.name}
               </span>
             </div>
+
+            {/* Expanded content */}
             {isExpanded && (
               <div className="ml-2">
-                {hasChildren &&
-                  node.children!.map((child, index) => (
-                    <TreeNode
-                      key={child.id}
-                      node={child}
-                      level={level + 1}
-                      allTags={allTags}
-                      userId={userId}
-                    />
-                  ))}
                 {hasPages &&
                   node.pages.map((page) => (
                     <ContextMenu key={page.id}>
@@ -310,8 +347,9 @@ const TreeNode: React.FC<{
                           onClick={(e) =>
                             handleItemClick(e, page.id, page.title)
                           }
+                          // Change the color of the page if it is the current page
                           className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                            hasCurrentPage
+                            page.id === currentPageId
                               ? "bg-gray-50/80 dark:bg-gray-700/30"
                               : ""
                           }`}
@@ -325,7 +363,10 @@ const TreeNode: React.FC<{
                       <ContextMenuContent className="w-64">
                         <ContextMenuItem
                           onSelect={() => {
-                            setSelectedPage({ id: page.id, title: page.title });
+                            setSelectedPage({
+                              id: page.id,
+                              title: page.title,
+                            });
                             setShowMoveDialog(true);
                           }}
                         >
@@ -360,6 +401,151 @@ const TreeNode: React.FC<{
                       </ContextMenuContent>
                     </ContextMenu>
                   ))}
+                {/* First render folders */}
+                {hasFolders &&
+                  node.folders.map((folder) => {
+                    const hasPages = folder.pages && folder.pages.length > 0;
+                    const isFolderExpanded = expandedFolders.has(folder.id);
+                    return (
+                      <ContextMenu key={folder.id}>
+                        <ContextMenuTrigger>
+                          <div>
+                            <div
+                              className="flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700"
+                              style={{ paddingLeft: `${(level + 1) * 16}px` }}
+                              onClick={() => handleFolderToggle(folder.id)}
+                            >
+                              {hasPages && (
+                                <button
+                                  className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
+                                  aria-expanded={isFolderExpanded}
+                                  aria-label={
+                                    isFolderExpanded
+                                      ? "Collapse folder"
+                                      : "Expand folder"
+                                  }
+                                >
+                                  {isFolderExpanded ? (
+                                    <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                                  )}
+                                </button>
+                              )}
+                              <Folder className="mr-2 h-4 w-4 text-gray-400" />
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {folder.name}
+                              </span>
+                            </div>
+
+                            {/* Folder's pages - only show when expanded */}
+                            {isFolderExpanded &&
+                              folder.pages.map((page) => (
+                                <ContextMenu key={page.id}>
+                                  <ContextMenuTrigger>
+                                    <Link
+                                      href={`/workspace/${page.id}`}
+                                      onClick={(e) =>
+                                        handleItemClick(e, page.id, page.title)
+                                      }
+                                      className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                                        page.id === currentPageId
+                                          ? "bg-gray-50/80 dark:bg-gray-700/30"
+                                          : ""
+                                      }`}
+                                      style={{
+                                        paddingLeft: `${(level + 2) * 16}px`,
+                                      }}
+                                    >
+                                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                                        {page.title}
+                                      </span>
+                                    </Link>
+                                  </ContextMenuTrigger>
+                                  <ContextMenuContent className="w-64">
+                                    <ContextMenuItem
+                                      onSelect={() => {
+                                        setSelectedPage({
+                                          id: page.id,
+                                          title: page.title,
+                                        });
+                                        setShowMoveDialog(true);
+                                      }}
+                                    >
+                                      <Replace className="mr-2 h-4 w-4" />
+                                      <span>Move to</span>
+                                    </ContextMenuItem>
+                                    <ContextMenuItem
+                                      onSelect={async () => {
+                                        try {
+                                          const [pageResult, tabResult] =
+                                            await Promise.all([
+                                              deletePage({ id: page.id }),
+                                              deleteTabMatchingPageTitle(
+                                                page.title,
+                                              ),
+                                            ]);
+
+                                          if (
+                                            !pageResult.success ||
+                                            !tabResult.success
+                                          ) {
+                                            toast.error(
+                                              "Failed to delete page and associated tabs",
+                                            );
+                                            return;
+                                          }
+                                        } catch (error) {
+                                          console.error(
+                                            "Error deleting page:",
+                                            error,
+                                          );
+                                        }
+                                      }}
+                                      className="text-red-600"
+                                    >
+                                      <Trash className="mr-2 h-4 w-4" />
+                                      <span>Delete page</span>
+                                    </ContextMenuItem>
+                                  </ContextMenuContent>
+                                </ContextMenu>
+                              ))}
+                          </div>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent className="w-64">
+                          <ContextMenuItem
+                            onSelect={async () => {
+                              // Add folder deletion logic
+                            }}
+                            className="text-red-600"
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            <span>Delete folder</span>
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    );
+                  })}
+
+                {/* Then render unfoldered pages */}
+                {hasPages &&
+                  node.pages.map((page) => (
+                    <ContextMenu key={page.id}>
+                      {/* Keep existing page rendering code */}
+                    </ContextMenu>
+                  ))}
+
+                {/* Finally render child tags */}
+                {hasChildren &&
+                  node.children!.map((child) => (
+                    <TreeNode
+                      key={child.id}
+                      node={child}
+                      level={level + 1}
+                      allTags={allTags}
+                      userId={userId}
+                    />
+                  ))}
               </div>
             )}
           </div>
@@ -380,6 +566,10 @@ const TreeNode: React.FC<{
           >
             <PanelTop className="mr-2 h-4 w-4" />
             <span>{isLoading ? "Creating..." : "Create canvas"}</span>
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={async () => {}} disabled={isLoading}>
+            <FolderPlus className="mr-2 h-4 w-4" />
+            <span>Create folder</span>
           </ContextMenuItem>
           <ContextMenuItem onSelect={handleDeleteTag} className="text-red-600">
             <Trash className="mr-2 h-4 w-4" />
