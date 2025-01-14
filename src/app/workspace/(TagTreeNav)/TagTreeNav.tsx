@@ -415,23 +415,21 @@ const TreeNode: React.FC<{
                               style={{ paddingLeft: `${(level + 1) * 16}px` }}
                               onClick={() => handleFolderToggle(folder.id)}
                             >
-                              {hasPages && (
-                                <button
-                                  className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
-                                  aria-expanded={isFolderExpanded}
-                                  aria-label={
-                                    isFolderExpanded
-                                      ? "Collapse folder"
-                                      : "Expand folder"
-                                  }
-                                >
-                                  {isFolderExpanded ? (
-                                    <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                                  )}
-                                </button>
-                              )}
+                              <button
+                                className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
+                                aria-expanded={isFolderExpanded}
+                                aria-label={
+                                  isFolderExpanded
+                                    ? "Collapse folder"
+                                    : "Expand folder"
+                                }
+                              >
+                                {isFolderExpanded ? (
+                                  <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                                )}
+                              </button>
                               <Folder className="mr-2 h-4 w-4 text-gray-400" />
                               <span className="text-sm text-gray-600 dark:text-gray-400">
                                 {folder.name}
@@ -527,17 +525,9 @@ const TreeNode: React.FC<{
                     );
                   })}
 
-                {/* Then render unfoldered pages */}
-                {hasPages &&
-                  node.pages.map((page) => (
-                    <ContextMenu key={page.id}>
-                      {/* Keep existing page rendering code */}
-                    </ContextMenu>
-                  ))}
-
                 {/* Finally render child tags */}
                 {hasChildren &&
-                  node.children!.map((child) => (
+                  node.children.map((child) => (
                     <TreeNode
                       key={child.id}
                       node={child}
