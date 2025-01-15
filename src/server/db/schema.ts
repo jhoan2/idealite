@@ -333,6 +333,12 @@ export const folders = createTable(
     user_id: uuid("user_id")
       .notNull()
       .references(() => users.id),
+    parent_folder_id: uuid("parent_folder_id").references(
+      (): AnyPgColumn => folders.id,
+      {
+        onDelete: "cascade",
+      },
+    ),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -356,7 +362,7 @@ export const users_folders = createTable(
       .references(() => users.id),
     folder_id: uuid("folder_id")
       .notNull()
-      .references(() => folders.id),
+      .references(() => folders.id, { onDelete: "cascade" }),
     is_collapsed: boolean("is_collapsed").default(false).notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
