@@ -6,9 +6,7 @@ import {
   ChevronDown,
   Trash,
   StickyNote,
-  Replace,
   PanelTop,
-  Folder,
   FolderPlus,
 } from "lucide-react";
 import {
@@ -17,10 +15,10 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import type { TreeTag } from "~/server/queries/usersTags";
+import type { TreeFolder, TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
 import { deleteTag } from "~/server/actions/usersTags";
-import { createPage, deletePage } from "~/server/actions/page";
+import { createPage } from "~/server/actions/page";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -33,16 +31,16 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { movePagesBetweenTags } from "~/server/actions/usersTags";
-import Link from "next/link";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
 import { usePathname, useRouter } from "next/navigation";
-import { createTab, deleteTabMatchingPageTitle } from "~/server/actions/tabs";
+import { createTab } from "~/server/actions/tabs";
 import { MoveToDialog } from "./MoveToDialog";
 import {
-  deleteFolder,
   updateFolderCollapsed,
   createFolder,
 } from "~/server/actions/usersFolders";
+import { FolderComponent } from "./Folder";
+import { PageComponent } from "./Page";
 
 interface TreeProps {
   data: TreeTag[];
@@ -91,6 +89,28 @@ const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
     title: newTitle,
     tag_id: node.id,
     hierarchy: getTagHierarchy(node),
+    folder_id: null,
+  };
+};
+
+const createUntitledPageInFolder = (folder: TreeFolder, tagId: string) => {
+  // Get all untitled pages in the folder
+  const untitledPages = folder.pages.filter((page: { title: string }) =>
+    page.title.toLowerCase().startsWith("untitled"),
+  );
+
+  // Create new page title using array length
+  const newTitle =
+    untitledPages.length === 0
+      ? "untitled"
+      : `untitled ${untitledPages.length}`;
+
+  return {
+    id: uuidv4(),
+    title: newTitle,
+    tag_id: tagId,
+    folder_id: folder.id,
+    hierarchy: [tagId], // Since folders are always in a single tag
   };
 };
 
@@ -297,6 +317,58 @@ const TreeNode: React.FC<{
     }
   };
 
+  const handleCreatePageInFolder = async (
+    folder: TreeFolder,
+    type: "page" | "canvas",
+  ) => {
+    try {
+      setIsLoading(true);
+      const pageInput = createUntitledPageInFolder(folder, node.id);
+      const result = await createPage(pageInput, type);
+
+      if (!result.success) {
+        throw new Error("Failed to create page");
+      }
+
+      // Optionally expand the folder if it's not already expanded
+      if (!expandedFolders.has(folder.id)) {
+        handleFolderToggle(folder.id);
+      }
+    } catch (error) {
+      console.error("Error creating page:", error);
+      toast.error("Failed to create page");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateSubfolder = async (parentFolder: TreeFolder) => {
+    try {
+      setIsLoading(true);
+      const result = await createFolder({
+        tagId: node.id,
+        parentFolderId: parentFolder.id,
+      });
+
+      console.log(result);
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to create folder");
+        return;
+      }
+
+      // Expand the parent folder if it's not already expanded
+      if (!expandedFolders.has(parentFolder.id)) {
+        handleFolderToggle(parentFolder.id);
+      }
+    } catch (error) {
+      console.error("Error creating subfolder:", error);
+      toast.error("Failed to create folder");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
@@ -363,200 +435,45 @@ const TreeNode: React.FC<{
               <div className="ml-2">
                 {hasPages &&
                   node.pages.map((page) => (
-                    <ContextMenu key={page.id}>
-                      <ContextMenuTrigger>
-                        <Link
-                          href={`/workspace/${page.id}`}
-                          onClick={(e) =>
-                            handleItemClick(e, page.id, page.title)
-                          }
-                          // Change the color of the page if it is the current page
-                          className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                            page.id === currentPageId
-                              ? "bg-gray-50/80 dark:bg-gray-700/30"
-                              : ""
-                          }`}
-                          style={{ paddingLeft: `${(level + 1) * 16}px` }}
-                        >
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {page.title}
-                          </span>
-                        </Link>
-                      </ContextMenuTrigger>
-                      <ContextMenuContent className="w-64">
-                        <ContextMenuItem
-                          onSelect={() => {
-                            setSelectedPage({
-                              id: page.id,
-                              title: page.title,
-                            });
-                            setShowMoveDialog(true);
-                          }}
-                        >
-                          <Replace className="mr-2 h-4 w-4" />
-                          <span>Move to</span>
-                        </ContextMenuItem>
-                        <ContextMenuItem
-                          onSelect={async () => {
-                            try {
-                              const [pageResult, tabResult] = await Promise.all(
-                                [
-                                  deletePage({ id: page.id }),
-                                  deleteTabMatchingPageTitle(page.title),
-                                ],
-                              );
-
-                              if (!pageResult.success || !tabResult.success) {
-                                toast.error(
-                                  "Failed to delete page and associated tabs",
-                                );
-                                return;
-                              }
-                            } catch (error) {
-                              console.error("Error deleting page:", error);
-                            }
-                          }}
-                          className="text-red-600"
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          <span>Delete page</span>
-                        </ContextMenuItem>
-                      </ContextMenuContent>
-                    </ContextMenu>
+                    <PageComponent
+                      key={page.id}
+                      page={page}
+                      level={level}
+                      currentPageId={currentPageId}
+                      onMovePageClick={(pageId, title) => {
+                        setSelectedPage({
+                          id: pageId,
+                          title,
+                        });
+                        setShowMoveDialog(true);
+                      }}
+                      handleItemClick={handleItemClick}
+                    />
                   ))}
                 {/* First render folders */}
                 {hasFolders &&
-                  node.folders.map((folder) => {
-                    const hasPages = folder.pages && folder.pages.length > 0;
-                    const isFolderExpanded = expandedFolders.has(folder.id);
-                    return (
-                      <ContextMenu key={folder.id}>
-                        <ContextMenuTrigger>
-                          <div>
-                            <div
-                              className="flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700"
-                              style={{ paddingLeft: `${(level + 1) * 16}px` }}
-                              onClick={() => handleFolderToggle(folder.id)}
-                            >
-                              <button
-                                className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
-                                aria-expanded={isFolderExpanded}
-                                aria-label={
-                                  isFolderExpanded
-                                    ? "Collapse folder"
-                                    : "Expand folder"
-                                }
-                              >
-                                {isFolderExpanded ? (
-                                  <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                                )}
-                              </button>
-                              <Folder className="mr-2 h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600 dark:text-gray-400">
-                                {folder.name}
-                              </span>
-                            </div>
-
-                            {/* Folder's pages - only show when expanded */}
-                            {isFolderExpanded &&
-                              folder.pages.map((page) => (
-                                <ContextMenu key={page.id}>
-                                  <ContextMenuTrigger>
-                                    <Link
-                                      href={`/workspace/${page.id}`}
-                                      onClick={(e) =>
-                                        handleItemClick(e, page.id, page.title)
-                                      }
-                                      className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                                        page.id === currentPageId
-                                          ? "bg-gray-50/80 dark:bg-gray-700/30"
-                                          : ""
-                                      }`}
-                                      style={{
-                                        paddingLeft: `${(level + 2) * 16}px`,
-                                      }}
-                                    >
-                                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                                        {page.title}
-                                      </span>
-                                    </Link>
-                                  </ContextMenuTrigger>
-                                  <ContextMenuContent className="w-64">
-                                    <ContextMenuItem
-                                      onSelect={() => {
-                                        setSelectedPage({
-                                          id: page.id,
-                                          title: page.title,
-                                        });
-                                        setShowMoveDialog(true);
-                                      }}
-                                    >
-                                      <Replace className="mr-2 h-4 w-4" />
-                                      <span>Move to</span>
-                                    </ContextMenuItem>
-                                    <ContextMenuItem
-                                      onSelect={async () => {
-                                        try {
-                                          const [pageResult, tabResult] =
-                                            await Promise.all([
-                                              deletePage({ id: page.id }),
-                                              deleteTabMatchingPageTitle(
-                                                page.title,
-                                              ),
-                                            ]);
-
-                                          if (
-                                            !pageResult.success ||
-                                            !tabResult.success
-                                          ) {
-                                            toast.error(
-                                              "Failed to delete page and associated tabs",
-                                            );
-                                            return;
-                                          }
-                                        } catch (error) {
-                                          console.error(
-                                            "Error deleting page:",
-                                            error,
-                                          );
-                                        }
-                                      }}
-                                      className="text-red-600"
-                                    >
-                                      <Trash className="mr-2 h-4 w-4" />
-                                      <span>Delete page</span>
-                                    </ContextMenuItem>
-                                  </ContextMenuContent>
-                                </ContextMenu>
-                              ))}
-                          </div>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent className="w-64">
-                          <ContextMenuItem
-                            onSelect={async () => {
-                              try {
-                                const result = await deleteFolder({
-                                  id: folder.id,
-                                });
-                                if (!result.success) {
-                                  toast.error("Failed to delete folder");
-                                }
-                              } catch (error) {
-                                console.error("Error deleting folder:", error);
-                                toast.error("Failed to delete folder");
-                              }
-                            }}
-                            className="text-red-600"
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            <span>Delete folder</span>
-                          </ContextMenuItem>
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    );
-                  })}
+                  node.folders.map((folder) => (
+                    <FolderComponent
+                      key={folder.id}
+                      folder={folder}
+                      level={level}
+                      parentTagId={node.id}
+                      expandedFolders={expandedFolders}
+                      handleFolderToggle={handleFolderToggle}
+                      handleItemClick={handleItemClick}
+                      currentPageId={currentPageId}
+                      onMovePageClick={(pageId, title) => {
+                        setSelectedPage({
+                          id: pageId,
+                          title,
+                        });
+                        setShowMoveDialog(true);
+                      }}
+                      onCreatePageInFolder={handleCreatePageInFolder}
+                      onCreateSubfolder={handleCreateSubfolder}
+                      isLoading={isLoading}
+                    />
+                  ))}
 
                 {/* Finally render child tags */}
                 {hasChildren &&
@@ -573,6 +490,7 @@ const TreeNode: React.FC<{
             )}
           </div>
         </ContextMenuTrigger>
+        {/* Context menu for tags */}
         <ContextMenuContent className="w-64">
           <ContextMenuItem
             onSelect={() => handleCreatePage("page")}

@@ -1,13 +1,20 @@
 "use server";
 
 import { auth } from "~/app/auth";
-import { folders, pages, users_folders } from "../db/schema";
+import {
+  folders,
+  pages,
+  pages_tags,
+  resourcesPages,
+  users_folders,
+  users_pages,
+} from "../db/schema";
 import { db } from "../db";
-import { eq, sql, and } from "drizzle-orm";
-import { deletePage } from "./page";
+import { eq, sql, and, isNull } from "drizzle-orm";
 import { deleteTabMatchingPageTitle } from "./tabs";
 import { v4 as uuidv4 } from "uuid";
 import { revalidatePath } from "next/cache";
+
 export async function updateFolderCollapsed({
   folderId,
   isCollapsed,
@@ -52,7 +59,7 @@ export async function deleteFolder({ id }: { id: string }) {
   }
 
   try {
-    // First get all pages in the folder
+    // First get all pages in the folder and subfolders
     const folderPages = await db
       .select({
         id: pages.id,
@@ -62,20 +69,24 @@ export async function deleteFolder({ id }: { id: string }) {
       .where(eq(pages.folder_id, id));
 
     await db.transaction(async (tx) => {
-      // Delete all pages and their associated tabs
-      await Promise.all(
-        folderPages.map(async (page) => {
-          await Promise.all([
-            deletePage({ id: page.id }),
-            deleteTabMatchingPageTitle(page.title),
-          ]);
-        }),
-      );
+      // First, delete all pages in the folder
+      for (const page of folderPages) {
+        // Delete all related records for the page
+        await tx.delete(pages_tags).where(eq(pages_tags.page_id, page.id));
+        await tx
+          .delete(resourcesPages)
+          .where(eq(resourcesPages.page_id, page.id));
+        await tx.delete(users_pages).where(eq(users_pages.page_id, page.id));
+        await tx.delete(pages).where(eq(pages.id, page.id));
 
-      // Delete the folder collapse state
+        // Delete associated tab outside the transaction since it's not part of the database
+        await deleteTabMatchingPageTitle(page.title);
+      }
+
+      // Then delete the folder relation
       await tx.delete(users_folders).where(eq(users_folders.folder_id, id));
 
-      // Finally delete the folder itself
+      // Finally delete the folder
       await tx.delete(folders).where(eq(folders.id, id));
     });
 
@@ -96,9 +107,11 @@ export async function deleteFolder({ id }: { id: string }) {
 export async function createFolder({
   name,
   tagId,
+  parentFolderId,
 }: {
   name?: string;
   tagId: string;
+  parentFolderId?: string;
 }) {
   const session = await auth();
   const userId = session?.user?.id;
@@ -111,7 +124,7 @@ export async function createFolder({
   }
 
   try {
-    // Get count of existing "New Folder" names
+    // Get count of existing "New Folder" names in the parent folder
     const existingFolders = await db
       .select({ name: folders.name })
       .from(folders)
@@ -119,11 +132,13 @@ export async function createFolder({
         and(
           eq(folders.tag_id, tagId),
           eq(folders.user_id, userId),
+          parentFolderId
+            ? eq(folders.parent_folder_id, parentFolderId)
+            : isNull(folders.parent_folder_id),
           sql`lower(${folders.name}) LIKE 'new folder%'`,
         ),
       );
 
-    // Generate new folder name
     const newName =
       existingFolders.length === 0
         ? "New Folder"
@@ -132,15 +147,14 @@ export async function createFolder({
     const folderId = uuidv4();
 
     await db.transaction(async (tx) => {
-      // Create the folder
       await tx.insert(folders).values({
         id: folderId,
         name: name || newName,
         tag_id: tagId,
         user_id: userId,
+        parent_folder_id: parentFolderId || null,
       });
 
-      // Initialize folder collapse state as not collapsed
       await tx.insert(users_folders).values({
         user_id: userId,
         folder_id: folderId,
@@ -149,7 +163,6 @@ export async function createFolder({
     });
 
     revalidatePath("/workspace");
-
     return {
       success: true,
       folderId,

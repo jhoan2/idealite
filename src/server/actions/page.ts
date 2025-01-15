@@ -179,6 +179,7 @@ export type CreatePageInput = {
   title: string;
   tag_id: string;
   hierarchy: string[];
+  folder_id: string | null;
 };
 
 export async function createPage(
@@ -205,6 +206,7 @@ export async function createPage(
           content: "",
           content_type: type,
           primary_tag_id: input.tag_id,
+          folder_id: input.folder_id,
         })
         .returning();
 

@@ -19,18 +19,20 @@ export interface TreePage {
   title: string | null;
 }
 
-// Types
+export interface TreeFolder {
+  id: string;
+  name: string;
+  is_collapsed: boolean;
+  pages: Array<{ id: string; title: string }>;
+  subFolders: TreeFolder[];
+}
+
 export interface TreeTag {
   id: string;
   name: string;
   is_collapsed: boolean;
   children: TreeTag[];
-  folders: Array<{
-    id: string;
-    name: string;
-    is_collapsed: boolean;
-    pages: Array<{ id: string; title: string }>;
-  }>;
+  folders: TreeFolder[];
   pages: Array<{ id: string; title: string }>;
 }
 
@@ -71,6 +73,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       name: folders.name,
       tag_id: folders.tag_id,
       is_collapsed: users_folders.is_collapsed,
+      parent_folder_id: folders.parent_folder_id,
     })
     .from(folders)
     .leftJoin(
@@ -82,7 +85,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
     )
     .where(eq(folders.user_id, userId));
 
-  // 3. Get all pages (both in folders and unfoldered)
+  // 3. Get all pages
   const userPages = await db
     .select({
       id: pages.id,
@@ -100,9 +103,12 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
     Array<{
       id: string;
       name: string;
+      is_collapsed: boolean | null;
+      parent_folder_id: string | null;
       pages: Array<{ id: string; title: string }>;
     }>
   >();
+
   const pagesByFolder = new Map<string, Array<{ id: string; title: string }>>();
   const unfolderedPagesByTag = new Map<
     string,
@@ -112,7 +118,6 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
   // Organize pages by folder and tag
   userPages.forEach((page) => {
     if (page.folder_id) {
-      // Page is in a folder
       if (!pagesByFolder.has(page.folder_id)) {
         pagesByFolder.set(page.folder_id, []);
       }
@@ -121,7 +126,6 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         title: page.title,
       });
     } else if (page.primary_tag_id) {
-      // Unfoldered page
       if (!unfolderedPagesByTag.has(page.primary_tag_id)) {
         unfolderedPagesByTag.set(page.primary_tag_id, []);
       }
@@ -132,54 +136,62 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
     }
   });
 
-  // Organize folders by tag
+  // Organize folders by tag (flat structure)
   userFolders.forEach((folder) => {
     if (!foldersByTag.has(folder.tag_id)) {
       foldersByTag.set(folder.tag_id, []);
     }
+
     foldersByTag.get(folder.tag_id)?.push({
       id: folder.id,
       name: folder.name,
+      is_collapsed: folder.is_collapsed,
+      parent_folder_id: folder.parent_folder_id,
       pages: pagesByFolder.get(folder.id) || [],
     });
   });
 
-  // Create child tags map
-  const childrenByParent = new Map<
-    string | null,
-    Array<{
+  function buildFolderTree(
+    folders: Array<{
       id: string;
       name: string;
-      parent_id: string | null;
-      is_collapsed: boolean;
-    }>
-  >();
+      is_collapsed: boolean | null;
+      parent_folder_id: string | null;
+      pages: Array<{ id: string; title: string }>;
+    }>,
+    parentId: string | null = null,
+  ): TreeFolder[] {
+    const foldersAtLevel = folders.filter(
+      (folder) => folder.parent_folder_id === parentId,
+    );
 
-  userTags.forEach((tag) => {
-    const parentId = tag.parent_id || null;
-    if (!childrenByParent.has(parentId)) {
-      childrenByParent.set(parentId, []);
-    }
-    childrenByParent.get(parentId)?.push(tag);
-  });
-
-  function buildTagTree(parentId: string | null): TreeTag[] {
-    const children = childrenByParent.get(parentId) || [];
-
-    return children.map((tag) => ({
-      id: tag.id,
-      name: tag.name,
-      is_collapsed: tag.is_collapsed,
-      children: buildTagTree(tag.id),
-      folders:
-        foldersByTag.get(tag.id)?.map((folder) => ({
-          ...folder,
-          is_collapsed:
-            userFolders.find((f) => f.id === folder.id)?.is_collapsed ?? false,
-        })) || [],
-      pages: unfolderedPagesByTag.get(tag.id) || [],
+    return foldersAtLevel.map((folder) => ({
+      id: folder.id,
+      name: folder.name,
+      is_collapsed: folder.is_collapsed ?? false,
+      pages: folder.pages,
+      subFolders: buildFolderTree(folders, folder.id),
     }));
   }
 
-  return buildTagTree(null);
+  function buildTagTree(parentId: string | null): TreeTag[] {
+    const children = userTags.filter((tag) => tag.parent_id === parentId);
+
+    return children.map((tag) => {
+      const folders = buildFolderTree(foldersByTag.get(tag.id) || []);
+      const pages = unfolderedPagesByTag.get(tag.id) || [];
+
+      return {
+        id: tag.id,
+        name: tag.name,
+        is_collapsed: tag.is_collapsed,
+        children: buildTagTree(tag.id),
+        folders,
+        pages,
+      };
+    });
+  }
+
+  const result = buildTagTree(null);
+  return result;
 }
