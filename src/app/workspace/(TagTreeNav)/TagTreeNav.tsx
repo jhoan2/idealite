@@ -46,6 +46,20 @@ interface TreeProps {
   data: TreeTag[];
 }
 
+const getCurrentTagNode = (
+  tags: TreeTag[],
+  targetId: string,
+): TreeTag | null => {
+  for (const tag of tags) {
+    if (tag.id === targetId) return tag;
+    if (tag.children) {
+      const found = getCurrentTagNode(tag.children, targetId);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
 const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
   // Get all untitled pages
   const untitledPages = node.pages.filter((page) =>
@@ -80,7 +94,6 @@ const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
       hierarchy.unshift(parentTag.id);
       parentTag = findParent(allTags, parentTag.id);
     }
-
     return hierarchy;
   };
 
@@ -90,27 +103,6 @@ const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
     tag_id: node.id,
     hierarchy: getTagHierarchy(node),
     folder_id: null,
-  };
-};
-
-const createUntitledPageInFolder = (folder: TreeFolder, tagId: string) => {
-  // Get all untitled pages in the folder
-  const untitledPages = folder.pages.filter((page: { title: string }) =>
-    page.title.toLowerCase().startsWith("untitled"),
-  );
-
-  // Create new page title using array length
-  const newTitle =
-    untitledPages.length === 0
-      ? "untitled"
-      : `untitled ${untitledPages.length}`;
-
-  return {
-    id: uuidv4(),
-    title: newTitle,
-    tag_id: tagId,
-    folder_id: folder.id,
-    hierarchy: [tagId], // Since folders are always in a single tag
   };
 };
 
@@ -167,6 +159,35 @@ const TreeNode: React.FC<{
     }
   };
 
+  const getTagHierarchy = (
+    currentNode: TreeTag,
+    allTags: TreeTag[],
+  ): string[] => {
+    //TODO: There is another function like this in createUntitledPage
+    const hierarchy: string[] = [currentNode.id];
+
+    const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
+      for (const tag of tags) {
+        if (tag.children?.some((child: TreeTag) => child.id === targetId)) {
+          return tag;
+        }
+        if (tag.children) {
+          const found = findParent(tag.children, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    let parentTag = findParent(allTags, currentNode.id);
+    while (parentTag) {
+      hierarchy.unshift(parentTag.id);
+      parentTag = findParent(allTags, parentTag.id);
+    }
+
+    return hierarchy;
+  };
+
   const handleCreatePage = async (type: "page" | "canvas") => {
     try {
       setIsLoading(true);
@@ -181,6 +202,32 @@ const TreeNode: React.FC<{
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const createUntitledPageInFolder = (folder: TreeFolder, tagId: string) => {
+    // Get all untitled pages in the folder
+    const untitledPages = folder.pages.filter((page: { title: string }) =>
+      page.title.toLowerCase().startsWith("untitled"),
+    );
+
+    // Create new page title using array length
+    const newTitle =
+      untitledPages.length === 0
+        ? "untitled"
+        : `untitled ${untitledPages.length}`;
+
+    const currentTag = getCurrentTagNode(allTags, tagId);
+    if (!currentTag) {
+      throw new Error("Tag not found");
+    }
+
+    return {
+      id: uuidv4(),
+      title: newTitle,
+      tag_id: tagId,
+      folder_id: folder.id,
+      hierarchy: getTagHierarchy(currentTag, allTags),
+    };
   };
 
   const calculateOrphanedPages = (tag: TreeTag): number => {
