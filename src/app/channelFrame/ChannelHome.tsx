@@ -9,7 +9,6 @@ import { Button } from "~/components/ui/button";
 import ChannelFrameTags from "./ChannelFrameTags";
 import { toast } from "sonner";
 import { SelectTag } from "~/server/queries/tag";
-import posthog from "posthog-js";
 
 interface ExploreStateProps {
   tag: SelectTag[];
@@ -49,7 +48,6 @@ export default function ChannelHome({
   isMember,
 }: ExploreStateProps) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [context, setContext] = useState<FrameContext>();
   const { data: session, status } = useSession();
 
   const handleJoinChannel = async () => {
@@ -68,17 +66,23 @@ export default function ChannelHome({
   useEffect(() => {
     const load = async () => {
       const frameContext = await sdk.context;
-      setContext(frameContext);
-
-      if (frameContext?.user) {
-        posthog.capture("frame_loaded", {
-          fid: frameContext.user.fid,
-          username: frameContext.user.username,
-          displayName: frameContext.user.displayName,
-        });
-      }
-
       sdk.actions.ready();
+      try {
+        await fetch("/api/analytics/channelFrame", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            event: "channel_home_viewed",
+            fid: frameContext?.user?.fid,
+            displayName: frameContext?.user?.displayName,
+            username: frameContext?.user?.username,
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to track analytics:", error);
+      }
     };
 
     if (sdk && !isSDKLoaded) {
