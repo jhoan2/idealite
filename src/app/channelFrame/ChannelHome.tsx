@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import sdk from "@farcaster/frame-sdk";
+import sdk, { FrameNotificationDetails } from "@farcaster/frame-sdk";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import SignInWithFarcaster from "./SignInWithFarcaster";
@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import ChannelFrameTags from "./ChannelFrameTags";
 import { toast } from "sonner";
 import { SelectTag } from "~/server/queries/tag";
+import posthog from "posthog-js";
 
 interface ExploreStateProps {
   tag: SelectTag[];
@@ -17,6 +18,30 @@ interface ExploreStateProps {
   isMember: boolean;
 }
 
+export type SafeAreaInsets = {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+};
+
+export type FrameContext = {
+  user: {
+    fid: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+  };
+  // @ts-ignore
+  location?: FrameLocationContext;
+  client: {
+    clientFid: number;
+    added: boolean;
+    safeAreaInsets?: SafeAreaInsets;
+    notificationDetails?: FrameNotificationDetails;
+  };
+};
+
 export default function ChannelHome({
   tag,
   userTags,
@@ -24,6 +49,7 @@ export default function ChannelHome({
   isMember,
 }: ExploreStateProps) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [context, setContext] = useState<FrameContext>();
   const { data: session, status } = useSession();
 
   const handleJoinChannel = async () => {
@@ -41,12 +67,27 @@ export default function ChannelHome({
 
   useEffect(() => {
     const load = async () => {
+      setContext(await sdk.context);
       sdk.actions.ready();
     };
+    if (context) {
+      posthog.register({
+        fid: context.user?.fid,
+        username: context.user?.username,
+        displayName: context.user?.displayName,
+        authStatus: status,
+      });
+    }
     if (sdk && !isSDKLoaded) {
       setIsSDKLoaded(true);
       load();
     }
+    return () => {
+      posthog.unregister("fid");
+      posthog.unregister("username");
+      posthog.unregister("displayName");
+      posthog.unregister("authStatus");
+    };
   }, [isSDKLoaded]);
 
   if (!isSDKLoaded) {
