@@ -7,6 +7,14 @@ import NeynarProvider from "~/app/NeynarProvider";
 import { Toaster } from "~/components/ui/sonner";
 import { SessionProvider } from "next-auth/react";
 
+export const metadata = {
+  title: "idealite",
+  description: "A mmo learning game",
+  icons: {
+    icon: "/icon48.png",
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {

@@ -164,7 +164,11 @@ function CirclePack({
       return (
         <g
           key={node.data.name}
-          onClick={node.data.isInBoth ? undefined : (event) => handleCircleClick(event, node)}
+          onClick={
+            node.data.isInBoth
+              ? undefined
+              : (event) => handleCircleClick(event, node)
+          }
           onPointerDown={stopEventPropagation}
         >
           <circle
@@ -290,6 +294,7 @@ export default function OnTheCanvasExample({
       <Tldraw
         persistenceKey="things-on-the-canvas-example"
         components={components}
+        hideUi={true}
       />
     </div>
   );

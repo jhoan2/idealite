@@ -1,5 +1,12 @@
 import { db } from "~/server/db";
-import { users_tags, tags, pages, users_pages } from "~/server/db/schema";
+import {
+  users_tags,
+  tags,
+  pages,
+  users_pages,
+  folders,
+  users_folders,
+} from "~/server/db/schema";
 import { eq, sql, and } from "drizzle-orm";
 
 export type SelectTag = typeof tags.$inferSelect;
@@ -10,24 +17,31 @@ export type InsertPage = typeof pages.$inferInsert;
 export interface TreePage {
   id: string;
   title: string | null;
+  primary_tag_id: string | null;
+  folder_id: string | null;
 }
 
-// Types
+export interface TreeFolder {
+  id: string;
+  name: string;
+  is_collapsed: boolean;
+  pages: Array<{ id: string; title: string }>;
+  subFolders: TreeFolder[];
+  parent_folder_id: string | null;
+}
+
 export interface TreeTag {
   id: string;
   name: string;
-  children: TreeTag[];
   is_collapsed: boolean;
+  children: TreeTag[];
+  folders: TreeFolder[];
   pages: Array<{
     id: string;
     title: string;
+    folder_id: string | null;
+    primary_tag_id: string | null;
   }>;
-}
-
-interface RawTag {
-  id: string;
-  name: string;
-  parent_id: string | null;
 }
 
 export async function getUserTags(userId: string): Promise<SelectTag[]> {
@@ -60,65 +74,156 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
     .innerJoin(users_tags, eq(users_tags.tag_id, tags.id))
     .where(and(eq(users_tags.user_id, userId), eq(tags.deleted, false)));
 
-  // 2. Get all pages the user has access to
+  // 2. Get all folders
+  const userFolders = await db
+    .select({
+      id: folders.id,
+      name: folders.name,
+      tag_id: folders.tag_id,
+      is_collapsed: users_folders.is_collapsed,
+      parent_folder_id: folders.parent_folder_id,
+    })
+    .from(folders)
+    .leftJoin(
+      users_folders,
+      and(
+        eq(users_folders.folder_id, folders.id),
+        eq(users_folders.user_id, userId),
+      ),
+    )
+    .where(eq(folders.user_id, userId));
+
+  // 3. Get all pages
   const userPages = await db
     .select({
       id: pages.id,
       title: pages.title,
       primary_tag_id: pages.primary_tag_id,
+      folder_id: pages.folder_id,
     })
     .from(pages)
     .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
     .where(and(eq(users_pages.user_id, userId), eq(pages.deleted, false)));
 
-  // Create a Map for O(1) lookups of pages by tag
-  const pagesByTag = new Map<string, Array<{ id: string; title: string }>>();
+  // Create Maps for O(1) lookups
+  const foldersByTag = new Map<
+    string,
+    Array<{
+      id: string;
+      name: string;
+      is_collapsed: boolean | null;
+      parent_folder_id: string | null;
+      pages: Array<{
+        id: string;
+        title: string;
+        folder_id: string | null;
+        primary_tag_id: string | null;
+      }>;
+    }>
+  >();
+
+  const pagesByFolder = new Map<
+    string,
+    Array<{
+      id: string;
+      title: string;
+      folder_id: string | null;
+      primary_tag_id: string | null;
+    }>
+  >();
+
+  const unfolderedPagesByTag = new Map<
+    string,
+    Array<{
+      id: string;
+      title: string;
+      folder_id: string | null;
+      primary_tag_id: string | null;
+    }>
+  >();
+
+  // Organize pages by folder and tag
   userPages.forEach((page) => {
-    if (page.primary_tag_id) {
-      if (!pagesByTag.has(page.primary_tag_id)) {
-        pagesByTag.set(page.primary_tag_id, []);
+    if (page.folder_id) {
+      if (!pagesByFolder.has(page.folder_id)) {
+        pagesByFolder.set(page.folder_id, []);
       }
-      pagesByTag.get(page.primary_tag_id)?.push({
+      pagesByFolder.get(page.folder_id)?.push({
         id: page.id,
         title: page.title,
+        folder_id: page.folder_id,
+        primary_tag_id: page.primary_tag_id,
+      });
+    } else if (page.primary_tag_id) {
+      if (!unfolderedPagesByTag.has(page.primary_tag_id)) {
+        unfolderedPagesByTag.set(page.primary_tag_id, []);
+      }
+      unfolderedPagesByTag.get(page.primary_tag_id)?.push({
+        id: page.id,
+        title: page.title,
+        folder_id: page.folder_id,
+        primary_tag_id: page.primary_tag_id,
       });
     }
   });
 
-  // Create a Map for O(1) lookups of child tags
-  const childrenByParent = new Map<
-    string | null,
-    Array<{
-      id: string;
-      name: string;
-      parent_id: string | null;
-      is_collapsed: boolean;
-    }>
-  >();
-
-  userTags.forEach((tag) => {
-    const parentId = tag.parent_id || null;
-    if (!childrenByParent.has(parentId)) {
-      childrenByParent.set(parentId, []);
+  // Organize folders by tag (flat structure)
+  userFolders.forEach((folder) => {
+    if (!foldersByTag.has(folder.tag_id)) {
+      foldersByTag.set(folder.tag_id, []);
     }
-    childrenByParent.get(parentId)?.push(tag);
+
+    foldersByTag.get(folder.tag_id)?.push({
+      id: folder.id,
+      name: folder.name,
+      is_collapsed: folder.is_collapsed,
+      parent_folder_id: folder.parent_folder_id,
+      pages: pagesByFolder.get(folder.id) || [],
+    });
   });
 
-  function buildTagTree(parentId: string | null): TreeTag[] {
-    // Get children for this parent
-    const children = childrenByParent.get(parentId) || [];
+  function buildFolderTree(
+    folders: Array<{
+      id: string;
+      name: string;
+      is_collapsed: boolean | null;
+      parent_folder_id: string | null;
+      pages: Array<{ id: string; title: string }>;
+    }>,
+    parentId: string | null = null,
+  ): TreeFolder[] {
+    const foldersAtLevel = folders.filter(
+      (folder) => folder.parent_folder_id === parentId,
+    );
 
-    return children.map((tag) => ({
-      id: tag.id,
-      name: tag.name,
-      // Recursively build children's subtrees
-      is_collapsed: tag.is_collapsed,
-      children: buildTagTree(tag.id),
-      // Get pages for this tag from our Map
-      pages: pagesByTag.get(tag.id) || [],
+    return foldersAtLevel.map((folder) => ({
+      id: folder.id,
+      name: folder.name,
+      is_collapsed: folder.is_collapsed ?? false,
+      pages: folder.pages,
+      subFolders: buildFolderTree(folders, folder.id),
+      parent_folder_id: folder.parent_folder_id,
     }));
   }
 
-  // Start with root level tags (those with no parent)
-  return buildTagTree(null);
+  function buildTagTree(parentId: string | null): TreeTag[] {
+    const children = userTags.filter((tag) => tag.parent_id === parentId);
+
+    return children.map((tag) => {
+      const folders = buildFolderTree(foldersByTag.get(tag.id) || []);
+      const pages = unfolderedPagesByTag.get(tag.id) || [];
+
+      return {
+        id: tag.id,
+        name: tag.name,
+        is_collapsed: tag.is_collapsed,
+        children: buildTagTree(tag.id),
+        folders,
+        pages,
+      };
+    });
+  }
+
+  const result = buildTagTree(null);
+  return result;
 }

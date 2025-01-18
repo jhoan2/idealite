@@ -6,8 +6,8 @@ import {
   ChevronDown,
   Trash,
   StickyNote,
-  Replace,
   PanelTop,
+  FolderPlus,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -15,10 +15,10 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import type { TreeTag } from "~/server/queries/usersTags";
+import type { TreeFolder, TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
 import { deleteTag } from "~/server/actions/usersTags";
-import { createPage, deletePage } from "~/server/actions/page";
+import { createPage, movePage } from "~/server/actions/page";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -31,15 +31,34 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { movePagesBetweenTags } from "~/server/actions/usersTags";
-import Link from "next/link";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
 import { usePathname, useRouter } from "next/navigation";
-import { createTab, deleteTabMatchingPageTitle } from "~/server/actions/tabs";
+import { createTab } from "~/server/actions/tabs";
 import { MoveToDialog } from "./MoveToDialog";
+import {
+  updateFolderCollapsed,
+  createFolder,
+} from "~/server/actions/usersFolders";
+import { FolderComponent } from "./Folder";
+import { PageComponent } from "./Page";
 
 interface TreeProps {
   data: TreeTag[];
 }
+
+const getCurrentTagNode = (
+  tags: TreeTag[],
+  targetId: string,
+): TreeTag | null => {
+  for (const tag of tags) {
+    if (tag.id === targetId) return tag;
+    if (tag.children) {
+      const found = getCurrentTagNode(tag.children, targetId);
+      if (found) return found;
+    }
+  }
+  return null;
+};
 
 const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
   // Get all untitled pages
@@ -59,7 +78,7 @@ const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
 
     const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
       for (const tag of tags) {
-        if (tag.children?.some((child) => child.id === targetId)) {
+        if (tag.children?.some((child: TreeTag) => child.id === targetId)) {
           return tag;
         }
         if (tag.children) {
@@ -75,7 +94,6 @@ const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
       hierarchy.unshift(parentTag.id);
       parentTag = findParent(allTags, parentTag.id);
     }
-
     return hierarchy;
   };
 
@@ -84,6 +102,7 @@ const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
     title: newTitle,
     tag_id: node.id,
     hierarchy: getTagHierarchy(node),
+    folder_id: null,
   };
 };
 
@@ -95,21 +114,26 @@ const TreeNode: React.FC<{
 }> = ({ node, level, allTags, userId }) => {
   const hasChildren = node.children && node.children.length > 0;
   const hasPages = node.pages && node.pages.length > 0;
+  const hasFolders = node.folders && node.folders.length > 0;
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [selectedPage, setSelectedPage] = useState<{
     id: string;
     title: string;
+    folder_id: string | null;
+    primary_tag_id: string | null;
   } | null>(null);
   const [isExpanded, setIsExpanded] = useState(!node.is_collapsed);
   const router = useRouter();
 
-  // Change the color of the page if it is the current page
   const pathname = usePathname();
   const currentPageId = pathname?.split("/workspace/")?.[1]?.split("?")?.[0];
-  const hasCurrentPage = node.pages.some((page) => page.id === currentPageId);
-
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
+    new Set(
+      node.folders?.filter((f) => !f.is_collapsed).map((f) => f.id) ?? [],
+    ),
+  );
   const handleItemClick = async (
     e: React.MouseEvent,
     pageId: string,
@@ -136,6 +160,35 @@ const TreeNode: React.FC<{
     }
   };
 
+  const getTagHierarchy = (
+    currentNode: TreeTag,
+    allTags: TreeTag[],
+  ): string[] => {
+    //TODO: There is another function like this in createUntitledPage
+    const hierarchy: string[] = [currentNode.id];
+
+    const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
+      for (const tag of tags) {
+        if (tag.children?.some((child: TreeTag) => child.id === targetId)) {
+          return tag;
+        }
+        if (tag.children) {
+          const found = findParent(tag.children, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    let parentTag = findParent(allTags, currentNode.id);
+    while (parentTag) {
+      hierarchy.unshift(parentTag.id);
+      parentTag = findParent(allTags, parentTag.id);
+    }
+
+    return hierarchy;
+  };
+
   const handleCreatePage = async (type: "page" | "canvas") => {
     try {
       setIsLoading(true);
@@ -150,6 +203,32 @@ const TreeNode: React.FC<{
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const createUntitledPageInFolder = (folder: TreeFolder, tagId: string) => {
+    // Get all untitled pages in the folder
+    const untitledPages = folder.pages.filter((page: { title: string }) =>
+      page.title.toLowerCase().startsWith("untitled"),
+    );
+
+    // Create new page title using array length
+    const newTitle =
+      untitledPages.length === 0
+        ? "untitled"
+        : `untitled ${untitledPages.length}`;
+
+    const currentTag = getCurrentTagNode(allTags, tagId);
+    if (!currentTag) {
+      throw new Error("Tag not found");
+    }
+
+    return {
+      id: uuidv4(),
+      title: newTitle,
+      tag_id: tagId,
+      folder_id: folder.id,
+      hierarchy: getTagHierarchy(currentTag, allTags),
+    };
   };
 
   const calculateOrphanedPages = (tag: TreeTag): number => {
@@ -181,33 +260,8 @@ const TreeNode: React.FC<{
     }
   };
 
-  const handleMovePage = async (destinationTagId: string) => {
-    if (!selectedPage) return;
-
-    setIsLoading(true);
-    try {
-      const result = await movePagesBetweenTags({
-        pageId: selectedPage.id,
-        newTagId: destinationTagId,
-      });
-
-      if (!result.success) {
-        const errorMessage =
-          "error" in result ? result.error : "Failed to move page";
-        throw new Error(errorMessage);
-      }
-
-      toast.success(`Successfully moved "${selectedPage.title}"`);
-    } catch (error) {
-      console.error("Error moving page:", error);
-      toast.error("Failed to move page");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleToggleExpand = async () => {
-    if (!hasChildren && !hasPages) return;
+    if (!hasChildren && !hasPages && !hasFolders) return;
 
     const newIsExpanded = !isExpanded;
     setIsExpanded(newIsExpanded);
@@ -226,6 +280,144 @@ const TreeNode: React.FC<{
       console.error("Error updating tag state:", error);
       toast.error("Failed to update tag state");
       setIsExpanded(!newIsExpanded);
+    }
+  };
+
+  const handleFolderToggle = async (folderId: string) => {
+    const newExpandedState = !expandedFolders.has(folderId);
+
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (newExpandedState) {
+        next.add(folderId);
+      } else {
+        next.delete(folderId);
+      }
+      return next;
+    });
+
+    try {
+      const result = await updateFolderCollapsed({
+        folderId,
+        isCollapsed: !newExpandedState,
+      });
+
+      if (!result.success) {
+        toast.error("Failed to update folder state");
+        // Revert the state
+        setExpandedFolders((prev) => {
+          const next = new Set(prev);
+          if (!newExpandedState) {
+            next.add(folderId);
+          } else {
+            next.delete(folderId);
+          }
+          return next;
+        });
+      }
+    } catch (error) {
+      console.error("Error updating folder state:", error);
+      toast.error("Failed to update folder state");
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    try {
+      setIsLoading(true);
+      const result = await createFolder({
+        tagId: node.id,
+      });
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to create folder");
+        return;
+      }
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      toast.error("Failed to create folder");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreatePageInFolder = async (
+    folder: TreeFolder,
+    type: "page" | "canvas",
+  ) => {
+    try {
+      setIsLoading(true);
+      const pageInput = createUntitledPageInFolder(folder, node.id);
+      const result = await createPage(pageInput, type);
+
+      if (!result.success) {
+        throw new Error("Failed to create page");
+      }
+
+      // Optionally expand the folder if it's not already expanded
+      if (!expandedFolders.has(folder.id)) {
+        handleFolderToggle(folder.id);
+      }
+    } catch (error) {
+      console.error("Error creating page:", error);
+      toast.error("Failed to create page");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateSubfolder = async (parentFolder: TreeFolder) => {
+    try {
+      setIsLoading(true);
+      const result = await createFolder({
+        tagId: node.id,
+        parentFolderId: parentFolder.id,
+      });
+
+      console.log(result);
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to create folder");
+        return;
+      }
+
+      // Expand the parent folder if it's not already expanded
+      if (!expandedFolders.has(parentFolder.id)) {
+        handleFolderToggle(parentFolder.id);
+      }
+    } catch (error) {
+      console.error("Error creating subfolder:", error);
+      toast.error("Failed to create folder");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMovePage = async (destinationId: string) => {
+    if (!selectedPage) return;
+
+    setIsLoading(true);
+    try {
+      const result = await movePage({
+        pageId: selectedPage.id,
+        destinationId: destinationId,
+      });
+
+      if (!result.success) {
+        throw new Error(
+          "error" in result ? result.error : "Failed to move page",
+        );
+      }
+
+      setSelectedPage(null);
+      setShowMoveDialog(false);
+    } catch (error) {
+      console.error("Error moving page:", error);
+      // Handle both Error objects and string errors
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to move page";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -261,6 +453,8 @@ const TreeNode: React.FC<{
         }}
         tags={allTags}
         currentTagId={node.id}
+        currentFolderId={selectedPage?.folder_id ?? null}
+        primaryTagId={selectedPage?.primary_tag_id ?? null}
         onMove={handleMovePage}
         isLoading={isLoading}
       />
@@ -289,10 +483,64 @@ const TreeNode: React.FC<{
                 {node.name}
               </span>
             </div>
+
+            {/* Expanded content */}
             {isExpanded && (
               <div className="ml-2">
+                {hasPages &&
+                  node.pages.map((page) => (
+                    <PageComponent
+                      key={page.id}
+                      page={{
+                        id: page.id,
+                        title: page.title,
+                        folder_id: page.folder_id,
+                        primary_tag_id: page.primary_tag_id,
+                      }}
+                      level={level}
+                      currentPageId={currentPageId}
+                      onMovePageClick={(pageId, title) => {
+                        setSelectedPage({
+                          id: pageId,
+                          title,
+                          folder_id: page.folder_id,
+                          primary_tag_id: page.primary_tag_id,
+                        });
+                        setShowMoveDialog(true);
+                      }}
+                      handleItemClick={handleItemClick}
+                    />
+                  ))}
+                {/* First render folders */}
+                {hasFolders &&
+                  node.folders.map((folder) => (
+                    <FolderComponent
+                      key={folder.id}
+                      folder={folder}
+                      level={level}
+                      parentTagId={node.id}
+                      expandedFolders={expandedFolders}
+                      handleFolderToggle={handleFolderToggle}
+                      handleItemClick={handleItemClick}
+                      currentPageId={currentPageId}
+                      onMovePageClick={(pageId, title) => {
+                        setSelectedPage({
+                          id: pageId,
+                          title,
+                          folder_id: folder.id,
+                          primary_tag_id: node.id,
+                        });
+                        setShowMoveDialog(true);
+                      }}
+                      onCreatePageInFolder={handleCreatePageInFolder}
+                      onCreateSubfolder={handleCreateSubfolder}
+                      isLoading={isLoading}
+                    />
+                  ))}
+
+                {/* Finally render child tags */}
                 {hasChildren &&
-                  node.children!.map((child, index) => (
+                  node.children.map((child) => (
                     <TreeNode
                       key={child.id}
                       node={child}
@@ -301,69 +549,11 @@ const TreeNode: React.FC<{
                       userId={userId}
                     />
                   ))}
-                {hasPages &&
-                  node.pages.map((page) => (
-                    <ContextMenu key={page.id}>
-                      <ContextMenuTrigger>
-                        <Link
-                          href={`/workspace/${page.id}`}
-                          onClick={(e) =>
-                            handleItemClick(e, page.id, page.title)
-                          }
-                          className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                            hasCurrentPage
-                              ? "bg-gray-50/80 dark:bg-gray-700/30"
-                              : ""
-                          }`}
-                          style={{ paddingLeft: `${(level + 1) * 16}px` }}
-                        >
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {page.title}
-                          </span>
-                        </Link>
-                      </ContextMenuTrigger>
-                      <ContextMenuContent className="w-64">
-                        <ContextMenuItem
-                          onSelect={() => {
-                            setSelectedPage({ id: page.id, title: page.title });
-                            setShowMoveDialog(true);
-                          }}
-                        >
-                          <Replace className="mr-2 h-4 w-4" />
-                          <span>Move to</span>
-                        </ContextMenuItem>
-                        <ContextMenuItem
-                          onSelect={async () => {
-                            try {
-                              const [pageResult, tabResult] = await Promise.all(
-                                [
-                                  deletePage({ id: page.id }),
-                                  deleteTabMatchingPageTitle(page.title),
-                                ],
-                              );
-
-                              if (!pageResult.success || !tabResult.success) {
-                                toast.error(
-                                  "Failed to delete page and associated tabs",
-                                );
-                                return;
-                              }
-                            } catch (error) {
-                              console.error("Error deleting page:", error);
-                            }
-                          }}
-                          className="text-red-600"
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          <span>Delete page</span>
-                        </ContextMenuItem>
-                      </ContextMenuContent>
-                    </ContextMenu>
-                  ))}
               </div>
             )}
           </div>
         </ContextMenuTrigger>
+        {/* Context menu for tags */}
         <ContextMenuContent className="w-64">
           <ContextMenuItem
             onSelect={() => handleCreatePage("page")}
@@ -380,6 +570,13 @@ const TreeNode: React.FC<{
           >
             <PanelTop className="mr-2 h-4 w-4" />
             <span>{isLoading ? "Creating..." : "Create canvas"}</span>
+          </ContextMenuItem>
+          <ContextMenuItem
+            onSelect={() => handleCreateFolder()}
+            disabled={isLoading}
+          >
+            <FolderPlus className="mr-2 h-4 w-4" />
+            <span>Create folder</span>
           </ContextMenuItem>
           <ContextMenuItem onSelect={handleDeleteTag} className="text-red-600">
             <Trash className="mr-2 h-4 w-4" />
@@ -398,9 +595,9 @@ const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="custom-scrollbar h-screen overflow-y-auto p-4">
-        {data.map((node, index) => (
+        {data.map((node) => (
           <TreeNode
-            key={index}
+            key={node.id}
             node={node}
             level={0}
             allTags={data}

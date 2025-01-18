@@ -117,20 +117,32 @@ export async function movePagesBetweenTags(input: MovePagesInput) {
     }
 
     // 3. Update the page's tag_id
-    const [updatedPage] = await db
-      .update(pages)
-      .set({
-        primary_tag_id: newTagId,
-        updated_at: new Date(),
-      })
-      .where(eq(pages.id, pageId))
-      .returning();
+    return await db.transaction(async (tx) => {
+      const [updatedPage] = await tx
+        .update(pages)
+        .set({
+          primary_tag_id: newTagId,
+          folder_id: null,
+          updated_at: new Date(),
+        })
+        .where(eq(pages.id, pageId))
+        .returning();
 
-    revalidatePath("/workspace");
-    return {
-      success: true,
-      page: updatedPage,
-    };
+      await tx
+        .insert(pages_tags)
+        .values({
+          page_id: pageId,
+          tag_id: newTagId,
+        })
+        .onConflictDoNothing();
+
+      revalidatePath("/workspace");
+
+      return {
+        success: true,
+        page: updatedPage,
+      };
+    });
   } catch (error) {
     console.error("Error moving page:", error);
     return { success: false, error: "Failed to move page" };
