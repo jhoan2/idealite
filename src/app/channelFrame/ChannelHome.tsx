@@ -67,27 +67,24 @@ export default function ChannelHome({
 
   useEffect(() => {
     const load = async () => {
-      setContext(await sdk.context);
+      const frameContext = await sdk.context;
+      setContext(frameContext);
+
+      if (frameContext?.user) {
+        posthog.capture("frame_loaded", {
+          fid: frameContext.user.fid,
+          username: frameContext.user.username,
+          displayName: frameContext.user.displayName,
+        });
+      }
+
       sdk.actions.ready();
     };
-    if (context) {
-      posthog.register({
-        fid: context.user?.fid,
-        username: context.user?.username,
-        displayName: context.user?.displayName,
-        authStatus: status,
-      });
-    }
+
     if (sdk && !isSDKLoaded) {
       setIsSDKLoaded(true);
       load();
     }
-    return () => {
-      posthog.unregister("fid");
-      posthog.unregister("username");
-      posthog.unregister("displayName");
-      posthog.unregister("authStatus");
-    };
   }, [isSDKLoaded]);
 
   if (!isSDKLoaded) {
