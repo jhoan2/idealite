@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import ChannelFrameTags from "./ChannelFrameTags";
 import { toast } from "sonner";
 import { SelectTag } from "~/server/queries/tag";
+import posthog from "posthog-js";
 
 interface ExploreStateProps {
   tag: SelectTag[];
@@ -67,24 +68,11 @@ export default function ChannelHome({
     const load = async () => {
       const frameContext = await sdk.context;
       sdk.actions.ready();
-      try {
-        await fetch("/api/analytics/channelFrame", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            distinctId: frameContext?.user?.fid,
-            event: "channel_home_viewed",
-            properties: {
-              displayName: frameContext?.user?.displayName,
-              username: frameContext?.user?.username,
-            },
-          }),
-        });
-      } catch (error) {
-        console.error("Failed to track analytics:", error);
-      }
+      posthog.capture("channel_home_viewed", {
+        distinctId: frameContext?.user?.fid,
+        displayName: frameContext?.user?.displayName,
+        username: frameContext?.user?.username,
+      });
     };
 
     if (sdk && !isSDKLoaded) {
