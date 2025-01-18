@@ -6,7 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Focus from "@tiptap/extension-focus";
 import { useDebouncedCallback } from "use-debounce";
 import { toast } from "sonner";
-import { TreeTag } from "~/server/queries/usersTags";
+import { TreeFolder, TreeTag } from "~/server/queries/usersTags";
 import { updatePage } from "~/server/actions/page";
 import { updateTabTitle } from "~/server/actions/tabs";
 import { useSearchParams } from "next/navigation";
@@ -19,14 +19,36 @@ interface HeadingEditorProps {
   onSavingStateChange: (isSaving: boolean) => void;
 }
 
+// Helper function to search through folder
+function searchFolderForPage(folder: TreeFolder, pageId: string): boolean {
+  // Check pages in current folder
+  if (folder.pages?.some((page) => page.id === pageId)) {
+    return true;
+  }
+
+  return false;
+}
+
 function findTagContainingPage(
   tree: TreeTag[],
   pageId: string,
 ): TreeTag | null {
   for (const tag of tree) {
-    // Check pages in current tag
+    // Check pages directly in tag
     if (tag.pages?.some((page) => page.id === pageId)) {
       return tag;
+    }
+
+    // Check pages in folders
+    if (tag.folders) {
+      const hasPageInFolders = tag.folders.some((folder) => {
+        const hasPage = searchFolderForPage(folder, pageId);
+        return hasPage;
+      });
+
+      if (hasPageInFolders) {
+        return tag;
+      }
     }
 
     // Check children tags
@@ -38,16 +60,59 @@ function findTagContainingPage(
   return null;
 }
 
-function isTitleUniqueInTag(
-  tag: TreeTag,
+function findContainingFolder(
+  tree: TreeTag[],
+  pageId: string,
+): { folder: TreeFolder | null; tag: TreeTag | null } {
+  for (const tag of tree) {
+    // Check immediate folders in current tag
+    if (tag.folders) {
+      const folder = tag.folders.find((folder) =>
+        folder.pages?.some((page) => page.id === pageId),
+      );
+
+      if (folder) {
+        return { folder, tag };
+      }
+    }
+
+    // Check children tags
+    if (tag.children?.length) {
+      const result = findContainingFolder(tag.children, pageId);
+      if (result.folder) {
+        return result;
+      }
+    }
+  }
+  return { folder: null, tag: null };
+}
+
+// Simplified check that only looks at immediate container
+function isTitleUniqueInContext(
+  folder: TreeFolder | null,
+  tag: TreeTag | null,
   newTitle: string,
   currentPageId: string,
 ): boolean {
-  return !tag.pages?.some(
-    (page) =>
-      page.id !== currentPageId &&
-      page.title.toLowerCase() === newTitle.toLowerCase(),
-  );
+  if (folder) {
+    // Only check pages in the immediate folder
+    return !folder.pages?.some(
+      (page) =>
+        page.id !== currentPageId &&
+        page.title.toLowerCase() === newTitle.toLowerCase(),
+    );
+  }
+
+  if (tag) {
+    // Only check direct pages in tag (already working this way)
+    return !tag.pages?.some(
+      (page) =>
+        page.id !== currentPageId &&
+        page.title.toLowerCase() === newTitle.toLowerCase(),
+    );
+  }
+
+  return true;
 }
 
 function hasInvalidCharacters(title: string): {
@@ -78,29 +143,42 @@ const HeadingEditor = ({
 
   const debouncedSave = useDebouncedCallback(async (newTitle: string) => {
     onSavingStateChange(true);
+
     if (!newTitle.trim()) {
       return;
     }
 
     try {
+      // Check for invalid characters
       const { isValid } = hasInvalidCharacters(newTitle);
       if (!isValid) {
         toast.error(`Title cannot contain the characters: " / \\ * < > : | ?`);
         return;
       }
-      // Find which tag contains this page
-      const containingTag = findTagContainingPage(userTagTree, pageId);
+
+      // Find containing folder and tag
+      const { folder, tag } = findContainingFolder(userTagTree, pageId);
+
+      // If not in a folder, find the containing tag directly
+      const containingTag = folder
+        ? tag
+        : findTagContainingPage(userTagTree, pageId);
 
       if (!containingTag) {
         throw new Error("Page not found in any tag");
       }
 
-      // Check if the title is unique within the tag
-      if (!isTitleUniqueInTag(containingTag, newTitle, pageId)) {
-        toast.error("A page with this title already exists in this tag");
+      // Check for title uniqueness in the immediate context
+      if (!isTitleUniqueInContext(folder, containingTag, newTitle, pageId)) {
+        toast.error(
+          folder
+            ? "A page with this title already exists in this folder"
+            : "A page with this title already exists in this tag",
+        );
         return;
       }
 
+      // Update the page and tab
       const [updatedPage] = await Promise.all([
         updatePage(pageId, { title: newTitle }),
         updateTabTitle(tabId, newTitle),
