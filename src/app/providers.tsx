@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { useNeynarContext } from "@neynar/react";
 import dynamic from "next/dynamic";
 
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
     api_host: "/ingest",
     ui_host: "https://app.posthog.com",
