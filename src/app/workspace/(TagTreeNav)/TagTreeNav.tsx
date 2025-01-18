@@ -18,7 +18,7 @@ import {
 import type { TreeFolder, TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
 import { deleteTag } from "~/server/actions/usersTags";
-import { createPage } from "~/server/actions/page";
+import { createPage, movePage } from "~/server/actions/page";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -121,6 +121,8 @@ const TreeNode: React.FC<{
   const [selectedPage, setSelectedPage] = useState<{
     id: string;
     title: string;
+    folder_id: string | null;
+    primary_tag_id: string | null;
   } | null>(null);
   const [isExpanded, setIsExpanded] = useState(!node.is_collapsed);
   const router = useRouter();
@@ -132,7 +134,6 @@ const TreeNode: React.FC<{
       node.folders?.filter((f) => !f.is_collapsed).map((f) => f.id) ?? [],
     ),
   );
-
   const handleItemClick = async (
     e: React.MouseEvent,
     pageId: string,
@@ -256,31 +257,6 @@ const TreeNode: React.FC<{
       toast.error("Failed to delete tag");
     } finally {
       setShowDeleteAlert(false);
-    }
-  };
-
-  const handleMovePage = async (destinationTagId: string) => {
-    if (!selectedPage) return;
-
-    setIsLoading(true);
-    try {
-      const result = await movePagesBetweenTags({
-        pageId: selectedPage.id,
-        newTagId: destinationTagId,
-      });
-
-      if (!result.success) {
-        const errorMessage =
-          "error" in result ? result.error : "Failed to move page";
-        throw new Error(errorMessage);
-      }
-
-      toast.success(`Successfully moved "${selectedPage.title}"`);
-    } catch (error) {
-      console.error("Error moving page:", error);
-      toast.error("Failed to move page");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -416,6 +392,35 @@ const TreeNode: React.FC<{
     }
   };
 
+  const handleMovePage = async (destinationId: string) => {
+    if (!selectedPage) return;
+
+    setIsLoading(true);
+    try {
+      const result = await movePage({
+        pageId: selectedPage.id,
+        destinationId: destinationId,
+      });
+
+      if (!result.success) {
+        throw new Error(
+          "error" in result ? result.error : "Failed to move page",
+        );
+      }
+
+      setSelectedPage(null);
+      setShowMoveDialog(false);
+    } catch (error) {
+      console.error("Error moving page:", error);
+      // Handle both Error objects and string errors
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to move page";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
@@ -448,6 +453,8 @@ const TreeNode: React.FC<{
         }}
         tags={allTags}
         currentTagId={node.id}
+        currentFolderId={selectedPage?.folder_id ?? null}
+        primaryTagId={selectedPage?.primary_tag_id ?? null}
         onMove={handleMovePage}
         isLoading={isLoading}
       />
@@ -484,13 +491,20 @@ const TreeNode: React.FC<{
                   node.pages.map((page) => (
                     <PageComponent
                       key={page.id}
-                      page={page}
+                      page={{
+                        id: page.id,
+                        title: page.title,
+                        folder_id: page.folder_id,
+                        primary_tag_id: page.primary_tag_id,
+                      }}
                       level={level}
                       currentPageId={currentPageId}
                       onMovePageClick={(pageId, title) => {
                         setSelectedPage({
                           id: pageId,
                           title,
+                          folder_id: page.folder_id,
+                          primary_tag_id: page.primary_tag_id,
                         });
                         setShowMoveDialog(true);
                       }}
@@ -513,6 +527,8 @@ const TreeNode: React.FC<{
                         setSelectedPage({
                           id: pageId,
                           title,
+                          folder_id: folder.id,
+                          primary_tag_id: node.id,
                         });
                         setShowMoveDialog(true);
                       }}

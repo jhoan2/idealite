@@ -17,6 +17,8 @@ export type InsertPage = typeof pages.$inferInsert;
 export interface TreePage {
   id: string;
   title: string | null;
+  primary_tag_id: string | null;
+  folder_id: string | null;
 }
 
 export interface TreeFolder {
@@ -25,6 +27,7 @@ export interface TreeFolder {
   is_collapsed: boolean;
   pages: Array<{ id: string; title: string }>;
   subFolders: TreeFolder[];
+  parent_folder_id: string | null;
 }
 
 export interface TreeTag {
@@ -33,7 +36,12 @@ export interface TreeTag {
   is_collapsed: boolean;
   children: TreeTag[];
   folders: TreeFolder[];
-  pages: Array<{ id: string; title: string }>;
+  pages: Array<{
+    id: string;
+    title: string;
+    folder_id: string | null;
+    primary_tag_id: string | null;
+  }>;
 }
 
 export async function getUserTags(userId: string): Promise<SelectTag[]> {
@@ -105,14 +113,33 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       name: string;
       is_collapsed: boolean | null;
       parent_folder_id: string | null;
-      pages: Array<{ id: string; title: string }>;
+      pages: Array<{
+        id: string;
+        title: string;
+        folder_id: string | null;
+        primary_tag_id: string | null;
+      }>;
     }>
   >();
 
-  const pagesByFolder = new Map<string, Array<{ id: string; title: string }>>();
+  const pagesByFolder = new Map<
+    string,
+    Array<{
+      id: string;
+      title: string;
+      folder_id: string | null;
+      primary_tag_id: string | null;
+    }>
+  >();
+
   const unfolderedPagesByTag = new Map<
     string,
-    Array<{ id: string; title: string }>
+    Array<{
+      id: string;
+      title: string;
+      folder_id: string | null;
+      primary_tag_id: string | null;
+    }>
   >();
 
   // Organize pages by folder and tag
@@ -124,6 +151,8 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       pagesByFolder.get(page.folder_id)?.push({
         id: page.id,
         title: page.title,
+        folder_id: page.folder_id,
+        primary_tag_id: page.primary_tag_id,
       });
     } else if (page.primary_tag_id) {
       if (!unfolderedPagesByTag.has(page.primary_tag_id)) {
@@ -132,6 +161,8 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       unfolderedPagesByTag.get(page.primary_tag_id)?.push({
         id: page.id,
         title: page.title,
+        folder_id: page.folder_id,
+        primary_tag_id: page.primary_tag_id,
       });
     }
   });
@@ -171,6 +202,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       is_collapsed: folder.is_collapsed ?? false,
       pages: folder.pages,
       subFolders: buildFolderTree(folders, folder.id),
+      parent_folder_id: folder.parent_folder_id,
     }));
   }
 

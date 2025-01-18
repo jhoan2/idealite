@@ -17,10 +17,17 @@ interface PageComponentProps {
   page: {
     id: string;
     title: string;
+    folder_id: string | null;
+    primary_tag_id: string | null;
   };
   level: number;
   currentPageId: string | undefined;
-  onMovePageClick: (pageId: string, title: string) => void;
+  onMovePageClick: (
+    pageId: string,
+    title: string,
+    folder_id: string | null,
+    primary_tag_id: string | null,
+  ) => void;
   handleItemClick: (
     e: React.MouseEvent,
     pageId: string,
@@ -52,7 +59,16 @@ export const PageComponent: React.FC<PageComponentProps> = ({
         </Link>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-64">
-        <ContextMenuItem onSelect={() => onMovePageClick(page.id, page.title)}>
+        <ContextMenuItem
+          onSelect={() => {
+            onMovePageClick(
+              page.id,
+              page.title,
+              page.folder_id,
+              page.primary_tag_id,
+            );
+          }}
+        >
           <Replace className="mr-2 h-4 w-4" />
           <span>Move to</span>
         </ContextMenuItem>
