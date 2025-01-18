@@ -74,10 +74,12 @@ export default function ChannelHome({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            distinctId: frameContext?.user?.fid,
             event: "channel_home_viewed",
-            fid: frameContext?.user?.fid,
-            displayName: frameContext?.user?.displayName,
-            username: frameContext?.user?.username,
+            properties: {
+              displayName: frameContext?.user?.displayName,
+              username: frameContext?.user?.username,
+            },
           }),
         });
       } catch (error) {
