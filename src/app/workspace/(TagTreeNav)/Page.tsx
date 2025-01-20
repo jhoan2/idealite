@@ -12,6 +12,7 @@ import {
 import { deletePage } from "~/server/actions/page";
 import { deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface PageComponentProps {
   page: {
@@ -43,6 +44,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
   onMovePageClick,
   handleItemClick,
 }) => {
+  const router = useRouter();
   return (
     <ContextMenu>
       <ContextMenuTrigger>
@@ -89,6 +91,10 @@ export const PageComponent: React.FC<PageComponentProps> = ({
               if (!pageResult.success || !tabResult.success) {
                 toast.error("Failed to delete page and associated tabs");
                 return;
+              }
+
+              if (currentPageId && page.id === currentPageId) {
+                router.push("/workspace");
               }
             } catch (error) {
               console.error("Error deleting page:", error);
