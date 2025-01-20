@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trash, Replace } from "lucide-react";
+import { Trash, Replace, StickyNote, PanelTop } from "lucide-react";
 import Link from "next/link";
 import {
   ContextMenu,
@@ -19,6 +19,7 @@ interface PageComponentProps {
     title: string;
     folder_id: string | null;
     primary_tag_id: string | null;
+    content_type: "page" | "canvas";
   };
   level: number;
   currentPageId: string | undefined;
@@ -53,6 +54,11 @@ export const PageComponent: React.FC<PageComponentProps> = ({
           }`}
           style={{ paddingLeft: `${(level + 1) * 16}px` }}
         >
+          {page.content_type === "canvas" ? (
+            <PanelTop className="mr-2 h-4 w-4 text-gray-400" />
+          ) : (
+            <StickyNote className="mr-2 h-4 w-4 text-gray-400" />
+          )}
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {page.title}
           </span>

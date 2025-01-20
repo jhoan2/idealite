@@ -496,6 +496,7 @@ const TreeNode: React.FC<{
                         title: page.title,
                         folder_id: page.folder_id,
                         primary_tag_id: page.primary_tag_id,
+                        content_type: page.content_type,
                       }}
                       level={level}
                       currentPageId={currentPageId}

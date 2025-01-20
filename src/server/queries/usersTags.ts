@@ -19,6 +19,7 @@ export interface TreePage {
   title: string | null;
   primary_tag_id: string | null;
   folder_id: string | null;
+  content_type: "page" | "canvas";
 }
 
 export interface TreeFolder {
@@ -41,6 +42,7 @@ export interface TreeTag {
     title: string;
     folder_id: string | null;
     primary_tag_id: string | null;
+    content_type: "page" | "canvas";
   }>;
 }
 
@@ -100,6 +102,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       title: pages.title,
       primary_tag_id: pages.primary_tag_id,
       folder_id: pages.folder_id,
+      content_type: pages.content_type,
     })
     .from(pages)
     .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
@@ -129,6 +132,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       title: string;
       folder_id: string | null;
       primary_tag_id: string | null;
+      content_type: "page" | "canvas";
     }>
   >();
 
@@ -139,6 +143,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       title: string;
       folder_id: string | null;
       primary_tag_id: string | null;
+      content_type: "page" | "canvas";
     }>
   >();
 
@@ -153,6 +158,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         title: page.title,
         folder_id: page.folder_id,
         primary_tag_id: page.primary_tag_id,
+        content_type: page.content_type,
       });
     } else if (page.primary_tag_id) {
       if (!unfolderedPagesByTag.has(page.primary_tag_id)) {
@@ -163,6 +169,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         title: page.title,
         folder_id: page.folder_id,
         primary_tag_id: page.primary_tag_id,
+        content_type: page.content_type,
       });
     }
   });
