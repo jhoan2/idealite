@@ -9,7 +9,7 @@ import {
   users_pages,
   folders,
 } from "~/server/db/schema";
-import { eq, and, exists, or } from "drizzle-orm";
+import { eq, and, exists, or, sql } from "drizzle-orm";
 import { auth } from "~/app/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
@@ -489,6 +489,52 @@ export async function movePage(input: z.infer<typeof movePageSchema>) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to move page",
+    };
+  }
+}
+
+const searchPagesSchema = z.object({
+  query: z.string().min(1),
+});
+
+export async function searchPages(query: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+
+    const { query: validatedQuery } = searchPagesSchema.parse({ query });
+
+    // Get all pages the user has access to with full-text search
+    const searchResults = await db
+      .select({
+        id: pages.id,
+        title: pages.title,
+        content: pages.content,
+        updated_at: pages.updated_at,
+        content_type: pages.content_type,
+      })
+      .from(pages)
+      .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
+      .where(
+        and(
+          eq(users_pages.user_id, session.user.id),
+          eq(pages.deleted, false),
+          sql`to_tsvector('english', ${pages.title}) @@ plainto_tsquery('english', ${validatedQuery})`,
+        ),
+      )
+      .orderBy(pages.updated_at);
+
+    return {
+      success: true,
+      data: searchResults,
+    };
+  } catch (error) {
+    console.error("Error searching pages:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to search pages",
     };
   }
 }
