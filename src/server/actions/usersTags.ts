@@ -218,7 +218,7 @@ export async function updateUserTags({
         );
       }
     });
-
+    revalidatePath("/workspace");
     return { success: true };
   } catch (error) {
     console.error("Error updating user tags:", error);
