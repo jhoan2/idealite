@@ -134,6 +134,10 @@ export const pages = createTable(
       primary_tag_id_idx: index("page_primary_tag_id_idx").on(
         table.primary_tag_id,
       ),
+      title_search_idx: index("page_title_search_idx").using(
+        "gin",
+        sql`to_tsvector('english', ${table.title})`,
+      ),
     };
   },
 );
