@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { inviteToChannel, checkIfMember } from "~/server/farcaster";
-import { trackEvent } from "~/lib/posthog/client";
+import { trackEvent } from "~/lib/posthog/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -34,9 +34,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: response.message }, { status: 500 });
     }
 
-    trackEvent("channel_joined", {
-      fid: fid,
-    });
+    trackEvent(Number(fid), "channel_joined", {});
 
     return NextResponse.json({ success: true, data: response });
   } catch (err) {
