@@ -25,7 +25,6 @@ export default function NeynarProvider({
               username: user.username,
               display_name: user.display_name,
               bio: user.profile?.bio?.text,
-              signer_uuid: user.signer_uuid,
             });
           },
           onSignout: () => {
