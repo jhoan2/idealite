@@ -17,7 +17,7 @@ export default async function Image() {
         tw="h-full w-full flex flex-col justify-center items-center relative"
         style={{
           backgroundImage:
-            "url(https://gateway.pinata.cloud/ipfs/bafkreifcxtpzwappwtqn4lp2kupefzcqh4szk7kluky4abg6ywaew4chyy)",
+            "url(https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreifcxtpzwappwtqn4lp2kupefzcqh4szk7kluky4abg6ywaew4chyy)",
           backgroundSize: "cover",
           backgroundPosition: "100% 140%",
         }}
