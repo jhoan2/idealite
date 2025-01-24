@@ -4,18 +4,20 @@ import { useEffect, useState } from "react";
 import sdk, { FrameNotificationDetails } from "@farcaster/frame-sdk";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import SignInWithFarcaster from "./SignInWithFarcaster";
 import { Button } from "~/components/ui/button";
 import ChannelFrameTags from "./ChannelFrameTags";
 import { toast } from "sonner";
 import { SelectTag } from "~/server/queries/tag";
 import posthog from "posthog-js";
+import { Session } from "next-auth";
+import Onboarding from "./Onboarding";
 
 interface ExploreStateProps {
   tag: SelectTag[];
   userTags: SelectTag[];
   userId: string | null;
   isMember: boolean;
+  session: Session | null;
 }
 
 export type SafeAreaInsets = {
@@ -50,6 +52,9 @@ export default function ChannelHome({
 }: ExploreStateProps) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const { data: session, status } = useSession();
+  const [isOnboarding, setIsOnboarding] = useState(
+    !session || userTags.length === 0,
+  );
 
   const handleJoinChannel = async () => {
     const response = await fetch("/api/channelMembership", {
@@ -85,6 +90,21 @@ export default function ChannelHome({
     return <div>Loading...</div>;
   }
 
+  if (!isOnboarding && (!session || userTags.length === 0)) {
+    setIsOnboarding(true);
+  }
+
+  if (isOnboarding) {
+    return (
+      <Onboarding
+        tag={tag}
+        userTags={userTags}
+        userId={userId}
+        onComplete={() => setIsOnboarding(false)}
+      />
+    );
+  }
+
   return (
     <>
       <nav className="border-b">
@@ -99,19 +119,12 @@ export default function ChannelHome({
             <h1 className="text-xl font-semibold text-amber-400">Idealite</h1>
           </div>
           <div className="flex space-x-2">
-            <SignInWithFarcaster status={status} />
             {!isMember && status === "authenticated" && (
               <Button onClick={handleJoinChannel}>Join Channel</Button>
             )}
           </div>
         </div>
       </nav>
-      <ChannelFrameTags
-        tag={tag}
-        userTags={userTags}
-        userId={userId}
-        status={status}
-      />
     </>
   );
 }
