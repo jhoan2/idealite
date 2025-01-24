@@ -35,6 +35,7 @@ export interface TreeTag {
   id: string;
   name: string;
   is_collapsed: boolean;
+  is_archived: boolean;
   children: TreeTag[];
   folders: TreeFolder[];
   pages: Array<{
@@ -52,7 +53,9 @@ export async function getUserTags(userId: string): Promise<SelectTag[]> {
     SELECT t.*
     FROM ${tags} t
     JOIN ${users_tags} ut ON t.id = ut.tag_id
-    WHERE ut.user_id = ${userId} AND NOT t.deleted
+    WHERE ut.user_id = ${userId} 
+      AND NOT t.deleted 
+      AND NOT ut.is_archived
     ORDER BY t.name
   `;
 
@@ -71,10 +74,17 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       name: tags.name,
       parent_id: tags.parent_id,
       is_collapsed: users_tags.is_collapsed,
+      is_archived: users_tags.is_archived,
     })
     .from(tags)
     .innerJoin(users_tags, eq(users_tags.tag_id, tags.id))
-    .where(and(eq(users_tags.user_id, userId), eq(tags.deleted, false)));
+    .where(
+      and(
+        eq(users_tags.user_id, userId),
+        eq(tags.deleted, false),
+        eq(users_tags.is_archived, false),
+      ),
+    );
 
   // 2. Get all folders
   const userFolders = await db
@@ -224,6 +234,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         id: tag.id,
         name: tag.name,
         is_collapsed: tag.is_collapsed,
+        is_archived: tag.is_archived,
         children: buildTagTree(tag.id),
         folders,
         pages,

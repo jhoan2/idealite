@@ -1,16 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronRight, ChevronDown, Trash, Save } from "lucide-react";
+import { ChevronRight, ChevronDown, Archive } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import { Button } from "~/components/ui/button";
-import type { TreeNode } from "./buildUserTagTree";
-import type { SelectTag } from "~/server/queries/tag";
+import { toggleTagArchived } from "~/server/actions/usersTags";
+import { toast } from "sonner";
 
 interface ExploreTagTreeProps {
   tagTree: {
@@ -19,16 +18,12 @@ interface ExploreTagTreeProps {
     children: {
       id: string;
       name: string;
-      children: TreeNode[];
+      children: TreeNodeData[];
       parent_id: string | null;
     }[];
     parent_id: string | null;
   }[];
-  flatUserTags: SelectTag[];
-  setFlatUserTags: (tags: SelectTag[]) => void;
-  hasChanged: boolean;
-  handleSaveChanges: () => void;
-  isSaving: boolean;
+  userId: string | undefined;
 }
 
 interface TreeNodeData {
@@ -36,40 +31,36 @@ interface TreeNodeData {
   name: string;
   children?: TreeNodeData[];
   isInBoth?: boolean;
+  is_archived?: boolean;
 }
 
 interface TreeProps {
   data: TreeNodeData;
-  flatUserTags: SelectTag[];
-  setFlatUserTags: (tags: SelectTag[]) => void;
-  hasChanged: boolean;
-  handleSaveChanges: () => void;
-  isSaving: boolean;
+  userId: string | undefined;
 }
 
 const TreeNode: React.FC<{
   node: TreeNodeData;
   level: number;
-  flatUserTags: SelectTag[];
-  setFlatUserTags: (tags: SelectTag[]) => void;
-  hasChanged: boolean;
-  handleSaveChanges: () => void;
-  isSaving: boolean;
-}> = ({
-  node,
-  level,
-  flatUserTags,
-  setFlatUserTags,
-  hasChanged,
-  handleSaveChanges,
-  isSaving,
-}) => {
+  userId: string | undefined;
+}> = ({ node, level, userId }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
 
-  const handleDelete = (id: string) => {
-    const updatedTags = flatUserTags.filter((tag) => tag.id !== id);
-    setFlatUserTags(updatedTags);
+  const handleArchive = async (id: string) => {
+    try {
+      const result = await toggleTagArchived({
+        tagId: id,
+        isArchived: true,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to archive tag");
+      }
+    } catch (error) {
+      console.error("Error archiving tag:", error);
+      toast.error("Failed to archive tag");
+    }
   };
 
   return (
@@ -105,63 +96,29 @@ const TreeNode: React.FC<{
                   key={index}
                   node={child}
                   level={level + 1}
-                  flatUserTags={flatUserTags}
-                  setFlatUserTags={setFlatUserTags}
-                  hasChanged={hasChanged}
-                  handleSaveChanges={handleSaveChanges}
-                  isSaving={isSaving}
+                  userId={userId}
                 />
               ))}
             </div>
           )}
         </div>
       </ContextMenuTrigger>
+
       <ContextMenuContent className="w-64">
-        <ContextMenuItem
-          onSelect={() => handleDelete(node.id)}
-          className="text-red-600"
-        >
-          <Trash className="mr-2 h-4 w-4" />
-          <span>Delete</span>
+        <ContextMenuItem onSelect={() => handleArchive(node.id)}>
+          <Archive className="mr-2 h-4 w-4" />
+          <span>Archive</span>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );
 };
 
-const MinimalistTree: React.FC<TreeProps> = ({
-  data,
-  flatUserTags,
-  setFlatUserTags,
-  hasChanged,
-  handleSaveChanges,
-  isSaving,
-}) => {
+const MinimalistTree: React.FC<TreeProps> = ({ data, userId }) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      {hasChanged && (
-        <div className="mt-4 flex justify-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSaveChanges}
-            disabled={isSaving}
-          >
-            {!isSaving && <Save className="mr-2 h-4 w-4" />}
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-        </div>
-      )}
       <div className="custom-scrollbar h-screen overflow-y-auto p-4">
-        <TreeNode
-          node={data}
-          level={0}
-          flatUserTags={flatUserTags}
-          setFlatUserTags={setFlatUserTags}
-          hasChanged={hasChanged}
-          handleSaveChanges={handleSaveChanges}
-          isSaving={isSaving}
-        />
+        <TreeNode node={data} level={0} userId={userId} />
       </div>
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -194,21 +151,8 @@ const MinimalistTree: React.FC<TreeProps> = ({
 
 export default function ExploreTagTree({
   tagTree,
-  flatUserTags,
-  setFlatUserTags,
-  hasChanged,
-  handleSaveChanges,
-  isSaving,
+  userId,
 }: ExploreTagTreeProps) {
   const data: TreeNodeData = tagTree[0] || { id: "", name: "" };
-  return (
-    <MinimalistTree
-      data={data}
-      flatUserTags={flatUserTags}
-      setFlatUserTags={setFlatUserTags}
-      hasChanged={hasChanged}
-      handleSaveChanges={handleSaveChanges}
-      isSaving={isSaving}
-    />
-  );
+  return <MinimalistTree data={data} userId={userId} />;
 }

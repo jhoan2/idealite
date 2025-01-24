@@ -187,21 +187,45 @@ export async function updateUserTags({
   const session = await auth();
 
   if (!session?.user?.id) {
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
+    return { success: false, error: "Unauthorized" };
   }
 
   try {
     await db.transaction(async (tx) => {
       if (addedTags.length > 0) {
-        await tx.insert(users_tags).values(
-          addedTags.map((tag) => ({
-            user_id: userId,
-            tag_id: typeof tag === "string" ? tag : tag.id,
-          })),
-        );
+        for (const tag of addedTags) {
+          // Check if relation exists but is archived
+          const existingRelation = await tx
+            .select()
+            .from(users_tags)
+            .where(
+              and(
+                eq(users_tags.user_id, userId),
+                eq(users_tags.tag_id, typeof tag === "string" ? tag : tag.id),
+              ),
+            )
+            .limit(1);
+
+          if (existingRelation.length > 0) {
+            // Update existing relation to unarchive
+            await tx
+              .update(users_tags)
+              .set({ is_archived: false })
+              .where(
+                and(
+                  eq(users_tags.user_id, userId),
+                  eq(users_tags.tag_id, typeof tag === "string" ? tag : tag.id),
+                ),
+              );
+          } else {
+            // Create new relation
+            await tx.insert(users_tags).values({
+              user_id: userId,
+              tag_id: typeof tag === "string" ? tag : tag.id,
+              is_archived: false,
+            });
+          }
+        }
       }
 
       if (removedTags.length > 0) {
@@ -218,10 +242,79 @@ export async function updateUserTags({
         );
       }
     });
+
     revalidatePath("/workspace");
+    revalidatePath("/explore");
     return { success: true };
   } catch (error) {
     console.error("Error updating user tags:", error);
     return { success: false, error: "Failed to update user tags" };
+  }
+}
+
+export async function toggleTagArchived({
+  tagId,
+  isArchived,
+}: {
+  tagId: string;
+  isArchived: boolean;
+}) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
+
+  try {
+    await db
+      .update(users_tags)
+      .set({ is_archived: isArchived })
+      .where(
+        and(
+          eq(users_tags.tag_id, tagId),
+          eq(users_tags.user_id, session.user.id),
+        ),
+      );
+
+    revalidatePath("/workspace");
+    revalidatePath("/explore");
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling tag archive state:", error);
+    return { success: false, error: "Failed to update archive state" };
+  }
+}
+
+export async function addUserTag(tagId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    await db
+      .insert(users_tags)
+      .values({
+        user_id: session.user.id,
+        tag_id: tagId,
+        is_archived: false,
+        is_collapsed: false,
+      })
+      .onConflictDoUpdate({
+        target: [users_tags.user_id, users_tags.tag_id],
+        set: {
+          is_archived: false,
+        },
+      });
+
+    revalidatePath("/workspace");
+    revalidatePath("/explore");
+    return { success: true };
+  } catch (error) {
+    console.error("Error adding tag:", error);
+    return { success: false, error: "Failed to add tag" };
   }
 }

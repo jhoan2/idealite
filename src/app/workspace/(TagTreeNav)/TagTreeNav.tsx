@@ -4,10 +4,10 @@ import React, { useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
-  Trash,
   StickyNote,
   PanelTop,
   FolderPlus,
+  Archive,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -17,20 +17,9 @@ import {
 } from "~/components/ui/context-menu";
 import type { TreeFolder, TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
-import { deleteTag } from "~/server/actions/usersTags";
+import { toggleTagArchived } from "~/server/actions/usersTags";
 import { createPage, movePage } from "~/server/actions/page";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "~/components/ui/alert-dialog";
-import { movePagesBetweenTags } from "~/server/actions/usersTags";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
 import { usePathname, useRouter } from "next/navigation";
 import { createTab } from "~/server/actions/tabs";
@@ -241,23 +230,8 @@ const TreeNode: React.FC<{
     return count;
   };
 
-  const handleDeleteTag = async () => {
-    setShowDeleteAlert(true);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      const result = await deleteTag({ id: node.id });
-      if (!result.success) {
-        toast.error("Failed to delete tag");
-        return;
-      }
-    } catch (error) {
-      console.error("Error deleting tag:", error);
-      toast.error("Failed to delete tag");
-    } finally {
-      setShowDeleteAlert(false);
-    }
+  const handleArchiveTag = async () => {
+    await toggleTagArchived({ tagId: node.id, isArchived: true });
   };
 
   const handleToggleExpand = async () => {
@@ -404,7 +378,7 @@ const TreeNode: React.FC<{
 
       if (!result.success) {
         throw new Error(
-          "error" in result ? result.error : "Failed to move page",
+          "error" in result ? String(result.error) : "Failed to move page",
         );
       }
 
@@ -423,26 +397,6 @@ const TreeNode: React.FC<{
 
   return (
     <>
-      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {node.pages.length === 0
-                ? "Are you sure you want to delete this tag?"
-                : `This will archive ${calculateOrphanedPages(node)} page${
-                    calculateOrphanedPages(node) === 1 ? "" : "s"
-                  }.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       <MoveToDialog
         open={showMoveDialog}
         onOpenChange={(isOpen: boolean) => {
@@ -579,9 +533,9 @@ const TreeNode: React.FC<{
             <FolderPlus className="mr-2 h-4 w-4" />
             <span>Create folder</span>
           </ContextMenuItem>
-          <ContextMenuItem onSelect={handleDeleteTag} className="text-red-600">
-            <Trash className="mr-2 h-4 w-4" />
-            <span>Delete tag</span>
+          <ContextMenuItem onSelect={handleArchiveTag}>
+            <Archive className="mr-2 h-4 w-4" />
+            <span>Archive tag</span>
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
