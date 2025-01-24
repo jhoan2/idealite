@@ -95,7 +95,7 @@ export default function Onboarding({
         {currentStep === "multiplayer" && (
           <Multiplayer goToNextStep={goToNextStep} />
         )}
-        {currentStep === "final" && <Final />}
+        {currentStep === "final" && <Final onComplete={onComplete} />}
       </div>
     </div>
   );
