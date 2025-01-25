@@ -66,7 +66,21 @@ export async function getUserTags(userId: string): Promise<SelectTag[]> {
   return userTags;
 }
 
+export async function ensureUserRootTag(userId: string) {
+  // Then ensure user has relation to root tag
+  await db
+    .insert(users_tags)
+    .values({
+      user_id: userId,
+      tag_id: process.env.ROOT_TAG_ID ?? "",
+      is_archived: false,
+      is_collapsed: false,
+    })
+    .onConflictDoNothing();
+}
+
 export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
+  await ensureUserRootTag(userId);
   // 1. Get all tags the user has access to
   const userTags = await db
     .select({
@@ -243,5 +257,6 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
   }
 
   const result = buildTagTree(null);
+  console.log(result, "result");
   return result;
 }
