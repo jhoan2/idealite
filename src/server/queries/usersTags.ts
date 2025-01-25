@@ -257,6 +257,5 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
   }
 
   const result = buildTagTree(null);
-  console.log(result, "result");
   return result;
 }
