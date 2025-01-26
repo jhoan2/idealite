@@ -8,6 +8,8 @@ import {
   PanelTop,
   FolderPlus,
   Archive,
+  FilePlus,
+  Palette,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -32,7 +34,7 @@ import {
 import { FolderComponent } from "./Folder";
 import { PageComponent } from "./Page";
 import { Button } from "~/components/ui/button";
-import PanelWithPlusIcon from "./PanelWithPlusIcon";
+import {
 
 interface TreeProps {
   data: TreeTag[];
@@ -687,7 +689,7 @@ export default function TagTreeNav({
               onClick={() => handleCreateRootPage("canvas")}
               disabled={isLoading}
             >
-              <PanelWithPlusIcon className="h-6 w-6" />
+              <Palette className="h-6 w-6" />
             </Button>
             <Button
               variant="ghost"
