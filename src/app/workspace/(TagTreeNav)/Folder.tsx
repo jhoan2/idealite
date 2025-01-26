@@ -18,7 +18,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import type { TreeFolder } from "~/server/queries/usersTags";
+import type { TreeFolder, TreePage, TreeTag } from "~/server/queries/usersTags";
 import { deleteFolder } from "~/server/actions/usersFolders";
 import { toast } from "sonner";
 import { PageComponent } from "./Page";

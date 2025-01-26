@@ -26,7 +26,7 @@ export interface TreeFolder {
   id: string;
   name: string;
   is_collapsed: boolean;
-  pages: Array<{ id: string; title: string }>;
+  pages: TreePage[];
   subFolders: TreeFolder[];
   parent_folder_id: string | null;
 }
@@ -38,13 +38,7 @@ export interface TreeTag {
   is_archived: boolean;
   children: TreeTag[];
   folders: TreeFolder[];
-  pages: Array<{
-    id: string;
-    title: string;
-    folder_id: string | null;
-    primary_tag_id: string | null;
-    content_type: "page" | "canvas";
-  }>;
+  pages: TreePage[];
 }
 
 export async function getUserTags(userId: string): Promise<SelectTag[]> {
@@ -231,7 +225,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       id: folder.id,
       name: folder.name,
       is_collapsed: folder.is_collapsed ?? false,
-      pages: folder.pages,
+      pages: folder.pages as TreePage[],
       subFolders: buildFolderTree(folders, folder.id),
       parent_folder_id: folder.parent_folder_id,
     }));

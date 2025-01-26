@@ -13,15 +13,10 @@ import { deletePage } from "~/server/actions/page";
 import { deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { TreePage, TreeFolder, TreeTag } from "~/server/queries/usersTags";
 
 interface PageComponentProps {
-  page: {
-    id: string;
-    title: string;
-    folder_id: string | null;
-    primary_tag_id: string | null;
-    content_type: "page" | "canvas";
-  };
+  page: TreePage;
   level: number;
   currentPageId: string | undefined;
   onMovePageClick: (
@@ -50,7 +45,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
       <ContextMenuTrigger>
         <Link
           href={`/workspace/${page.id}`}
-          onClick={(e) => handleItemClick(e, page.id, page.title)}
+          onClick={(e) => handleItemClick(e, page.id, page.title || "")}
           className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
             page.id === currentPageId ? "bg-gray-50/80 dark:bg-gray-700/30" : ""
           }`}
@@ -71,7 +66,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
           onSelect={() => {
             onMovePageClick(
               page.id,
-              page.title,
+              page.title || "",
               page.folder_id,
               page.primary_tag_id,
             );
@@ -85,7 +80,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
             try {
               const [pageResult, tabResult] = await Promise.all([
                 deletePage({ id: page.id }),
-                deleteTabMatchingPageTitle(page.title),
+                deleteTabMatchingPageTitle(page.title || ""),
               ]);
 
               if (!pageResult.success || !tabResult.success) {

@@ -57,7 +57,7 @@ const getCurrentTagNode = (
 const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
   // Get all untitled pages
   const untitledPages = node.pages.filter((page) =>
-    page.title.toLowerCase().startsWith("untitled"),
+    page.title?.toLowerCase().startsWith("untitled"),
   );
 
   // Create new page title using array length
@@ -201,8 +201,8 @@ const TreeNode: React.FC<{
 
   const createUntitledPageInFolder = (folder: TreeFolder, tagId: string) => {
     // Get all untitled pages in the folder
-    const untitledPages = folder.pages.filter((page: { title: string }) =>
-      page.title.toLowerCase().startsWith("untitled"),
+    const untitledPages = folder.pages.filter((page: TreePage) =>
+      page.title?.toLowerCase().startsWith("untitled"),
     );
 
     // Create new page title using array length
@@ -452,10 +452,10 @@ const TreeNode: React.FC<{
                       key={page.id}
                       page={{
                         id: page.id,
-                        title: page.title,
+                        title: page.title || "",
                         folder_id: page.folder_id,
                         primary_tag_id: page.primary_tag_id,
-                        content_type: page.content_type,
+                        content_type: page.content_type || "page",
                       }}
                       level={level}
                       currentPageId={currentPageId}
