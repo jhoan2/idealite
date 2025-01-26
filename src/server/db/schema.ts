@@ -326,6 +326,7 @@ export const tabs = createTable(
   }),
 );
 
+export type Folder = typeof folders.$inferSelect;
 export const folders = createTable(
   "folder",
   {

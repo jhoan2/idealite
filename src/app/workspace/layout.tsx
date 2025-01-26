@@ -28,7 +28,11 @@ export default async function WorkspaceLayout({
     >
       <div className="flex h-screen w-full overflow-hidden">
         <div>
-          <TagTreeNav userTagTree={userTagTree} userId={userId ?? ""} />
+          <TagTreeNav
+            userTagTree={userTagTree}
+            userId={userId ?? ""}
+            isChannelView={false}
+          />
         </div>
         <div className="custom-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto">
           <TabBarWrapper

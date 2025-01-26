@@ -8,6 +8,7 @@ import {
   users_folders,
   users_pages,
   folders,
+  users_tags,
 } from "~/server/db/schema";
 import { eq, and, exists, or, sql } from "drizzle-orm";
 import { auth } from "~/app/auth";
@@ -536,5 +537,95 @@ export async function searchPages(query: string) {
       success: false,
       error: error instanceof Error ? error.message : "Failed to search pages",
     };
+  }
+}
+
+export async function createRootPage(type: "page" | "canvas"): Promise<{
+  success: boolean;
+  data?: Page;
+  error?: string;
+}> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const rootTagId = process.env.ROOT_TAG_ID;
+    if (!rootTagId) {
+      return { success: false, error: "Root tag not configured" };
+    }
+
+    return await db.transaction(async (tx) => {
+      // Check and create tag relation if needed
+      const existingRelation = await tx
+        .select()
+        .from(users_tags)
+        .where(
+          and(
+            eq(users_tags.user_id, session.user?.id ?? ""),
+            eq(users_tags.tag_id, rootTagId),
+          ),
+        )
+        .limit(1);
+
+      if (!existingRelation.length) {
+        await tx.insert(users_tags).values({
+          user_id: session.user?.id ?? "",
+          tag_id: rootTagId,
+          is_collapsed: false,
+          is_archived: false,
+        });
+      }
+
+      // Rest of existing creation logic
+      const existingPages = await tx
+        .select({ title: pages.title })
+        .from(pages)
+        .where(
+          and(
+            eq(pages.primary_tag_id, rootTagId),
+            sql`lower(${pages.title}) LIKE 'untitled%'`,
+            eq(pages.deleted, false),
+          ),
+        );
+
+      const newTitle =
+        existingPages.length === 0
+          ? "untitled"
+          : `untitled ${existingPages.length}`;
+
+      const [newPage] = await tx
+        .insert(pages)
+        .values({
+          title: newTitle,
+          content: "",
+          content_type: type,
+          primary_tag_id: rootTagId,
+          folder_id: null,
+        })
+        .returning();
+
+      if (!newPage) {
+        throw new Error("Failed to create page");
+      }
+
+      await tx.insert(pages_tags).values({
+        page_id: newPage.id,
+        tag_id: rootTagId,
+      });
+
+      await tx.insert(users_pages).values({
+        user_id: session.user?.id ?? "",
+        page_id: newPage.id,
+        role: "owner",
+      });
+
+      revalidatePath("/channelFrame");
+      return { success: true, data: newPage };
+    });
+  } catch (error) {
+    console.error("Failed to create root page:", error);
+    return { success: false, error: "Failed to create page" };
   }
 }

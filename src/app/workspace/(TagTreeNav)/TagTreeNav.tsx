@@ -15,10 +15,11 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import type { TreeFolder, TreeTag } from "~/server/queries/usersTags";
+import type { TreeFolder, TreePage, TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
 import { toggleTagArchived } from "~/server/actions/usersTags";
-import { createPage, movePage } from "~/server/actions/page";
+import { createPage, movePage, createRootPage } from "~/server/actions/page";
+import { createRootFolder } from "~/server/actions/usersFolders";
 import { toast } from "sonner";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
 import { usePathname, useRouter } from "next/navigation";
@@ -30,6 +31,8 @@ import {
 } from "~/server/actions/usersFolders";
 import { FolderComponent } from "./Folder";
 import { PageComponent } from "./Page";
+import { Button } from "~/components/ui/button";
+import PanelWithPlusIcon from "./PanelWithPlusIcon";
 
 interface TreeProps {
   data: TreeTag[];
@@ -592,15 +595,114 @@ const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
 export default function TagTreeNav({
   userTagTree,
   userId,
+  isChannelView = false,
 }: {
   userTagTree: TreeTag[];
   userId: string;
+  isChannelView: boolean;
 }) {
+  const [drawerState, setDrawerState] = useState<DrawerState>({
+    isOpen: false,
+    type: null,
+    data: null,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCreateRootPage = async (type: "page" | "canvas") => {
+    try {
+      setIsLoading(true);
+      const result = await createRootPage(type);
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create page");
+      }
+    } catch (error) {
+      console.error("Error creating page:", error);
+      toast.error("Failed to create page");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateRootFolder = async () => {
+    try {
+      setIsLoading(true);
+      const result = await createRootFolder();
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create folder");
+      }
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      toast.error("Failed to create folder");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLongPress = (
+    type: "tag" | "folder" | "page",
+    data: TreeTag | TreeFolder | TreePage,
+  ) => {
+    setDrawerState({
+      isOpen: true,
+      type,
+      data,
+    });
+  };
+
+  const renderDrawerContent = () => {
+    if (!drawerState.data) return null;
+
+    switch (drawerState.type) {
+      case "page":
+        const page = drawerState.data as TreePage;
+        return <PageDrawer page={page} />;
+      case "folder":
+        const folder = drawerState.data as TreeFolder;
+        return <FolderDrawer folder={folder} />;
+      case "tag":
+        const tag = drawerState.data as TreeTag;
+        return <TagDrawer tag={tag} />;
+    }
+  };
+
   return (
     <div className="flex h-screen">
       <div className="w-64 overflow-hidden border-r">
         <MinimalistTree data={userTagTree} userId={userId} />
       </div>
+      {isChannelView && (
+        <div className="mb-4 bg-background px-4 py-3">
+          <div className="flex w-full justify-between space-x-1">
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => handleCreateRootPage("page")}
+              disabled={isLoading}
+            >
+              <FilePlus className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => handleCreateRootPage("canvas")}
+              disabled={isLoading}
+            >
+              <PanelWithPlusIcon className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => handleCreateRootFolder()}
+              disabled={isLoading}
+            >
+              <FolderPlus className="h-6 w-6" />
+            </Button>
+            <Button variant="ghost" className="flex-1">
+              {/* <Archive className="h-6 w-6" /> */}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,12 +8,14 @@ import {
   resourcesPages,
   users_folders,
   users_pages,
+  users_tags,
 } from "../db/schema";
 import { db } from "../db";
 import { eq, sql, and, isNull } from "drizzle-orm";
 import { deleteTabMatchingPageTitle } from "./tabs";
 import { v4 as uuidv4 } from "uuid";
 import { revalidatePath } from "next/cache";
+import { Folder } from "../db/schema";
 
 export async function updateFolderCollapsed({
   folderId,
@@ -173,5 +175,86 @@ export async function createFolder({
       success: false,
       error: "Failed to create folder",
     };
+  }
+}
+
+export async function createRootFolder(): Promise<{
+  success: boolean;
+  data?: Folder;
+  error?: string;
+}> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const rootTagId = process.env.ROOT_TAG_ID;
+    if (!rootTagId) {
+      return { success: false, error: "Root tag not configured" };
+    }
+
+    return await db.transaction(async (tx) => {
+      // Check and create tag relation if needed
+      const existingRelation = await tx
+        .select()
+        .from(users_tags)
+        .where(
+          and(
+            eq(users_tags.user_id, session.user?.id ?? ""),
+            eq(users_tags.tag_id, rootTagId),
+          ),
+        )
+        .limit(1);
+
+      if (!existingRelation.length) {
+        await tx.insert(users_tags).values({
+          user_id: session.user?.id ?? "",
+          tag_id: rootTagId,
+          is_collapsed: false,
+          is_archived: false,
+        });
+      }
+
+      // Rest of existing creation logic
+      const existingFolders = await tx
+        .select({ name: folders.name })
+        .from(folders)
+        .where(
+          and(
+            eq(folders.tag_id, rootTagId),
+            eq(folders.user_id, session.user?.id ?? ""),
+            isNull(folders.parent_folder_id),
+            sql`lower(${folders.name}) LIKE 'new folder%'`,
+          ),
+        );
+
+      const newName =
+        existingFolders.length === 0
+          ? "New Folder"
+          : `New Folder ${existingFolders.length}`;
+
+      const [newFolder] = await tx
+        .insert(folders)
+        .values({
+          name: newName,
+          tag_id: rootTagId,
+          user_id: session.user?.id ?? "",
+          parent_folder_id: null,
+        })
+        .returning();
+
+      await tx.insert(users_folders).values({
+        user_id: session.user?.id ?? "",
+        folder_id: newFolder?.id ?? "",
+        is_collapsed: false,
+      });
+
+      revalidatePath("/channelFrame");
+      return { success: true, data: newFolder };
+    });
+  } catch (error) {
+    console.error("Failed to create root folder:", error);
+    return { success: false, error: "Failed to create folder" };
   }
 }
