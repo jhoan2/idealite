@@ -62,7 +62,6 @@ export const tags = createTable(
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name")
       .notNull()
-      .unique()
       .$default(() => sql`lower(name)`),
     parent_id: uuid("parent_id").references((): AnyPgColumn => tags.id),
     created_at: timestamp("created_at", { withTimezone: true })
