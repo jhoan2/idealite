@@ -735,6 +735,12 @@ export default function TagTreeNav({
                 onOpenChange={(open) =>
                   setDrawerState((prev) => ({ ...prev, isOpen: open }))
                 }
+                allTags={userTagTree}
+                currentTagId={
+                  (drawerState.data as TreePage).primary_tag_id ||
+                  userTagTree[0]?.id ||
+                  ""
+                }
               />
             )}
           </DrawerContent>
