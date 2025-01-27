@@ -38,11 +38,7 @@ import { Drawer, DrawerContent } from "~/components/ui/drawer";
 import TagDrawer from "./(Drawer)/TagDrawer";
 import FolderDrawer from "./(Drawer)/FolderDrawer";
 import PageDrawer from "./(Drawer)/PageDrawer";
-import {
-  getCurrentTagNode,
-  generateUntitledTitle,
-  createUntitledPage,
-} from "~/lib/tree";
+import { createUntitledPage, createUntitledPageInFolder } from "~/lib/tree";
 
 interface DrawerState {
   isOpen: boolean;
@@ -133,35 +129,6 @@ const TreeNode: React.FC<{
     }
   };
 
-  const getTagHierarchy = (
-    currentNode: TreeTag,
-    allTags: TreeTag[],
-  ): string[] => {
-    //TODO: There is another function like this in createUntitledPage
-    const hierarchy: string[] = [currentNode.id];
-
-    const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
-      for (const tag of tags) {
-        if (tag.children?.some((child: TreeTag) => child.id === targetId)) {
-          return tag;
-        }
-        if (tag.children) {
-          const found = findParent(tag.children, targetId);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    let parentTag = findParent(allTags, currentNode.id);
-    while (parentTag) {
-      hierarchy.unshift(parentTag.id);
-      parentTag = findParent(allTags, parentTag.id);
-    }
-
-    return hierarchy;
-  };
-
   const handleCreatePage = async (type: "page" | "canvas") => {
     try {
       setIsLoading(true);
@@ -176,33 +143,6 @@ const TreeNode: React.FC<{
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const createUntitledPageInFolder = (folder: TreeFolder, tagId: string) => {
-    // Get all untitled pages in the folder
-    const newTitle = generateUntitledTitle(folder.pages);
-    const currentTag = getCurrentTagNode(allTags, tagId);
-    if (!currentTag) {
-      throw new Error("Tag not found");
-    }
-
-    return {
-      id: uuidv4(),
-      title: newTitle,
-      tag_id: tagId,
-      folder_id: folder.id,
-      hierarchy: getTagHierarchy(currentTag, allTags),
-    };
-  };
-
-  const calculateOrphanedPages = (tag: TreeTag): number => {
-    let count = tag.pages.length;
-    if (tag.children) {
-      for (const child of tag.children) {
-        count += calculateOrphanedPages(child);
-      }
-    }
-    return count;
   };
 
   const handleArchiveTag = async () => {
@@ -295,7 +235,7 @@ const TreeNode: React.FC<{
   ) => {
     try {
       setIsLoading(true);
-      const pageInput = createUntitledPageInFolder(folder, node.id);
+      const pageInput = createUntitledPageInFolder(folder, node.id, allTags);
       const result = await createPage(pageInput, type);
 
       if (!result.success) {
