@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { Trash, Replace, StickyNote, PanelTop } from "lucide-react";
 import Link from "next/link";
 import {
@@ -30,6 +30,10 @@ interface PageComponentProps {
     pageId: string,
     title: string,
   ) => Promise<void>;
+  onOpenDrawer: (
+    type: "tag" | "folder" | "page",
+    data: TreeTag | TreeFolder | TreePage,
+  ) => void;
 }
 
 export const PageComponent: React.FC<PageComponentProps> = ({
@@ -38,28 +42,54 @@ export const PageComponent: React.FC<PageComponentProps> = ({
   currentPageId,
   onMovePageClick,
   handleItemClick,
+  onOpenDrawer,
 }) => {
   const router = useRouter();
+  const longPressTimeout = useRef<NodeJS.Timeout>();
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    longPressTimeout.current = setTimeout(() => {
+      onOpenDrawer("page", page);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    clearTimeout(longPressTimeout.current);
+  };
+
+  const handleTouchMove = () => {
+    clearTimeout(longPressTimeout.current);
+  };
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        <Link
-          href={`/workspace/${page.id}`}
-          onClick={(e) => handleItemClick(e, page.id, page.title || "")}
-          className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-            page.id === currentPageId ? "bg-gray-50/80 dark:bg-gray-700/30" : ""
-          }`}
-          style={{ paddingLeft: `${(level + 1) * 16}px` }}
+        <div
+          className="touch-action-none"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchMove={handleTouchMove}
         >
-          {page.content_type === "canvas" ? (
-            <PanelTop className="mr-2 h-4 w-4 text-gray-400" />
-          ) : (
-            <StickyNote className="mr-2 h-4 w-4 text-gray-400" />
-          )}
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            {page.title}
-          </span>
-        </Link>
+          <Link
+            href={`/workspace/${page.id}`}
+            onClick={(e) => handleItemClick(e, page.id, page.title || "")}
+            className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+              page.id === currentPageId
+                ? "bg-gray-50/80 dark:bg-gray-700/30"
+                : ""
+            } touch-action-none`}
+            style={{ paddingLeft: `${(level + 1) * 16}px` }}
+          >
+            {page.content_type === "canvas" ? (
+              <PanelTop className="mr-2 h-4 w-4 text-gray-400" />
+            ) : (
+              <StickyNote className="mr-2 h-4 w-4 text-gray-400" />
+            )}
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {page.title}
+            </span>
+          </Link>
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-64">
         <ContextMenuItem
