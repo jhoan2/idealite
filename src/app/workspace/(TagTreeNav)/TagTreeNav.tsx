@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -34,7 +34,16 @@ import {
 import { FolderComponent } from "./Folder";
 import { PageComponent } from "./Page";
 import { Button } from "~/components/ui/button";
-import {
+import { Drawer, DrawerContent } from "~/components/ui/drawer";
+import TagDrawer from "./(Drawer)/TagDrawer";
+import FolderDrawer from "./(Drawer)/FolderDrawer";
+import PageDrawer from "./(Drawer)/PageDrawer";
+
+interface DrawerState {
+  isOpen: boolean;
+  type: "tag" | "folder" | "page" | null;
+  data: TreeTag | TreeFolder | TreePage | null;
+}
 
 interface TreeProps {
   data: TreeTag[];
@@ -105,12 +114,19 @@ const TreeNode: React.FC<{
   level: number;
   allTags: TreeTag[];
   userId: string;
-}> = ({ node, level, allTags, userId }) => {
+  onLongPress?: (
+    type: "tag" | "folder" | "page",
+    data: TreeTag | TreeFolder | TreePage,
+  ) => void;
+  onOpenDrawer: (
+    type: "tag" | "folder" | "page",
+    data: TreeTag | TreeFolder | TreePage,
+  ) => void;
+}> = ({ node, level, allTags, userId, onOpenDrawer }) => {
   const hasChildren = node.children && node.children.length > 0;
   const hasPages = node.pages && node.pages.length > 0;
   const hasFolders = node.folders && node.folders.length > 0;
   const [isLoading, setIsLoading] = useState(false);
-  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [selectedPage, setSelectedPage] = useState<{
     id: string;
@@ -128,6 +144,24 @@ const TreeNode: React.FC<{
       node.folders?.filter((f) => !f.is_collapsed).map((f) => f.id) ?? [],
     ),
   );
+
+  const longPressTimeout = useRef<NodeJS.Timeout>();
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    longPressTimeout.current = setTimeout(() => {
+      onOpenDrawer("tag", node);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    clearTimeout(longPressTimeout.current);
+  };
+
+  const handleTouchMove = () => {
+    clearTimeout(longPressTimeout.current);
+  };
+
   const handleItemClick = async (
     e: React.MouseEvent,
     pageId: string,
@@ -419,7 +453,12 @@ const TreeNode: React.FC<{
       />
       <ContextMenu>
         <ContextMenuTrigger>
-          <div className="select-none">
+          <div
+            className="touch-action-none select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+          >
             <div
               className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
               style={{ paddingLeft: `${level * 16}px` }}
@@ -469,6 +508,7 @@ const TreeNode: React.FC<{
                         setShowMoveDialog(true);
                       }}
                       handleItemClick={handleItemClick}
+                      onOpenDrawer={onOpenDrawer}
                     />
                   ))}
                 {/* First render folders */}
@@ -495,6 +535,7 @@ const TreeNode: React.FC<{
                       onCreatePageInFolder={handleCreatePageInFolder}
                       onCreateSubfolder={handleCreateSubfolder}
                       isLoading={isLoading}
+                      onOpenDrawer={onOpenDrawer}
                     />
                   ))}
 
@@ -507,6 +548,7 @@ const TreeNode: React.FC<{
                       level={level + 1}
                       allTags={allTags}
                       userId={userId}
+                      onOpenDrawer={onOpenDrawer}
                     />
                   ))}
               </div>
@@ -548,13 +590,25 @@ const TreeNode: React.FC<{
   );
 };
 
-const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
-  data,
-  userId,
-}) => {
+const MinimalistTree: React.FC<
+  TreeProps & {
+    userId: string;
+    isChannelView: boolean;
+    onLongPress?: (
+      type: "tag" | "folder" | "page",
+      data: TreeTag | TreeFolder | TreePage,
+    ) => void;
+    onOpenDrawer: (
+      type: "tag" | "folder" | "page",
+      data: TreeTag | TreeFolder | TreePage,
+    ) => void;
+  }
+> = ({ data, userId, isChannelView, onLongPress, onOpenDrawer }) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="custom-scrollbar h-screen overflow-y-auto p-4">
+      <div
+        className={`custom-scrollbar ${isChannelView ? "pb-36" : ""} h-screen overflow-y-auto p-4`}
+      >
         {data.map((node) => (
           <TreeNode
             key={node.id}
@@ -562,6 +616,7 @@ const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
             level={0}
             allTags={data}
             userId={userId}
+            onOpenDrawer={onOpenDrawer}
           />
         ))}
       </div>
@@ -589,6 +644,12 @@ const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
             background-color: rgba(156, 163, 175, 0.5);
           }
         }
+        .touch-action-none {
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: none;
+        }
       `}</style>
     </div>
   );
@@ -603,11 +664,6 @@ export default function TagTreeNav({
   userId: string;
   isChannelView: boolean;
 }) {
-  const [drawerState, setDrawerState] = useState<DrawerState>({
-    isOpen: false,
-    type: null,
-    data: null,
-  });
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateRootPage = async (type: "page" | "canvas") => {
@@ -640,37 +696,50 @@ export default function TagTreeNav({
     }
   };
 
-  const handleLongPress = (
+  const [drawerState, setDrawerState] = useState<DrawerState>({
+    isOpen: false,
+    type: null,
+    data: null,
+  });
+
+  // Function to open drawer from child components
+  const handleOpenDrawer = (
     type: "tag" | "folder" | "page",
     data: TreeTag | TreeFolder | TreePage,
   ) => {
-    setDrawerState({
-      isOpen: true,
-      type,
-      data,
-    });
-  };
-
-  const renderDrawerContent = () => {
-    if (!drawerState.data) return null;
-
-    switch (drawerState.type) {
-      case "page":
-        const page = drawerState.data as TreePage;
-        return <PageDrawer page={page} />;
-      case "folder":
-        const folder = drawerState.data as TreeFolder;
-        return <FolderDrawer folder={folder} />;
-      case "tag":
-        const tag = drawerState.data as TreeTag;
-        return <TagDrawer tag={tag} />;
-    }
+    setDrawerState({ isOpen: true, type, data });
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen flex-col">
       <div className="w-64 overflow-hidden border-r">
-        <MinimalistTree data={userTagTree} userId={userId} />
+        <Drawer
+          open={drawerState.isOpen}
+          onOpenChange={(open) =>
+            setDrawerState((prev) => ({ ...prev, isOpen: open }))
+          }
+        >
+          <DrawerContent>
+            {drawerState.type === "tag" && (
+              <TagDrawer
+                tag={drawerState.data as TreeTag}
+                allTags={userTagTree}
+              />
+            )}
+            {drawerState.type === "folder" && (
+              <FolderDrawer folder={drawerState.data as TreeFolder} />
+            )}
+            {drawerState.type === "page" && (
+              <PageDrawer page={drawerState.data as TreePage} />
+            )}
+          </DrawerContent>
+        </Drawer>
+        <MinimalistTree
+          data={userTagTree}
+          userId={userId}
+          isChannelView={isChannelView}
+          onOpenDrawer={handleOpenDrawer}
+        />
       </div>
       {isChannelView && (
         <div className="mb-4 bg-background px-4 py-3">
