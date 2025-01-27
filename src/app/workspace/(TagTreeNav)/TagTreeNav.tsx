@@ -730,7 +730,12 @@ export default function TagTreeNav({
               <FolderDrawer folder={drawerState.data as TreeFolder} />
             )}
             {drawerState.type === "page" && (
-              <PageDrawer page={drawerState.data as TreePage} />
+              <PageDrawer
+                page={drawerState.data as TreePage}
+                onOpenChange={(open) =>
+                  setDrawerState((prev) => ({ ...prev, isOpen: open }))
+                }
+              />
             )}
           </DrawerContent>
         </Drawer>
