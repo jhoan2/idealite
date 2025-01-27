@@ -63,17 +63,18 @@ const getCurrentTagNode = (
   return null;
 };
 
-const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
-  // Get all untitled pages
-  const untitledPages = node.pages.filter((page) =>
+const generateUntitledTitle = (pages: Array<{ title?: string | null }>) => {
+  const untitledPages = pages.filter((page) =>
     page.title?.toLowerCase().startsWith("untitled"),
   );
+  return untitledPages.length === 0
+    ? "untitled"
+    : `untitled ${untitledPages.length}`;
+};
 
-  // Create new page title using array length
-  const newTitle =
-    untitledPages.length === 0
-      ? "untitled"
-      : `untitled ${untitledPages.length}`;
+const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
+  // Get all untitled pages
+  const newTitle = generateUntitledTitle(node.pages);
 
   // Get tag hierarchy
   const getTagHierarchy = (currentNode: TreeTag): string[] => {
@@ -235,16 +236,7 @@ const TreeNode: React.FC<{
 
   const createUntitledPageInFolder = (folder: TreeFolder, tagId: string) => {
     // Get all untitled pages in the folder
-    const untitledPages = folder.pages.filter((page: TreePage) =>
-      page.title?.toLowerCase().startsWith("untitled"),
-    );
-
-    // Create new page title using array length
-    const newTitle =
-      untitledPages.length === 0
-        ? "untitled"
-        : `untitled ${untitledPages.length}`;
-
+    const newTitle = generateUntitledTitle(folder.pages);
     const currentTag = getCurrentTagNode(allTags, tagId);
     if (!currentTag) {
       throw new Error("Tag not found");
