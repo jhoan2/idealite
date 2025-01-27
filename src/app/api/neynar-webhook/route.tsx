@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { createHmac } from "crypto";
 import { crawlUrl } from "~/server/farcaster";
 import { createResourceFromWebhook } from "~/server/actions/resource";
-import { cleanUrl } from "~/lib/utils";
+import { cleanUrl } from "~/lib/url";
 import { findResourceByUrl } from "~/server/queries/resource";
 import { findUserByFid } from "~/server/queries/user";
 import { createPageWithRelationsFromWebhook } from "~/server/actions/page";
