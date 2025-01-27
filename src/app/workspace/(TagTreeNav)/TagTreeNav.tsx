@@ -38,6 +38,11 @@ import { Drawer, DrawerContent } from "~/components/ui/drawer";
 import TagDrawer from "./(Drawer)/TagDrawer";
 import FolderDrawer from "./(Drawer)/FolderDrawer";
 import PageDrawer from "./(Drawer)/PageDrawer";
+import {
+  getCurrentTagNode,
+  generateUntitledTitle,
+  createUntitledPage,
+} from "~/lib/tree";
 
 interface DrawerState {
   isOpen: boolean;
@@ -48,67 +53,6 @@ interface DrawerState {
 interface TreeProps {
   data: TreeTag[];
 }
-
-const getCurrentTagNode = (
-  tags: TreeTag[],
-  targetId: string,
-): TreeTag | null => {
-  for (const tag of tags) {
-    if (tag.id === targetId) return tag;
-    if (tag.children) {
-      const found = getCurrentTagNode(tag.children, targetId);
-      if (found) return found;
-    }
-  }
-  return null;
-};
-
-const generateUntitledTitle = (pages: Array<{ title?: string | null }>) => {
-  const untitledPages = pages.filter((page) =>
-    page.title?.toLowerCase().startsWith("untitled"),
-  );
-  return untitledPages.length === 0
-    ? "untitled"
-    : `untitled ${untitledPages.length}`;
-};
-
-const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
-  // Get all untitled pages
-  const newTitle = generateUntitledTitle(node.pages);
-
-  // Get tag hierarchy
-  const getTagHierarchy = (currentNode: TreeTag): string[] => {
-    const hierarchy: string[] = [currentNode.id];
-
-    const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
-      for (const tag of tags) {
-        if (tag.children?.some((child: TreeTag) => child.id === targetId)) {
-          return tag;
-        }
-        if (tag.children) {
-          const found = findParent(tag.children, targetId);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    let parentTag = findParent(allTags, currentNode.id);
-    while (parentTag) {
-      hierarchy.unshift(parentTag.id);
-      parentTag = findParent(allTags, parentTag.id);
-    }
-    return hierarchy;
-  };
-
-  return {
-    id: uuidv4(),
-    title: newTitle,
-    tag_id: node.id,
-    hierarchy: getTagHierarchy(node),
-    folder_id: null,
-  };
-};
 
 const TreeNode: React.FC<{
   node: TreeTag;
