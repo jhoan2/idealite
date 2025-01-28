@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FilePlus, Palette, FolderPlus, Trash } from "lucide-react";
 import { toast } from "sonner";
+import { deleteFolder } from "~/server/actions/usersFolders";
 import { Button } from "~/components/ui/button";
 import { DrawerTitle } from "~/components/ui/drawer";
 import { createPage } from "~/server/actions/page";
@@ -21,6 +22,7 @@ export default function FolderDrawer({
 }) {
   const [isCreatingPage, setIsCreatingPage] = useState(false);
   const [isCreatingCanvas, setIsCreatingCanvas] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const parentTag = findFolderParentTag(allTags, folder.id);
 
@@ -78,6 +80,26 @@ export default function FolderDrawer({
     }
   };
 
+  const handleDeleteFolder = async () => {
+    if (!folder) return;
+
+    try {
+      setIsDeleting(true);
+      const result = await deleteFolder({ id: folder.id });
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to delete folder");
+      }
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+      toast.error("Failed to delete folder");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="p-4">
       <DrawerHeader>
@@ -118,10 +140,11 @@ export default function FolderDrawer({
         <Button
           variant="ghost"
           className="w-full justify-start py-6 text-sm font-normal text-destructive hover:text-destructive"
-          onClick={() => console.log("Delete Folder")}
+          onClick={handleDeleteFolder}
+          disabled={isDeleting}
         >
           <Trash className="mr-3 h-4 w-4" />
-          <span>Delete Folder</span>
+          <span>{isDeleting ? "Deleting..." : "Delete Folder"}</span>
         </Button>
       </div>
     </div>
