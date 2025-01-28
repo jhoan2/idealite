@@ -603,7 +603,13 @@ export default function TagTreeNav({
               />
             )}
             {drawerState.type === "folder" && (
-              <FolderDrawer folder={drawerState.data as TreeFolder} />
+              <FolderDrawer
+                folder={drawerState.data as TreeFolder}
+                allTags={userTagTree}
+                onOpenChange={(open) =>
+                  setDrawerState((prev) => ({ ...prev, isOpen: open }))
+                }
+              />
             )}
             {drawerState.type === "page" && (
               <PageDrawer

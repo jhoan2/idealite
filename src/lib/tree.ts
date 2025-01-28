@@ -38,11 +38,39 @@ export const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
   };
 };
 
-const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
+export const findParent = (
+  tags: TreeTag[],
+  targetId: string,
+): TreeTag | null => {
   for (const tag of tags) {
     if (tag.children?.some((child) => child.id === targetId)) return tag;
     if (tag.children) {
       const found = findParent(tag.children, targetId);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
+export const findFolderParentTag = (
+  tags: TreeTag[],
+  folderId: string,
+): TreeTag | null => {
+  for (const tag of tags) {
+    // Check direct folders in the current tag
+    if (
+      tag.folders?.some(
+        (folder) =>
+          folder.id === folderId ||
+          folder.subFolders?.some((subfolder) => subfolder.id === folderId),
+      )
+    ) {
+      return tag;
+    }
+
+    // Check tags' children
+    if (tag.children) {
+      const found = findFolderParentTag(tag.children, folderId);
       if (found) return found;
     }
   }
