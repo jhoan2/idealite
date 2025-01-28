@@ -3,13 +3,17 @@
 import { useState } from "react";
 import { FilePlus, Palette, FolderPlus, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { deleteFolder } from "~/server/actions/usersFolders";
+import { createFolder, deleteFolder } from "~/server/actions/usersFolders";
 import { Button } from "~/components/ui/button";
 import { DrawerTitle } from "~/components/ui/drawer";
 import { createPage } from "~/server/actions/page";
 import { DrawerHeader } from "~/components/ui/drawer";
 import { TreeFolder, TreeTag } from "~/server/queries/usersTags";
-import { createUntitledPageInFolder, findFolderParentTag } from "~/lib/tree";
+import {
+  createUntitledPageInFolder,
+  findFolderParentTag,
+  generateUntitledFolderName,
+} from "~/lib/tree";
 
 export default function FolderDrawer({
   folder,
@@ -22,6 +26,7 @@ export default function FolderDrawer({
 }) {
   const [isCreatingPage, setIsCreatingPage] = useState(false);
   const [isCreatingCanvas, setIsCreatingCanvas] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const parentTag = findFolderParentTag(allTags, folder.id);
@@ -100,6 +105,35 @@ export default function FolderDrawer({
     }
   };
 
+  const handleCreateFolder = async () => {
+    if (!parentTag) {
+      toast.error("Could not find parent tag");
+      return;
+    }
+
+    try {
+      setIsCreatingFolder(true);
+      const folderName = generateUntitledFolderName(parentTag.folders || []);
+
+      const result = await createFolder({
+        name: folderName,
+        tagId: parentTag.id,
+        parentFolderId: folder.id, // This makes it a subfolder of the current folder
+      });
+
+      if (!result.success) {
+        throw new Error("Failed to create folder");
+      }
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      toast.error("Failed to create folder");
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
+
   return (
     <div className="p-4">
       <DrawerHeader>
@@ -131,10 +165,11 @@ export default function FolderDrawer({
         <Button
           variant="ghost"
           className="w-full justify-start py-6 text-sm font-normal"
-          onClick={() => console.log("Create Folder")}
+          onClick={handleCreateFolder}
+          disabled={isCreatingFolder}
         >
           <FolderPlus className="mr-3 h-4 w-4" />
-          <span>New folder</span>
+          <span>{isCreatingFolder ? "Creating..." : "New Folder"}</span>
         </Button>
         <div className="h-px bg-border" />
         <Button
