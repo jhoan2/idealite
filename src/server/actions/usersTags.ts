@@ -318,3 +318,64 @@ export async function addUserTag(tagId: string) {
     return { success: false, error: "Failed to add tag" };
   }
 }
+
+const createTagForUserSchema = z.object({
+  name: z.string().min(1),
+  parentId: z.string().uuid().optional(),
+});
+
+type CreateTagInput = z.infer<typeof createTagForUserSchema>;
+
+export async function createTagForUser(input: CreateTagInput) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Validate input
+    const validatedInput = createTagForUserSchema.parse(input);
+
+    return await db.transaction(async (tx) => {
+      // Create the new tag
+      const [newTag] = await tx
+        .insert(tags)
+        .values({
+          name: validatedInput.name,
+          parent_id: validatedInput.parentId || null,
+          deleted: false,
+        })
+        .returning();
+
+      if (!newTag) {
+        throw new Error("Failed to create tag");
+      }
+
+      // Create the user-tag relationship
+      await tx.insert(users_tags).values({
+        user_id: session.user?.id ?? "",
+        tag_id: newTag.id,
+        is_archived: false,
+        is_collapsed: false,
+      });
+
+      revalidatePath("/workspace");
+      return {
+        success: true,
+        tag: newTag,
+      };
+    });
+  } catch (error) {
+    console.error("Error creating tag:", error);
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: "Invalid input",
+      };
+    }
+    return {
+      success: false,
+      error: "Failed to create tag",
+    };
+  }
+}

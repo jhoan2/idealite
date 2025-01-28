@@ -600,6 +600,9 @@ export default function TagTreeNav({
               <TagDrawer
                 tag={drawerState.data as TreeTag}
                 allTags={userTagTree}
+                onOpenChange={(open) =>
+                  setDrawerState((prev) => ({ ...prev, isOpen: open }))
+                }
               />
             )}
             {drawerState.type === "folder" && (
