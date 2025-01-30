@@ -2,14 +2,14 @@
 
 import { SelectTag } from "~/server/queries/tag";
 import { useRouter, useSearchParams } from "next/navigation";
-import Welcome from "./steps/Welcome";
+import Welcome from "./(steps)/Welcome";
 import ProgressBar from "./ProgressBar";
-import TagSelection from "./steps/TagSelection";
-import GlobalChat from "./steps/GlobalChat";
-import Topics from "./steps/Topics";
-import AddNotes from "./steps/AddNotes";
-import Multiplayer from "./steps/Multiplayer";
-import Final from "./steps/Final";
+import TagSelection from "./(steps)/TagSelection";
+import GlobalChat from "./(steps)/GlobalChat";
+import Topics from "./(steps)/Topics";
+import AddNotes from "./(steps)/AddNotes";
+import Multiplayer from "./(steps)/Multiplayer";
+import Final from "./(steps)/Final";
 
 interface OnboardingProps {
   tag: SelectTag[];
