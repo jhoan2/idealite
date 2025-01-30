@@ -46,21 +46,30 @@ export const PageComponent: React.FC<PageComponentProps> = ({
 }) => {
   const router = useRouter();
   const longPressTimeout = useRef<NodeJS.Timeout>();
+  const touchInteraction = useRef(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
+    touchInteraction.current = true;
     longPressTimeout.current = setTimeout(() => {
       onOpenDrawer("page", page);
     }, 500);
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     clearTimeout(longPressTimeout.current);
+    if (touchInteraction.current) {
+      e.preventDefault();
+      // Navigate to mobile-specific route
+      router.push(`/channelFrame/${page.id}`);
+      touchInteraction.current = false;
+    }
   };
 
   const handleTouchMove = () => {
     clearTimeout(longPressTimeout.current);
   };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger>
@@ -72,7 +81,15 @@ export const PageComponent: React.FC<PageComponentProps> = ({
         >
           <Link
             href={`/workspace/${page.id}`}
-            onClick={(e) => handleItemClick(e, page.id, page.title || "")}
+            onClick={(e) => {
+              if (touchInteraction.current) {
+                e.preventDefault();
+                return;
+              }
+              handleItemClick(e, page.id, page.title || "");
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
             className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
               page.id === currentPageId
                 ? "bg-gray-50/80 dark:bg-gray-700/30"
