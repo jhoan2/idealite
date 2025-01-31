@@ -24,7 +24,6 @@ export function PageHeader({ tags, userTagTree, resources }: PageHeaderProps) {
   const [isAddMetadataOpen, setIsAddMetadataOpen] = useState(false);
   const pathname = usePathname();
   const currentPageId = pathname.split("/workspace/")[1];
-
   return (
     <div className="p-4">
       <div className="flex items-center justify-between pb-4">
