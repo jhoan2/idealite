@@ -35,7 +35,9 @@ export default function RootLayout({
             <SessionProvider>
               <PHProvider>
                 <div className="flex h-screen">
-                  <SideNav />
+                  <div className="hidden md:block">
+                    <SideNav />
+                  </div>
                   <div className="flex-1 overflow-y-auto">{children}</div>
                   <Toaster />
                 </div>
