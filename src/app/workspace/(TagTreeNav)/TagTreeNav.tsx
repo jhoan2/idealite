@@ -18,7 +18,6 @@ import {
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
 import type { TreeFolder, TreePage, TreeTag } from "~/server/queries/usersTags";
-import { v4 as uuidv4 } from "uuid";
 import { toggleTagArchived } from "~/server/actions/usersTags";
 import { createPage, movePage, createRootPage } from "~/server/actions/page";
 import { createRootFolder } from "~/server/actions/usersFolders";
@@ -469,7 +468,7 @@ const TreeNode: React.FC<{
 const MinimalistTree: React.FC<
   TreeProps & {
     userId: string;
-    isChannelView: boolean;
+    isMobile: boolean;
     onLongPress?: (
       type: "tag" | "folder" | "page",
       data: TreeTag | TreeFolder | TreePage,
@@ -479,11 +478,11 @@ const MinimalistTree: React.FC<
       data: TreeTag | TreeFolder | TreePage,
     ) => void;
   }
-> = ({ data, userId, isChannelView, onLongPress, onOpenDrawer }) => {
+> = ({ data, userId, isMobile, onLongPress, onOpenDrawer }) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div
-        className={`custom-scrollbar ${isChannelView ? "pb-36" : ""} h-screen overflow-y-auto p-4`}
+        className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto p-4`}
       >
         {data.map((node) => (
           <TreeNode
@@ -534,11 +533,11 @@ const MinimalistTree: React.FC<
 export default function TagTreeNav({
   userTagTree,
   userId,
-  isChannelView = false,
+  isMobile = false,
 }: {
   userTagTree: TreeTag[];
   userId: string;
-  isChannelView: boolean;
+  isMobile: boolean;
 }) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -633,12 +632,12 @@ export default function TagTreeNav({
         <MinimalistTree
           data={userTagTree}
           userId={userId}
-          isChannelView={isChannelView}
+          isMobile={isMobile ? true : false}
           onOpenDrawer={handleOpenDrawer}
         />
       </div>
-      {isChannelView && (
-        <div className="mb-4 bg-background px-4 py-3">
+      {isMobile && (
+        <div className="mb-4 bg-background px-4 py-3 md:hidden">
           <div className="flex w-full justify-between space-x-1">
             <Button
               variant="ghost"
