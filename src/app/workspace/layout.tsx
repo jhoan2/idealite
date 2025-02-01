@@ -14,11 +14,14 @@ export default async function WorkspaceLayout({
 }) {
   const session = await auth();
   const userId = session?.user?.id;
-  const userTagTree = userId ? await getUserTagTree(userId) : [];
-  const userTabs = userId ? (await getTabs(userId)).data : [];
+  const [userTagTree, userTabs] = await Promise.all([
+    userId ? getUserTagTree(userId) : [],
+    userId ? getTabs(userId).then((res) => res.data) : [],
+  ]);
   const activeTabId = userTabs?.find((tab) => tab.is_active)?.id ?? null;
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
+
   const isMobile = userAgent?.toLowerCase().includes("mobile");
 
   return (
