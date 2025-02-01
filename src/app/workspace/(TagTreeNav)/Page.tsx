@@ -61,7 +61,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
     if (touchInteraction.current) {
       e.preventDefault();
       // Navigate to mobile-specific route
-      router.push(`/channelFrame/${page.id}`);
+      router.push(`/workspace/${page.id}`);
       touchInteraction.current = false;
     }
   };

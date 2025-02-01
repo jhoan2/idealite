@@ -1,6 +1,5 @@
 import { auth } from "~/app/auth";
 import { getUserTagTree } from "~/server/queries/usersTags";
-import TagTreeNav from "./(TagTreeNav)/TagTreeNav";
 import { getTabs } from "~/server/queries/tabs";
 import { TabBarWrapper } from "./TabBarWrapper";
 import { SidebarProvider } from "~/components/ui/sidebar";
