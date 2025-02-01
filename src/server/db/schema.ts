@@ -382,6 +382,74 @@ export const users_folders = createTable(
   },
 );
 
+export const cards = createTable(
+  "card",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    page_id: uuid("page_id").references(() => pages.id),
+    resource_id: uuid("resource_id").references(() => resources.id),
+    content: text("content"),
+    image_id: uuid("image_id").references(() => images.id, {
+      onDelete: "set null",
+    }),
+    canvas_image_id: uuid("canvas_image_id").references(() => images.id, {
+      onDelete: "set null",
+    }),
+    prompt: text("prompt"),
+    description: text("description"),
+    last_reviewed: timestamp("last_reviewed", { withTimezone: true }),
+    next_review: timestamp("next_review", { withTimezone: true }),
+
+    mastered_at: timestamp("mastered_at", { withTimezone: true }),
+    status: varchar("status", {
+      enum: ["active", "mastered", "suspended"],
+    })
+      .default("active")
+      .notNull(),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+    deleted: boolean("deleted").default(false),
+  },
+  (table) => ({
+    user_idx: index("card_user_idx").on(table.user_id),
+    page_idx: index("card_page_idx").on(table.page_id),
+    resource_idx: index("card_resource_idx").on(table.resource_id),
+    content_search_idx: index("card_content_search_idx").using(
+      "gin",
+      sql`to_tsvector('english', ${table.content})`,
+    ),
+    status_idx: index("card_status_idx").on(table.status),
+    deleted_idx: index("card_deleted_idx").on(table.deleted),
+  }),
+);
+
+export const cards_tags = createTable(
+  "cards_tags",
+  {
+    card_id: uuid("card_id")
+      .notNull()
+      .references(() => cards.id, { onDelete: "cascade" }),
+    tag_id: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.card_id, table.tag_id] }),
+    card_idx: index("cards_tags_card_idx").on(table.card_id),
+    tag_idx: index("cards_tags_tag_idx").on(table.tag_id),
+  }),
+);
+
 export const pagesRelations = relations(pages, ({ many, one }) => ({
   tags: many(pages_tags),
   users: many(users_pages),
@@ -505,5 +573,40 @@ export const usersFoldersRelations = relations(users_folders, ({ one }) => ({
   folder: one(folders, {
     fields: [users_folders.folder_id],
     references: [folders.id],
+  }),
+}));
+
+export const cardsRelations = relations(cards, ({ many, one }) => ({
+  tags: many(cards_tags),
+  user: one(users, {
+    fields: [cards.user_id],
+    references: [users.id],
+  }),
+  page: one(pages, {
+    fields: [cards.page_id],
+    references: [pages.id],
+  }),
+  resource: one(resources, {
+    fields: [cards.resource_id],
+    references: [resources.id],
+  }),
+  image: one(images, {
+    fields: [cards.image_id],
+    references: [images.id],
+  }),
+  canvasImage: one(images, {
+    fields: [cards.canvas_image_id],
+    references: [images.id],
+  }),
+}));
+
+export const cardsTagsRelations = relations(cards_tags, ({ one }) => ({
+  card: one(cards, {
+    fields: [cards_tags.card_id],
+    references: [cards.id],
+  }),
+  tag: one(tags, {
+    fields: [cards_tags.tag_id],
+    references: [tags.id],
   }),
 }));
