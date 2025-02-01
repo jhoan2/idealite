@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useRef } from "react";
-import { Trash, Replace, StickyNote, PanelTop } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { Trash, Replace, StickyNote, PanelTop, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
   ContextMenu,
@@ -47,6 +47,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
   const router = useRouter();
   const longPressTimeout = useRef<NodeJS.Timeout>();
   const touchInteraction = useRef(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
@@ -70,6 +71,17 @@ export const PageComponent: React.FC<PageComponentProps> = ({
     clearTimeout(longPressTimeout.current);
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (currentPageId !== page.id) {
+      setIsNavigating(true);
+    }
+    if (touchInteraction.current) {
+      e.preventDefault();
+      return;
+    }
+    handleItemClick(e, page.id, page.title || "");
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger>
@@ -81,13 +93,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
         >
           <Link
             href={`/workspace/${page.id}`}
-            onClick={(e) => {
-              if (touchInteraction.current) {
-                e.preventDefault();
-                return;
-              }
-              handleItemClick(e, page.id, page.title || "");
-            }}
+            onClick={handleClick}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
@@ -105,6 +111,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {page.title}
             </span>
+            {isNavigating && <Loader2 className="ml-2 h-3 w-3 animate-spin" />}
           </Link>
         </div>
       </ContextMenuTrigger>
