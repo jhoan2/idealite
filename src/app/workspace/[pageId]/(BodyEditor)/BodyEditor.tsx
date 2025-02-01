@@ -175,7 +175,7 @@ const BodyEditor = ({
         </div>
         {editor && (
           <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
-            <div className="bubble-menu">
+            <div className="bubble-menu flex gap-2 rounded border border-border bg-background p-2 shadow-md">
               <button
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 className={editor.isActive("bold") ? "is-active" : ""}
