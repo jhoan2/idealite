@@ -392,17 +392,12 @@ export const cards = createTable(
     page_id: uuid("page_id").references(() => pages.id),
     resource_id: uuid("resource_id").references(() => resources.id),
     content: text("content"),
-    image_id: uuid("image_id").references(() => images.id, {
-      onDelete: "set null",
-    }),
-    canvas_image_id: uuid("canvas_image_id").references(() => images.id, {
-      onDelete: "set null",
-    }),
+    image_cid: text("image_cid"),
+    canvas_image_cid: text("canvas_image_cid"),
     prompt: text("prompt"),
     description: text("description"),
     last_reviewed: timestamp("last_reviewed", { withTimezone: true }),
     next_review: timestamp("next_review", { withTimezone: true }),
-
     mastered_at: timestamp("mastered_at", { withTimezone: true }),
     status: varchar("status", {
       enum: ["active", "mastered", "suspended"],
@@ -589,14 +584,6 @@ export const cardsRelations = relations(cards, ({ many, one }) => ({
   resource: one(resources, {
     fields: [cards.resource_id],
     references: [resources.id],
-  }),
-  image: one(images, {
-    fields: [cards.image_id],
-    references: [images.id],
-  }),
-  canvasImage: one(images, {
-    fields: [cards.canvas_image_id],
-    references: [images.id],
   }),
 }));
 
