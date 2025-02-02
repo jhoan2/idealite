@@ -3,7 +3,7 @@ import { getUserTagTree } from "~/server/queries/usersTags";
 import { getTabs } from "~/server/queries/tabs";
 import { TabBarWrapper } from "./TabBarWrapper";
 import { SidebarProvider } from "~/components/ui/sidebar";
-import { RightSideBar } from "./(Page)/RightSideBar";
+import { RightSideBar } from "./(Page)/(RightSidebar)/RightSideBar";
 import { headers } from "next/headers";
 import { TagTreeContainer } from "./(TagTreeNav)/TagTreeContainer";
 
@@ -47,7 +47,7 @@ export default async function WorkspaceLayout({
           <div className="w-full">{children}</div>
         </div>
         <div>
-          <RightSideBar />
+          <RightSideBar userTagTree={userTagTree} />
         </div>
       </div>
     </SidebarProvider>
