@@ -21,7 +21,7 @@ const frame = {
       name: "idealite",
       url: route,
       splashImageUrl:
-        "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+        "https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
       splashBackgroundColor: "#f7f7f7",
     },
   },
