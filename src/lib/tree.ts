@@ -1,5 +1,6 @@
 import type { TreeFolder, TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
+import { Tag } from "~/server/db/schema";
 
 export const getCurrentTagNode = (
   tags: TreeTag[],
@@ -126,4 +127,35 @@ export const createUntitledPageInFolder = (
     folder_id: folder.id,
     hierarchy: getTagHierarchy(currentTag, allTags),
   };
+};
+
+export const flattenTagTree = (tree: TreeTag[], existingTags: Tag[]): Tag[] => {
+  const existingTagIds = new Set(existingTags.map((tag) => tag.id));
+
+  const flatten = (node: TreeTag): Tag[] => {
+    let result: Tag[] = [];
+
+    // Only add the current tag if it's not in existingTags
+    if (!existingTagIds.has(node.id)) {
+      result.push({
+        id: node.id,
+        name: node.name,
+        parent_id: null,
+        created_at: new Date(),
+        updated_at: null,
+        deleted: null,
+      });
+    }
+
+    // Recursively flatten children
+    if (node.children) {
+      node.children.forEach((child) => {
+        result = result.concat(flatten(child));
+      });
+    }
+
+    return result;
+  };
+
+  return tree.reduce((acc, node) => acc.concat(flatten(node)), [] as Tag[]);
 };
