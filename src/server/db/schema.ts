@@ -425,6 +425,7 @@ export const cards = createTable(
   }),
 );
 
+export type CardTag = typeof cards_tags.$inferSelect;
 export const cards_tags = createTable(
   "cards_tags",
   {
