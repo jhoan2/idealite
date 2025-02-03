@@ -47,7 +47,10 @@ export default async function WorkspaceLayout({
           <div className="w-full">{children}</div>
         </div>
         <div>
-          <RightSideBar userTagTree={userTagTree} />
+          <RightSideBar
+            userTagTree={userTagTree}
+            isMobile={isMobile ?? false}
+          />
         </div>
       </div>
     </SidebarProvider>

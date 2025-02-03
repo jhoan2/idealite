@@ -20,6 +20,8 @@ import { Tag } from "~/server/db/schema";
 import { TagList } from "../../[pageId]/TagList";
 import { flattenTagTree } from "~/lib/tree";
 import { TreeTag } from "~/server/queries/usersTags";
+import { Drawer } from "~/components/ui/drawer";
+import { TagDrawer } from "../../[pageId]/TagDrawer";
 
 interface SidebarCardProps {
   id: string;
@@ -31,6 +33,7 @@ interface SidebarCardProps {
   tags: Tag[];
   userTagTree: TreeTag[];
   currentCardId: string;
+  isMobile: boolean;
 }
 
 export function SidebarCard({
@@ -43,12 +46,14 @@ export function SidebarCard({
   userTagTree,
   tags,
   currentCardId,
+  isMobile,
 }: SidebarCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content || "");
   const [editedDescription, setEditedDescription] = useState(description || "");
   const [showTags, setShowTags] = useState(false);
   const availableTags = flattenTagTree(userTagTree, tags);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const handleSave = async () => {
     try {
@@ -72,6 +77,14 @@ export function SidebarCard({
     } catch (error) {
       toast.error("Failed to delete card");
       console.error("Error deleting card:", error);
+    }
+  };
+
+  const handleShowTags = () => {
+    if (isMobile) {
+      setIsDrawerOpen(true);
+    } else {
+      setShowTags(!showTags);
     }
   };
 
@@ -117,86 +130,96 @@ export function SidebarCard({
   }
 
   return (
-    <Card className="mb-4">
-      <CardContent className="pt-4">
-        <div className="space-y-4">
-          {image_cid ? (
-            <div className="space-y-2">
-              <img
-                src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY}${image_cid}`}
-                alt="Card content"
-                className="w-full rounded-md"
-              />
-              {description && (
-                <p className="text-sm text-muted-foreground">{description}</p>
-              )}
-            </div>
-          ) : (
-            content && (
-              <div>
-                <p className="text-sm">{content}</p>
-              </div>
-            )
-          )}
-          {prompt && (
-            <div>
-              <label className="text-sm font-medium">Prompt</label>
-              <p className="mt-1 text-sm">{prompt}</p>
-            </div>
-          )}
-          <div>
-            {showTags && (
-              <div className="flex flex-wrap gap-2">
-                <TagList
-                  tags={tags}
-                  availableTags={availableTags}
-                  currentPageId={currentCardId}
-                  variant="card"
-                  cardId={id}
+    <>
+      <Card className="mb-4">
+        <CardContent className="pt-4">
+          <div className="space-y-4">
+            {image_cid ? (
+              <div className="space-y-2">
+                <img
+                  src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY}${image_cid}`}
+                  alt="Card content"
+                  className="w-full rounded-md"
                 />
+                {description && (
+                  <p className="text-sm text-muted-foreground">{description}</p>
+                )}
+              </div>
+            ) : (
+              content && (
+                <div>
+                  <p className="text-sm">{content}</p>
+                </div>
+              )
+            )}
+            {prompt && (
+              <div>
+                <label className="text-sm font-medium">Prompt</label>
+                <p className="mt-1 text-sm">{prompt}</p>
               </div>
             )}
+            <div>
+              {!isMobile && showTags && (
+                <div className="flex flex-wrap gap-2">
+                  <TagList
+                    tags={tags}
+                    availableTags={availableTags}
+                    currentPageId={currentCardId}
+                    variant="card"
+                    cardId={id}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <div className="flex flex-row items-center gap-2">
-          {status === "suspended" && (
-            <div title="Suspended">
-              <Pause className="h-4 w-4 text-amber-500" />
-            </div>
-          )}
-          {status === "active" && (
-            <div title="Active">
-              <CircleDashed className="h-4 w-4 text-emerald-500" />
-            </div>
-          )}
-          {status === "mastered" && (
-            <div title="Mastered">
-              <CircleCheck className="h-4 w-4 text-emerald-700" />
-            </div>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTags(!showTags)}
-          >
-            <TagIcon className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditing(true)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="destructive" size="sm" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardFooter>
-    </Card>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <div className="flex flex-row items-center gap-2">
+            {status === "suspended" && (
+              <div title="Suspended">
+                <Pause className="h-4 w-4 text-amber-500" />
+              </div>
+            )}
+            {status === "active" && (
+              <div title="Active">
+                <CircleDashed className="h-4 w-4 text-emerald-500" />
+              </div>
+            )}
+            {status === "mastered" && (
+              <div title="Mastered">
+                <CircleCheck className="h-4 w-4 text-emerald-700" />
+              </div>
+            )}
+            <Button variant="outline" size="sm" onClick={handleShowTags}>
+              <TagIcon className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleDelete}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+      {isMobile && (
+        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <TagDrawer
+            tags={tags}
+            availableTags={availableTags}
+            onOpenChange={setIsDrawerOpen}
+            variant="card"
+            cardId={id}
+            currentPageId={currentCardId}
+          />
+        </Drawer>
+      )}
+    </>
   );
 }

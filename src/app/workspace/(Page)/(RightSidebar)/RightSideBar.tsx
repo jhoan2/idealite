@@ -11,7 +11,13 @@ import {
 import { CardList } from "./CardList";
 import { TreeTag } from "~/server/queries/usersTags";
 
-export function RightSideBar({ userTagTree }: { userTagTree: TreeTag[] }) {
+export function RightSideBar({
+  userTagTree,
+  isMobile,
+}: {
+  userTagTree: TreeTag[];
+  isMobile: boolean;
+}) {
   const params = useParams();
   const pageId = params.pageId as string;
 
@@ -23,7 +29,11 @@ export function RightSideBar({ userTagTree }: { userTagTree: TreeTag[] }) {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <CardList pageId={pageId} userTagTree={userTagTree} />
+        <CardList
+          pageId={pageId}
+          userTagTree={userTagTree}
+          isMobile={isMobile}
+        />
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>

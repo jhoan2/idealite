@@ -11,9 +11,10 @@ import CardSkeleton from "./CardSkeleton";
 interface CardListProps {
   pageId: string;
   userTagTree: TreeTag[];
+  isMobile: boolean;
 }
 
-export function CardList({ pageId, userTagTree }: CardListProps) {
+export function CardList({ pageId, userTagTree, isMobile }: CardListProps) {
   const [cards, setCards] = useState<Card[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -58,6 +59,7 @@ export function CardList({ pageId, userTagTree }: CardListProps) {
                 deleted: tag.deleted,
               }))}
               currentCardId={card.id}
+              isMobile={isMobile}
             />
           ))}
         </div>
