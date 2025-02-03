@@ -5,7 +5,7 @@ import { z } from "zod";
 import { auth } from "~/app/auth";
 import { db } from "~/server/db";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 const createCardSchema = z.object({
   pageId: z.string().uuid(),
@@ -86,4 +86,58 @@ export async function createCardFromPage(
       error: error instanceof Error ? error.message : "Failed to create card",
     };
   }
+}
+
+const updateCardSchema = z.object({
+  id: z.string().uuid(),
+  content: z.string().optional(),
+  prompt: z.string().optional(),
+  description: z.string().optional(),
+  status: z.enum(["active", "mastered", "suspended"]).optional(),
+});
+
+export async function updateCard(input: z.infer<typeof updateCardSchema>) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const validatedInput = updateCardSchema.parse(input);
+
+  const [updatedCard] = await db
+    .update(cards)
+    .set({
+      ...validatedInput,
+      updated_at: new Date(),
+    })
+    .where(
+      and(eq(cards.id, validatedInput.id), eq(cards.user_id, session.user.id)),
+    )
+    .returning();
+
+  revalidatePath(`/workspace/${updatedCard?.page_id}`);
+  return updatedCard;
+}
+
+export async function deleteCard(cardId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const [deletedCard] = await db
+    .update(cards)
+    .set({
+      deleted: true,
+      updated_at: new Date(),
+    })
+    .where(and(eq(cards.id, cardId), eq(cards.user_id, session.user.id)))
+    .returning();
+
+  if (!deletedCard) {
+    throw new Error("Card not found or unauthorized");
+  }
+
+  revalidatePath(`/workspace/${deletedCard.page_id}`);
+  return deletedCard;
 }

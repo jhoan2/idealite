@@ -11,11 +11,15 @@ import {
 } from "~/components/ui/context-menu";
 import { addTagToPage, removeTagFromPage } from "~/server/actions/page";
 import { toast } from "sonner";
+import { addTagToCard, removeTagFromCard } from "~/server/actions/cardsTags";
 
 interface TagListProps {
   tags: Tag[];
   availableTags: Tag[];
   currentPageId: string;
+  variant?: "page" | "card";
+  cardId?: string;
+  className?: string;
 }
 
 interface Tag {
@@ -23,27 +27,85 @@ interface Tag {
   name: string;
 }
 
-export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
-  const handleRemoveTag = async (pageId: string, tagId: string) => {
+export function TagList({
+  tags,
+  availableTags,
+  currentPageId,
+  variant = "page",
+  cardId,
+  className = "",
+}: TagListProps) {
+  const handleRemoveTag = async (tagId: string) => {
     try {
-      await removeTagFromPage(pageId, tagId);
+      if (variant === "card" && cardId) {
+        await removeTagFromCard(cardId, tagId);
+        toast.success("Tag removed from card");
+      } else {
+        await removeTagFromPage(currentPageId, tagId);
+      }
     } catch (error) {
       toast.error("Failed to remove tag");
       console.error("Error removing tag:", error);
     }
   };
 
-  const handleAddTag = async (pageId: string, tagId: string) => {
+  const handleAddTag = async (tagId: string) => {
     try {
-      await addTagToPage(pageId, tagId);
+      if (variant === "card" && cardId) {
+        await addTagToCard(cardId, tagId);
+        toast.success("Tag added to card");
+      } else {
+        await addTagToPage(currentPageId, tagId);
+      }
     } catch (error) {
       toast.error("Failed to add tag");
       console.error("Error adding tag:", error);
     }
   };
 
+  // For cards, we'll just show the tags without the container
+  if (variant === "card") {
+    return (
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <div className={`flex flex-wrap gap-2 ${className}`}>
+            {tags.map((tag: Tag) => (
+              <Badge
+                key={tag.id}
+                variant="secondary"
+                className="group relative hover:bg-destructive hover:text-destructive-foreground"
+              >
+                {tag.name}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void handleRemoveTag(tag.id);
+                  }}
+                  className="ml-1 hidden group-hover:inline-flex"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="max-h-[300px] overflow-y-auto">
+          {availableTags.map((tag: Tag) => (
+            <ContextMenuItem
+              key={tag.id}
+              onClick={() => void handleAddTag(tag.id)}
+            >
+              {tag.name}
+            </ContextMenuItem>
+          ))}
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+  }
+
+  // Original page variant with the card container
   return (
-    <div className="mt-4 w-full max-w-2xl">
+    <div className={`mt-4 w-full max-w-2xl ${className}`}>
       <ContextMenu>
         <ContextMenuTrigger>
           <Card className="mt-4 w-full max-w-2xl cursor-context-menu transition-colors hover:bg-muted/50">
@@ -61,7 +123,7 @@ export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          handleRemoveTag(currentPageId, tag.id);
+                          void handleRemoveTag(tag.id);
                         }}
                         className="ml-1 hidden group-hover:inline-flex"
                       >
@@ -74,12 +136,11 @@ export function TagList({ tags, availableTags, currentPageId }: TagListProps) {
             </CardContent>
           </Card>
         </ContextMenuTrigger>
-
         <ContextMenuContent className="max-h-[300px] overflow-y-auto">
           {availableTags.map((tag: Tag) => (
             <ContextMenuItem
               key={tag.id}
-              onClick={() => handleAddTag(currentPageId, tag.id)}
+              onClick={() => void handleAddTag(tag.id)}
             >
               {tag.name}
             </ContextMenuItem>
