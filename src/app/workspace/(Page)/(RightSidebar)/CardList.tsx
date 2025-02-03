@@ -6,6 +6,7 @@ import { getPageCards } from "~/server/queries/card";
 import { SidebarGroup } from "~/components/ui/sidebar";
 import { Card } from "~/server/queries/card";
 import { TreeTag } from "~/server/queries/usersTags";
+import CardSkeleton from "./CardSkeleton";
 
 interface CardListProps {
   pageId: string;
@@ -32,7 +33,7 @@ export function CardList({ pageId, userTagTree }: CardListProps) {
   }, [pageId]);
 
   if (isLoading) {
-    return <div className="p-4">Loading cards...</div>;
+    return <CardSkeleton />;
   }
 
   if (!cards.length) {
