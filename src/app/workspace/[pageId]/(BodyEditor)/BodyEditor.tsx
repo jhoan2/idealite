@@ -255,7 +255,7 @@ const BodyEditor = ({
       if (!result.success) {
         throw new Error(result.error || "Failed to create card");
       }
-
+      toast.success("Card created successfully");
       setDescription("");
       editor.commands.focus();
     } catch (error) {
