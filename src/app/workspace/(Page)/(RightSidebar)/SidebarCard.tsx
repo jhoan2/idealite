@@ -80,24 +80,24 @@ export function SidebarCard({
       <Card className="mb-4">
         <CardContent className="pt-4">
           <div className="space-y-4">
-            {!image_cid && (
+            {image_cid ? (
               <div>
-                <label className="text-sm font-medium">Content</label>
+                <label className="text-sm font-medium">Description</label>
                 <Textarea
-                  value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
                   className="mt-1"
                 />
               </div>
+            ) : (
+              <div>
+                <Textarea
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="mt-1 h-auto max-h-[200px] min-h-[100px] overflow-y-auto"
+                />
+              </div>
             )}
-            <div>
-              <label className="text-sm font-medium">Description</label>
-              <Textarea
-                value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-                className="mt-1"
-              />
-            </div>
           </div>
         </CardContent>
         <CardFooter className="justify-end space-x-2">
