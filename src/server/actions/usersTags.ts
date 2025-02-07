@@ -344,6 +344,7 @@ export async function createTagForUser(input: CreateTagInput) {
           name: validatedInput.name,
           parent_id: validatedInput.parentId || null,
           deleted: false,
+          is_template: false,
         })
         .returning();
 

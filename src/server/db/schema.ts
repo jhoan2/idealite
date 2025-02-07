@@ -71,6 +71,7 @@ export const tags = createTable(
       () => new Date(),
     ),
     deleted: boolean("deleted").default(false),
+    is_template: boolean("is_template").default(false).notNull(),
   },
   (table) => {
     return {
