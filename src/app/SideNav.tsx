@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Compass,
+  Gamepad2,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -36,6 +37,7 @@ export default function SideNav() {
   const menuItems = [
     { icon: Home, label: "Home", href: "/home" },
     { icon: Folder, label: "Workspace", href: "/workspace" },
+    { icon: Gamepad2, label: "Play", href: "/play" },
     { icon: Compass, label: "Explore", href: "/explore" },
     { icon: UserRound, label: "Profile", href: "/profile" },
   ];
