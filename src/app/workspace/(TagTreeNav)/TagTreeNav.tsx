@@ -10,6 +10,7 @@ import {
   Archive,
   FilePlus,
   Palette,
+  Tag,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -18,7 +19,10 @@ import {
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
 import type { TreeFolder, TreePage, TreeTag } from "~/server/queries/usersTags";
-import { toggleTagArchived } from "~/server/actions/usersTags";
+import {
+  createTagForUser,
+  toggleTagArchived,
+} from "~/server/actions/usersTags";
 import { createPage, movePage, createRootPage } from "~/server/actions/page";
 import { createRootFolder } from "~/server/actions/usersFolders";
 import { toast } from "sonner";
@@ -38,6 +42,15 @@ import TagDrawer from "./(Drawer)/TagDrawer";
 import FolderDrawer from "./(Drawer)/FolderDrawer";
 import PageDrawer from "./(Drawer)/PageDrawer";
 import { createUntitledPage, createUntitledPageInFolder } from "~/lib/tree";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
 
 interface DrawerState {
   isOpen: boolean;
@@ -62,11 +75,13 @@ const TreeNode: React.FC<{
     type: "tag" | "folder" | "page",
     data: TreeTag | TreeFolder | TreePage,
   ) => void;
-}> = ({ node, level, allTags, userId, onOpenDrawer }) => {
+  isMobile: boolean;
+}> = ({ node, level, allTags, userId, onOpenDrawer, isMobile }) => {
   const hasChildren = node.children && node.children.length > 0;
   const hasPages = node.pages && node.pages.length > 0;
   const hasFolders = node.folders && node.folders.length > 0;
   const [isLoading, setIsLoading] = useState(false);
+
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [selectedPage, setSelectedPage] = useState<{
     id: string;
@@ -84,6 +99,9 @@ const TreeNode: React.FC<{
       node.folders?.filter((f) => !f.is_collapsed).map((f) => f.id) ?? [],
     ),
   );
+  const [showDialog, setShowDialog] = useState(false);
+  const [tagName, setTagName] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const longPressTimeout = useRef<NodeJS.Timeout>();
 
@@ -146,6 +164,37 @@ const TreeNode: React.FC<{
 
   const handleArchiveTag = async () => {
     await toggleTagArchived({ tagId: node.id, isArchived: true });
+  };
+
+  const handleCreateTag = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    if (!tagName.trim()) {
+      toast.error("Tag name cannot be empty");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await createTagForUser({
+        name: tagName.trim(),
+        parentId: node.id,
+      });
+
+      if (!result.success) {
+        toast.error("Failed to create tag");
+        return;
+      }
+
+      setTagName("");
+      setShowDialog(false);
+      toast.success("Tag created successfully");
+    } catch (error) {
+      console.error("Error creating tag:", error);
+      toast.error("Failed to create tag");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleToggleExpand = async () => {
@@ -326,141 +375,193 @@ const TreeNode: React.FC<{
         onMove={handleMovePage}
         isLoading={isLoading}
       />
-      <ContextMenu>
-        <ContextMenuTrigger>
-          <div
-            className="touch-action-none select-none"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            onTouchMove={handleTouchMove}
-          >
-            <div
-              className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
-              style={{ paddingLeft: `${level * 16}px` }}
-              onClick={handleToggleExpand}
-            >
-              {
-                <button
-                  className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
-                  aria-expanded={isExpanded}
-                  aria-label={isExpanded ? "Collapse" : "Expand"}
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                  )}
-                </button>
-              }
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {node.name}
-              </span>
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Tag</DialogTitle>
+            <DialogDescription>
+              Enter a name for your new tag. This tag will be created as a child
+              of the current tag.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateTag}>
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <Input
+                  ref={inputRef}
+                  id="tagName"
+                  placeholder="Enter tag name"
+                  value={tagName}
+                  onChange={(e) => setTagName(e.target.value)}
+                  className="col-span-3"
+                  autoFocus
+                  disabled={isLoading}
+                />
+              </div>
             </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDialog(false);
+                  setTagName("");
+                }}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+        <ContextMenu>
+          <ContextMenuTrigger>
+            <div
+              className={isMobile ? "touch-action-none select-none" : ""}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onTouchMove={handleTouchMove}
+            >
+              <div
+                className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
+                style={{ paddingLeft: `${level * 16}px` }}
+                onClick={handleToggleExpand}
+              >
+                {
+                  <button
+                    className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
+                    aria-expanded={isExpanded}
+                    aria-label={isExpanded ? "Collapse" : "Expand"}
+                  >
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                    )}
+                  </button>
+                }
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {node.name}
+                </span>
+              </div>
 
-            {/* Expanded content */}
-            {isExpanded && (
-              <div className="ml-2">
-                {hasPages &&
-                  node.pages.map((page) => (
-                    <PageComponent
-                      key={page.id}
-                      page={{
-                        id: page.id,
-                        title: page.title || "",
-                        folder_id: page.folder_id,
-                        primary_tag_id: page.primary_tag_id,
-                        content_type: page.content_type || "page",
-                      }}
-                      level={level}
-                      currentPageId={currentPageId}
-                      onMovePageClick={(pageId, title) => {
-                        setSelectedPage({
-                          id: pageId,
-                          title,
+              {/* Expanded content */}
+              {isExpanded && (
+                <div className="ml-2">
+                  {hasPages &&
+                    node.pages.map((page) => (
+                      <PageComponent
+                        key={page.id}
+                        page={{
+                          id: page.id,
+                          title: page.title || "",
                           folder_id: page.folder_id,
                           primary_tag_id: page.primary_tag_id,
-                        });
-                        setShowMoveDialog(true);
-                      }}
-                      handleItemClick={handleItemClick}
-                      onOpenDrawer={onOpenDrawer}
-                    />
-                  ))}
-                {/* First render folders */}
-                {hasFolders &&
-                  node.folders.map((folder) => (
-                    <FolderComponent
-                      key={folder.id}
-                      folder={folder}
-                      level={level}
-                      parentTagId={node.id}
-                      expandedFolders={expandedFolders}
-                      handleFolderToggle={handleFolderToggle}
-                      handleItemClick={handleItemClick}
-                      currentPageId={currentPageId}
-                      onMovePageClick={(pageId, title) => {
-                        setSelectedPage({
-                          id: pageId,
-                          title,
-                          folder_id: folder.id,
-                          primary_tag_id: node.id,
-                        });
-                        setShowMoveDialog(true);
-                      }}
-                      onCreatePageInFolder={handleCreatePageInFolder}
-                      onCreateSubfolder={handleCreateSubfolder}
-                      isLoading={isLoading}
-                      onOpenDrawer={onOpenDrawer}
-                    />
-                  ))}
+                          content_type: page.content_type || "page",
+                        }}
+                        level={level}
+                        currentPageId={currentPageId}
+                        onMovePageClick={(pageId, title) => {
+                          setSelectedPage({
+                            id: pageId,
+                            title,
+                            folder_id: page.folder_id,
+                            primary_tag_id: page.primary_tag_id,
+                          });
+                          setShowMoveDialog(true);
+                        }}
+                        handleItemClick={handleItemClick}
+                        onOpenDrawer={onOpenDrawer}
+                      />
+                    ))}
+                  {/* First render folders */}
+                  {hasFolders &&
+                    node.folders.map((folder) => (
+                      <FolderComponent
+                        key={folder.id}
+                        folder={folder}
+                        level={level}
+                        parentTagId={node.id}
+                        expandedFolders={expandedFolders}
+                        handleFolderToggle={handleFolderToggle}
+                        handleItemClick={handleItemClick}
+                        currentPageId={currentPageId}
+                        onMovePageClick={(pageId, title) => {
+                          setSelectedPage({
+                            id: pageId,
+                            title,
+                            folder_id: folder.id,
+                            primary_tag_id: node.id,
+                          });
+                          setShowMoveDialog(true);
+                        }}
+                        onCreatePageInFolder={handleCreatePageInFolder}
+                        onCreateSubfolder={handleCreateSubfolder}
+                        isLoading={isLoading}
+                        onOpenDrawer={onOpenDrawer}
+                      />
+                    ))}
 
-                {/* Finally render child tags */}
-                {hasChildren &&
-                  node.children.map((child) => (
-                    <TreeNode
-                      key={child.id}
-                      node={child}
-                      level={level + 1}
-                      allTags={allTags}
-                      userId={userId}
-                      onOpenDrawer={onOpenDrawer}
-                    />
-                  ))}
-              </div>
-            )}
-          </div>
-        </ContextMenuTrigger>
-        {/* Context menu for tags */}
-        <ContextMenuContent className="w-64">
-          <ContextMenuItem
-            onSelect={() => handleCreatePage("page")}
-            disabled={isLoading}
-            className={isLoading ? "cursor-not-allowed opacity-50" : ""}
-          >
-            <StickyNote className="mr-2 h-4 w-4" />
-            <span>{isLoading ? "Creating..." : "Create  page"}</span>
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() => handleCreatePage("canvas")}
-            disabled={isLoading}
-            className={isLoading ? "cursor-not-allowed opacity-50" : ""}
-          >
-            <PanelTop className="mr-2 h-4 w-4" />
-            <span>{isLoading ? "Creating..." : "Create canvas"}</span>
-          </ContextMenuItem>
-          <ContextMenuItem
-            onSelect={() => handleCreateFolder()}
-            disabled={isLoading}
-          >
-            <FolderPlus className="mr-2 h-4 w-4" />
-            <span>Create folder</span>
-          </ContextMenuItem>
-          <ContextMenuItem onSelect={handleArchiveTag}>
-            <Archive className="mr-2 h-4 w-4" />
-            <span>Archive tag</span>
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
+                  {/* Finally render child tags */}
+                  {hasChildren &&
+                    node.children.map((child) => (
+                      <TreeNode
+                        key={child.id}
+                        node={child}
+                        level={level + 1}
+                        allTags={allTags}
+                        userId={userId}
+                        onOpenDrawer={onOpenDrawer}
+                        isMobile={isMobile}
+                      />
+                    ))}
+                </div>
+              )}
+            </div>
+          </ContextMenuTrigger>
+          {/* Context menu for tags */}
+          <ContextMenuContent className="w-64">
+            <ContextMenuItem
+              onSelect={() => handleCreatePage("page")}
+              disabled={isLoading}
+              className={isLoading ? "cursor-not-allowed opacity-50" : ""}
+            >
+              <StickyNote className="mr-2 h-4 w-4" />
+              <span>{isLoading ? "Creating..." : "Create  page"}</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => handleCreatePage("canvas")}
+              disabled={isLoading}
+              className={isLoading ? "cursor-not-allowed opacity-50" : ""}
+            >
+              <PanelTop className="mr-2 h-4 w-4" />
+              <span>{isLoading ? "Creating..." : "Create canvas"}</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => handleCreateFolder()}
+              disabled={isLoading}
+            >
+              <FolderPlus className="mr-2 h-4 w-4" />
+              <span>Create folder</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={(e) => {
+                setShowDialog(true);
+              }}
+            >
+              <Tag className="mr-2 h-4 w-4" />
+              <span>Create tag</span>
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={handleArchiveTag}>
+              <Archive className="mr-2 h-4 w-4" />
+              <span>Archive tag</span>
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </Dialog>
     </>
   );
 };
@@ -492,6 +593,7 @@ const MinimalistTree: React.FC<
             allTags={data}
             userId={userId}
             onOpenDrawer={onOpenDrawer}
+            isMobile={isMobile}
           />
         ))}
       </div>
