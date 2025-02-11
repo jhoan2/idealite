@@ -13,6 +13,6 @@
     "buttonTitle": "Check this out",
     "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
     "splashBackgroundColor": "#f7f7f7",
-    "webhookUrl": "https://idealite.xyz/api/webhook"
+    "webhookUrl": "https://api.neynar.com/f/app/9dca5c14-0de2-4f0c-9542-b51dea4a8474/event"
   }
 }

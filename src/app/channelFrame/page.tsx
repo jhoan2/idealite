@@ -2,10 +2,11 @@ import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import { auth } from "~/app/auth";
 import { getTagWithChildren } from "~/server/queries/tag";
-import { getUserTags } from "~/server/queries/usersTags";
+import { getUserTags, getUserTagTree } from "~/server/queries/usersTags";
 import { checkIfMember } from "~/server/farcaster";
 
 const ChannelHome = dynamic(() => import("./ChannelHome"), { ssr: false });
+
 const BASE_URL =
   process.env.NEXT_PUBLIC_DEPLOYMENT_URL || process.env.VERCEL_URL;
 const domain = BASE_URL ? `https://${BASE_URL}` : "http://localhost:3000";
@@ -20,7 +21,7 @@ const frame = {
       name: "idealite",
       url: route,
       splashImageUrl:
-        "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+        "https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
       splashBackgroundColor: "#f7f7f7",
     },
   },
@@ -50,12 +51,15 @@ export default async function Page() {
   );
   const userTags = userId ? await getUserTags(userId) : [];
   const isMember = userFid ? await checkIfMember(userFid.toString()) : false;
+  const userTagTree = userId ? await getUserTagTree(userId) : [];
   return (
     <ChannelHome
+      session={session}
       tag={tag}
       userTags={userTags}
       userId={userId ?? null}
       isMember={isMember}
+      userTagTree={userTagTree}
     />
   );
 }

@@ -1,24 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import {
   ChevronRight,
   ChevronDown,
   Folder,
   Trash,
-  Replace,
-  StickyNote,
-  PanelTop,
   FolderPlus,
+  FilePlus,
+  Palette,
 } from "lucide-react";
-import Link from "next/link";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import type { TreeFolder } from "~/server/queries/usersTags";
+import type { TreeFolder, TreePage, TreeTag } from "~/server/queries/usersTags";
 import { deleteFolder } from "~/server/actions/usersFolders";
 import { toast } from "sonner";
 import { PageComponent } from "./Page";
@@ -42,6 +40,10 @@ interface FolderComponentProps {
   ) => Promise<void>;
   onCreateSubfolder: (parentFolder: TreeFolder) => Promise<void>;
   isLoading: boolean;
+  onOpenDrawer: (
+    type: "tag" | "folder" | "page",
+    data: TreeTag | TreeFolder | TreePage,
+  ) => void;
 }
 
 export const FolderComponent: React.FC<FolderComponentProps> = ({
@@ -56,9 +58,25 @@ export const FolderComponent: React.FC<FolderComponentProps> = ({
   onCreatePageInFolder,
   onCreateSubfolder,
   isLoading,
+  onOpenDrawer,
 }) => {
   const isFolderExpanded = expandedFolders.has(folder.id);
+  const longPressTimeout = useRef<NodeJS.Timeout>();
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    longPressTimeout.current = setTimeout(() => {
+      onOpenDrawer("folder", folder);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    clearTimeout(longPressTimeout.current);
+  };
+
+  const handleTouchMove = () => {
+    clearTimeout(longPressTimeout.current);
+  };
   return (
     <ContextMenu>
       <ContextMenuTrigger>
@@ -67,6 +85,9 @@ export const FolderComponent: React.FC<FolderComponentProps> = ({
             className="flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700"
             style={{ paddingLeft: `${(level + 1) * 16}px` }}
             onClick={() => handleFolderToggle(folder.id)}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
           >
             <button
               className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
@@ -93,10 +114,11 @@ export const FolderComponent: React.FC<FolderComponentProps> = ({
                 <PageComponent
                   key={page.id}
                   page={page}
-                  level={level + 1} // Note the level adjustment for folder pages
+                  level={level + 1}
                   currentPageId={currentPageId}
                   onMovePageClick={onMovePageClick}
                   handleItemClick={handleItemClick}
+                  onOpenDrawer={onOpenDrawer}
                 />
               ))}
 
@@ -114,6 +136,7 @@ export const FolderComponent: React.FC<FolderComponentProps> = ({
                   onCreatePageInFolder={onCreatePageInFolder}
                   onCreateSubfolder={onCreateSubfolder}
                   isLoading={isLoading}
+                  onOpenDrawer={onOpenDrawer}
                 />
               ))}
             </div>
@@ -125,14 +148,14 @@ export const FolderComponent: React.FC<FolderComponentProps> = ({
           onSelect={() => onCreatePageInFolder(folder, "page")}
           disabled={isLoading}
         >
-          <StickyNote className="mr-2 h-4 w-4" />
+          <FilePlus className="mr-2 h-4 w-4" />
           <span>{isLoading ? "Creating..." : "Create page"}</span>
         </ContextMenuItem>
         <ContextMenuItem
           onSelect={() => onCreatePageInFolder(folder, "canvas")}
           disabled={isLoading}
         >
-          <PanelTop className="mr-2 h-4 w-4" />
+          <Palette className="mr-2 h-4 w-4" />
           <span>{isLoading ? "Creating..." : "Create canvas"}</span>
         </ContextMenuItem>
         <ContextMenuItem

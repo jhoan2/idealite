@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
@@ -14,10 +14,16 @@ import { TaskList } from "@tiptap/extension-task-list";
 import { TaskItem } from "@tiptap/extension-task-item";
 import Image from "@tiptap/extension-image";
 import LoadingOverlay from "./LoadingOverlay";
+import { createCardFromPage } from "~/server/actions/card";
+import { NodeSelection } from "@tiptap/pm/state";
+import { Input } from "~/components/ui/input";
+import StackCardsIcon from "./StackCardsIcon";
+import { Loader2 } from "lucide-react";
 
 const BodyEditor = ({
   content,
   immediatelyRender = false,
+
   onSavingStateChange,
   pageId,
 }: {
@@ -28,6 +34,10 @@ const BodyEditor = ({
 }) => {
   const [editorContent, setEditorContent] = useState(content);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [description, setDescription] = useState("");
+  const [isImageSelected, setIsImageSelected] = useState(false);
+  const [isCreatingCard, setIsCreatingCard] = useState(false);
+
   const debouncedSave = useDebouncedCallback(async (content: string) => {
     try {
       onSavingStateChange(true);
@@ -166,6 +176,98 @@ const BodyEditor = ({
     },
   });
 
+  useEffect(() => {
+    if (editor) {
+      // Update image selection state whenever selection changes
+      const handleSelectionUpdate = () => {
+        const selection = editor.state.selection;
+        const isImageSelection =
+          selection instanceof NodeSelection &&
+          selection.node?.type.name === "image";
+
+        setIsImageSelected(isImageSelection);
+      };
+
+      editor.on("selectionUpdate", handleSelectionUpdate);
+      return () => {
+        editor.off("selectionUpdate", handleSelectionUpdate);
+      };
+    }
+  }, [editor]);
+
+  const handleCreateCard = async (editor: Editor) => {
+    if (!editor) return;
+
+    try {
+      setIsCreatingCard(true);
+      const selection = editor.state.selection;
+      const isImageSelection =
+        selection instanceof NodeSelection &&
+        selection.node?.type.name === "image";
+
+      const twoWeeksFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      const baseCardData = {
+        pageId,
+        nextReview: twoWeeksFromNow.toISOString(),
+      };
+
+      let cardData;
+
+      if (isImageSelection) {
+        if (!description.trim()) {
+          toast.error("Description is required for image cards");
+          return;
+        }
+
+        const src = selection.node.attrs.src;
+        const imageId = src.split("/").pop();
+
+        if (!imageId) {
+          toast.error("Invalid image source");
+          return;
+        }
+
+        cardData = {
+          ...baseCardData,
+          imageCid: imageId,
+          description: description.trim(),
+        };
+      } else {
+        // Handle text cards
+        const content = editor.state.doc.textBetween(
+          selection.from,
+          selection.to,
+        );
+
+        if (!content.trim()) {
+          toast.error("Please select some text to create a card");
+          return;
+        }
+
+        cardData = {
+          ...baseCardData,
+          content: content.trim(),
+        };
+      }
+
+      const result = await createCardFromPage(cardData);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create card");
+      }
+      toast.success("Card created successfully");
+      setDescription("");
+      editor.commands.focus();
+    } catch (error) {
+      console.error("Card creation failed:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create card",
+      );
+    } finally {
+      setIsCreatingCard(false);
+    }
+  };
+
   return (
     <div className="flex h-full w-full justify-center overflow-auto">
       {isUploadingImage && <LoadingOverlay />}
@@ -173,9 +275,10 @@ const BodyEditor = ({
         <div className="pb-[50vh]">
           <EditorContent editor={editor} className="w-full" />
         </div>
+
         {editor && (
           <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
-            <div className="bubble-menu">
+            <div className="bubble-menu flex gap-2 rounded border border-border bg-background p-2 shadow-md">
               <button
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 className={editor.isActive("bold") ? "is-active" : ""}
@@ -196,24 +299,62 @@ const BodyEditor = ({
               </button>
               <div className="w-[1px] bg-slate-200" />
               <button
-                onClick={() => {
-                  // Method 1: Get text between from and to
-                  const { from, to } = editor.state.selection;
-                  const selectedText = editor.state.doc.textBetween(from, to);
-                  console.log(editor.state.doc.textContent, "inlineContent");
-                  console.log("Selected text (Method 1):", selectedText);
-
-                  // Method 2: Get text using getText()
-                  // const text = editor.getText();
-                  // console.log("All text (Method 2):", text);
-
-                  // Method 3: Get HTML of selection
-                  // const htmlContent = editor.getHTML();
-                  // console.log("HTML content (Method 3):", htmlContent);
-                }}
+                onClick={() => handleCreateCard(editor)}
+                className="rounded bg-background px-2 py-1 text-secondary-foreground transition-colors hover:bg-secondary/90"
+                disabled={isCreatingCard}
+                title="Create Card"
               >
-                Click
+                {isCreatingCard ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <StackCardsIcon />
+                )}
               </button>
+              {isImageSelected && (
+                <div className="absolute -top-10 left-0 right-0 flex gap-2 bg-background">
+                  <Input
+                    type="text"
+                    placeholder="Enter description..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    autoFocus
+                    className="h-8 min-w-[300px] bg-background text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleCreateCard(editor);
+                        setDescription("");
+                      }
+                      if (e.key === "Escape") {
+                        setDescription("");
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (description.trim()) {
+                        handleCreateCard(editor);
+                        setDescription("");
+                      }
+                    }}
+                    disabled={isCreatingCard}
+                    className="rounded bg-primary px-2 py-1 text-sm text-primary-foreground transition-colors hover:bg-muted-foreground"
+                  >
+                    {isCreatingCard ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Add"
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDescription("");
+                    }}
+                    className="rounded bg-background px-2 py-1 text-sm text-secondary-foreground transition-colors hover:bg-muted"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </BubbleMenu>
         )}

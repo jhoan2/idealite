@@ -62,7 +62,6 @@ export const tags = createTable(
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name")
       .notNull()
-      .unique()
       .$default(() => sql`lower(name)`),
     parent_id: uuid("parent_id").references((): AnyPgColumn => tags.id),
     created_at: timestamp("created_at", { withTimezone: true })
@@ -92,6 +91,7 @@ export const users_tags = createTable(
       .notNull()
       .references(() => tags.id),
     is_collapsed: boolean("is_collapsed").default(false).notNull(),
+    is_archived: boolean("is_archived").default(false).notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -133,6 +133,10 @@ export const pages = createTable(
       deleted_idx: index("page_deleted_idx").on(table.deleted),
       primary_tag_id_idx: index("page_primary_tag_id_idx").on(
         table.primary_tag_id,
+      ),
+      title_search_idx: index("page_title_search_idx").using(
+        "gin",
+        sql`to_tsvector('english', ${table.title})`,
       ),
     };
   },
@@ -322,6 +326,7 @@ export const tabs = createTable(
   }),
 );
 
+export type Folder = typeof folders.$inferSelect;
 export const folders = createTable(
   "folder",
   {
@@ -375,6 +380,70 @@ export const users_folders = createTable(
       folder_id_idx: index("users_folders_folder_id_idx").on(table.folder_id),
     };
   },
+);
+
+export const cards = createTable(
+  "card",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    page_id: uuid("page_id").references(() => pages.id),
+    resource_id: uuid("resource_id").references(() => resources.id),
+    content: text("content"),
+    image_cid: text("image_cid"),
+    canvas_image_cid: text("canvas_image_cid"),
+    prompt: text("prompt"),
+    description: text("description"),
+    last_reviewed: timestamp("last_reviewed", { withTimezone: true }),
+    next_review: timestamp("next_review", { withTimezone: true }),
+    mastered_at: timestamp("mastered_at", { withTimezone: true }),
+    status: varchar("status", {
+      enum: ["active", "mastered", "suspended"],
+    })
+      .default("active")
+      .notNull(),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+    deleted: boolean("deleted").default(false),
+  },
+  (table) => ({
+    user_idx: index("card_user_idx").on(table.user_id),
+    page_idx: index("card_page_idx").on(table.page_id),
+    resource_idx: index("card_resource_idx").on(table.resource_id),
+    content_search_idx: index("card_content_search_idx").using(
+      "gin",
+      sql`to_tsvector('english', ${table.content})`,
+    ),
+    status_idx: index("card_status_idx").on(table.status),
+    deleted_idx: index("card_deleted_idx").on(table.deleted),
+  }),
+);
+
+export type CardTag = typeof cards_tags.$inferSelect;
+export const cards_tags = createTable(
+  "cards_tags",
+  {
+    card_id: uuid("card_id")
+      .notNull()
+      .references(() => cards.id, { onDelete: "cascade" }),
+    tag_id: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.card_id, table.tag_id] }),
+    card_idx: index("cards_tags_card_idx").on(table.card_id),
+    tag_idx: index("cards_tags_tag_idx").on(table.tag_id),
+  }),
 );
 
 export const pagesRelations = relations(pages, ({ many, one }) => ({
@@ -500,5 +569,32 @@ export const usersFoldersRelations = relations(users_folders, ({ one }) => ({
   folder: one(folders, {
     fields: [users_folders.folder_id],
     references: [folders.id],
+  }),
+}));
+
+export const cardsRelations = relations(cards, ({ many, one }) => ({
+  tags: many(cards_tags),
+  user: one(users, {
+    fields: [cards.user_id],
+    references: [users.id],
+  }),
+  page: one(pages, {
+    fields: [cards.page_id],
+    references: [pages.id],
+  }),
+  resource: one(resources, {
+    fields: [cards.resource_id],
+    references: [resources.id],
+  }),
+}));
+
+export const cardsTagsRelations = relations(cards_tags, ({ one }) => ({
+  card: one(cards, {
+    fields: [cards_tags.card_id],
+    references: [cards.id],
+  }),
+  tag: one(tags, {
+    fields: [cards_tags.tag_id],
+    references: [tags.id],
   }),
 }));

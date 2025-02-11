@@ -47,9 +47,16 @@ const coreConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "purple-defensive-anglerfish-674.mypinata.cloud",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };
+
 // module.exports = withBundleAnalyzer(coreConfig);
 
 import { withSentryConfig } from "@sentry/nextjs";

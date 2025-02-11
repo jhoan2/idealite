@@ -3,18 +3,21 @@
 import { useEffect, useState } from "react";
 import sdk, { FrameNotificationDetails } from "@farcaster/frame-sdk";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
-import SignInWithFarcaster from "./SignInWithFarcaster";
-import { Button } from "~/components/ui/button";
-import ChannelFrameTags from "./ChannelFrameTags";
 import { toast } from "sonner";
 import { SelectTag } from "~/server/queries/tag";
+import posthog from "posthog-js";
+import { Session } from "next-auth";
+import Onboarding from "./Onboarding";
+import { TreeTag } from "~/server/queries/usersTags";
+import { useRouter } from "next/navigation";
 
 interface ExploreStateProps {
   tag: SelectTag[];
   userTags: SelectTag[];
   userId: string | null;
   isMember: boolean;
+  session: Session | null;
+  userTagTree: TreeTag[];
 }
 
 export type SafeAreaInsets = {
@@ -45,11 +48,13 @@ export default function ChannelHome({
   tag,
   userTags,
   userId,
-  isMember,
 }: ExploreStateProps) {
+  const router = useRouter();
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const { data: session, status } = useSession();
-
+  const [isOnboarding, setIsOnboarding] = useState(
+    !session || userTags.length === 0,
+  );
   const handleJoinChannel = async () => {
     const response = await fetch("/api/channelMembership", {
       method: "POST",
@@ -67,23 +72,13 @@ export default function ChannelHome({
     const load = async () => {
       const frameContext = await sdk.context;
       sdk.actions.ready();
-      try {
-        await fetch("/api/analytics/channelFrame", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            distinctId: frameContext?.user?.fid,
-            event: "channel_home_viewed",
-            properties: {
-              displayName: frameContext?.user?.displayName,
-              username: frameContext?.user?.username,
-            },
-          }),
-        });
-      } catch (error) {
-        console.error("Failed to track analytics:", error);
+      posthog.capture("channel_home_viewed", {
+        distinctId: frameContext?.user?.fid,
+        displayName: frameContext?.user?.displayName,
+        username: frameContext?.user?.username,
+      });
+      if (status !== "loading" && session && userTags.length > 0) {
+        router.push("/workspace");
       }
     };
 
@@ -97,33 +92,24 @@ export default function ChannelHome({
     return <div>Loading...</div>;
   }
 
-  return (
-    <>
-      <nav className="border-b">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-2">
-            <Image
-              src="/icon48.png"
-              alt="idealite logo"
-              width={32}
-              height={32}
-            />
-            <h1 className="text-xl font-semibold text-amber-400">Idealite</h1>
-          </div>
-          <div className="flex space-x-2">
-            <SignInWithFarcaster status={status} />
-            {!isMember && status === "authenticated" && (
-              <Button onClick={handleJoinChannel}>Join Channel</Button>
-            )}
-          </div>
-        </div>
-      </nav>
-      <ChannelFrameTags
+  if (!isOnboarding && (!session || userTags.length === 0)) {
+    setIsOnboarding(true);
+  }
+
+  if (!isSDKLoaded) {
+    return <div>Loading...</div>;
+  }
+
+  if (!session || userTags.length === 0) {
+    return (
+      <Onboarding
         tag={tag}
         userTags={userTags}
         userId={userId}
-        status={status}
+        onComplete={() => router.push("/workspace")}
       />
-    </>
-  );
+    );
+  }
+
+  return null;
 }

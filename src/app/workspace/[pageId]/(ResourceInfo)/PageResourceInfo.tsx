@@ -8,6 +8,7 @@ import InfoCard from "../(ResourceInfo)/InfoCard";
 import { deleteResourcePage } from "~/server/actions/pagesResource";
 import { deleteUserResource } from "~/server/actions/usersResource";
 import { toast } from "sonner";
+import { flattenTagTree } from "~/lib/tree";
 
 interface PageResourceInfoProps {
   resources: Resource[];
@@ -19,31 +20,11 @@ interface PageResourceInfoProps {
 interface Tag {
   id: string;
   name: string;
+  created_at: Date;
+  updated_at: Date | null;
+  parent_id: string | null;
+  deleted: boolean | null;
 }
-
-const flattenTagTree = (tree: TreeTag[], existingTags: Tag[]): Tag[] => {
-  const existingTagIds = new Set(existingTags.map((tag) => tag.id));
-
-  const flatten = (node: TreeTag): Tag[] => {
-    let result: Tag[] = [];
-
-    // Only add the current tag if it's not in existingTags
-    if (!existingTagIds.has(node.id)) {
-      result.push({ id: node.id, name: node.name });
-    }
-
-    // Recursively flatten children
-    if (node.children) {
-      node.children.forEach((child) => {
-        result = result.concat(flatten(child));
-      });
-    }
-
-    return result;
-  };
-
-  return tree.reduce((acc, node) => acc.concat(flatten(node)), [] as Tag[]);
-};
 
 export default function PageResourceInfo({
   resources,

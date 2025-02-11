@@ -19,13 +19,14 @@ export interface TreePage {
   title: string | null;
   primary_tag_id: string | null;
   folder_id: string | null;
+  content_type: "page" | "canvas";
 }
 
 export interface TreeFolder {
   id: string;
   name: string;
   is_collapsed: boolean;
-  pages: Array<{ id: string; title: string }>;
+  pages: TreePage[];
   subFolders: TreeFolder[];
   parent_folder_id: string | null;
 }
@@ -34,14 +35,10 @@ export interface TreeTag {
   id: string;
   name: string;
   is_collapsed: boolean;
+  is_archived: boolean;
   children: TreeTag[];
   folders: TreeFolder[];
-  pages: Array<{
-    id: string;
-    title: string;
-    folder_id: string | null;
-    primary_tag_id: string | null;
-  }>;
+  pages: TreePage[];
 }
 
 export async function getUserTags(userId: string): Promise<SelectTag[]> {
@@ -50,7 +47,9 @@ export async function getUserTags(userId: string): Promise<SelectTag[]> {
     SELECT t.*
     FROM ${tags} t
     JOIN ${users_tags} ut ON t.id = ut.tag_id
-    WHERE ut.user_id = ${userId} AND NOT t.deleted
+    WHERE ut.user_id = ${userId} 
+      AND NOT t.deleted 
+      AND NOT ut.is_archived
     ORDER BY t.name
   `;
 
@@ -61,7 +60,21 @@ export async function getUserTags(userId: string): Promise<SelectTag[]> {
   return userTags;
 }
 
+export async function ensureUserRootTag(userId: string) {
+  // Then ensure user has relation to root tag
+  await db
+    .insert(users_tags)
+    .values({
+      user_id: userId,
+      tag_id: process.env.ROOT_TAG_ID ?? "",
+      is_archived: false,
+      is_collapsed: false,
+    })
+    .onConflictDoNothing();
+}
+
 export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
+  await ensureUserRootTag(userId);
   // 1. Get all tags the user has access to
   const userTags = await db
     .select({
@@ -69,10 +82,17 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       name: tags.name,
       parent_id: tags.parent_id,
       is_collapsed: users_tags.is_collapsed,
+      is_archived: users_tags.is_archived,
     })
     .from(tags)
     .innerJoin(users_tags, eq(users_tags.tag_id, tags.id))
-    .where(and(eq(users_tags.user_id, userId), eq(tags.deleted, false)));
+    .where(
+      and(
+        eq(users_tags.user_id, userId),
+        eq(tags.deleted, false),
+        eq(users_tags.is_archived, false),
+      ),
+    );
 
   // 2. Get all folders
   const userFolders = await db
@@ -100,6 +120,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       title: pages.title,
       primary_tag_id: pages.primary_tag_id,
       folder_id: pages.folder_id,
+      content_type: pages.content_type,
     })
     .from(pages)
     .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
@@ -129,6 +150,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       title: string;
       folder_id: string | null;
       primary_tag_id: string | null;
+      content_type: "page" | "canvas";
     }>
   >();
 
@@ -139,6 +161,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       title: string;
       folder_id: string | null;
       primary_tag_id: string | null;
+      content_type: "page" | "canvas";
     }>
   >();
 
@@ -153,6 +176,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         title: page.title,
         folder_id: page.folder_id,
         primary_tag_id: page.primary_tag_id,
+        content_type: page.content_type,
       });
     } else if (page.primary_tag_id) {
       if (!unfolderedPagesByTag.has(page.primary_tag_id)) {
@@ -163,6 +187,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         title: page.title,
         folder_id: page.folder_id,
         primary_tag_id: page.primary_tag_id,
+        content_type: page.content_type,
       });
     }
   });
@@ -200,7 +225,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       id: folder.id,
       name: folder.name,
       is_collapsed: folder.is_collapsed ?? false,
-      pages: folder.pages,
+      pages: folder.pages as TreePage[],
       subFolders: buildFolderTree(folders, folder.id),
       parent_folder_id: folder.parent_folder_id,
     }));
@@ -217,6 +242,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         id: tag.id,
         name: tag.name,
         is_collapsed: tag.is_collapsed,
+        is_archived: tag.is_archived,
         children: buildTagTree(tag.id),
         folders,
         pages,

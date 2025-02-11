@@ -23,7 +23,8 @@ interface ExploreTagTreeProps {
   hasChanged: boolean;
   handleSaveChanges: () => void;
   isSaving: boolean;
-  status: string;
+  goToNextStep: () => void;
+  saveSuccess: boolean;
 }
 
 interface TreeNodeData {
@@ -40,7 +41,8 @@ interface TreeProps {
   hasChanged: boolean;
   handleSaveChanges: () => void;
   isSaving: boolean;
-  status: string;
+  saveSuccess: boolean;
+  goToNextStep: () => void;
 }
 
 const TreeNode: React.FC<{
@@ -51,7 +53,6 @@ const TreeNode: React.FC<{
   hasChanged: boolean;
   handleSaveChanges: () => void;
   isSaving: boolean;
-  status: string;
 }> = ({
   node,
   level,
@@ -60,13 +61,11 @@ const TreeNode: React.FC<{
   hasChanged,
   handleSaveChanges,
   isSaving,
-  status,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
 
   const handleRowClick = () => {
-    if (status !== "authenticated") return;
     // If tag is already in flatUserTags, remove it
     if (flatUserTags.some((tag) => tag.id === node.id)) {
       setFlatUserTags(flatUserTags.filter((tag) => tag.id !== node.id));
@@ -119,7 +118,6 @@ const TreeNode: React.FC<{
               hasChanged={hasChanged}
               handleSaveChanges={handleSaveChanges}
               isSaving={isSaving}
-              status={status}
             />
           ))}
         </div>
@@ -135,21 +133,32 @@ const MinimalistTree: React.FC<TreeProps> = ({
   hasChanged,
   handleSaveChanges,
   isSaving,
-  status,
+  saveSuccess,
+  goToNextStep,
 }) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      {hasChanged && (
+      {(hasChanged || saveSuccess) && (
         <div className="mt-4 flex justify-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSaveChanges}
-            disabled={isSaving}
-          >
-            {!isSaving && <Save className="mr-2 h-4 w-4" />}
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
+          {hasChanged && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveChanges}
+              disabled={isSaving}
+            >
+              {!isSaving && <Save className="mr-2 h-4 w-4" />}
+              {isSaving ? "Saving..." : "Save"}
+            </Button>
+          )}
+          {saveSuccess && !hasChanged && (
+            <Button
+              className="w-full rounded-full bg-primary py-4 text-primary-foreground"
+              onClick={goToNextStep}
+            >
+              Continue
+            </Button>
+          )}
         </div>
       )}
       <div className="custom-scrollbar h-screen overflow-y-auto p-4">
@@ -161,7 +170,6 @@ const MinimalistTree: React.FC<TreeProps> = ({
           hasChanged={hasChanged}
           handleSaveChanges={handleSaveChanges}
           isSaving={isSaving}
-          status={status}
         />
       </div>
       <style jsx global>{`
@@ -200,7 +208,8 @@ export default function ChannelTagTree({
   hasChanged,
   handleSaveChanges,
   isSaving,
-  status,
+  goToNextStep,
+  saveSuccess,
 }: ExploreTagTreeProps) {
   const data: TreeNodeData = tagTree[0] || { id: "", name: "" };
   return (
@@ -211,7 +220,8 @@ export default function ChannelTagTree({
       hasChanged={hasChanged}
       handleSaveChanges={handleSaveChanges}
       isSaving={isSaving}
-      status={status}
+      goToNextStep={goToNextStep}
+      saveSuccess={saveSuccess}
     />
   );
 }

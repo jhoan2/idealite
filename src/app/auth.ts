@@ -108,6 +108,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const verifyResponse = await appClient.verifySignInMessage({
             message: credentials?.message as string,
             signature: credentials?.signature as `0x${string}`,
+            //remember to the remove the https:// from the domain
             domain:
               process.env.NEXT_PUBLIC_DEPLOYMENT_URL ??
               "366f-2601-646-8900-8b60-113c-c8a1-74cc-4923.ngrok-free.app",

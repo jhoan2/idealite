@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
-  Trash,
   StickyNote,
   PanelTop,
   FolderPlus,
+  Archive,
+  FilePlus,
+  Palette,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -15,22 +17,11 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import type { TreeFolder, TreeTag } from "~/server/queries/usersTags";
-import { v4 as uuidv4 } from "uuid";
-import { deleteTag } from "~/server/actions/usersTags";
-import { createPage, movePage } from "~/server/actions/page";
+import type { TreeFolder, TreePage, TreeTag } from "~/server/queries/usersTags";
+import { toggleTagArchived } from "~/server/actions/usersTags";
+import { createPage, movePage, createRootPage } from "~/server/actions/page";
+import { createRootFolder } from "~/server/actions/usersFolders";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "~/components/ui/alert-dialog";
-import { movePagesBetweenTags } from "~/server/actions/usersTags";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
 import { usePathname, useRouter } from "next/navigation";
 import { createTab } from "~/server/actions/tabs";
@@ -41,82 +32,41 @@ import {
 } from "~/server/actions/usersFolders";
 import { FolderComponent } from "./Folder";
 import { PageComponent } from "./Page";
+import { Button } from "~/components/ui/button";
+import { Drawer, DrawerContent } from "~/components/ui/drawer";
+import TagDrawer from "./(Drawer)/TagDrawer";
+import FolderDrawer from "./(Drawer)/FolderDrawer";
+import PageDrawer from "./(Drawer)/PageDrawer";
+import { createUntitledPage, createUntitledPageInFolder } from "~/lib/tree";
+
+interface DrawerState {
+  isOpen: boolean;
+  type: "tag" | "folder" | "page" | null;
+  data: TreeTag | TreeFolder | TreePage | null;
+}
 
 interface TreeProps {
   data: TreeTag[];
 }
-
-const getCurrentTagNode = (
-  tags: TreeTag[],
-  targetId: string,
-): TreeTag | null => {
-  for (const tag of tags) {
-    if (tag.id === targetId) return tag;
-    if (tag.children) {
-      const found = getCurrentTagNode(tag.children, targetId);
-      if (found) return found;
-    }
-  }
-  return null;
-};
-
-const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
-  // Get all untitled pages
-  const untitledPages = node.pages.filter((page) =>
-    page.title.toLowerCase().startsWith("untitled"),
-  );
-
-  // Create new page title using array length
-  const newTitle =
-    untitledPages.length === 0
-      ? "untitled"
-      : `untitled ${untitledPages.length}`;
-
-  // Get tag hierarchy
-  const getTagHierarchy = (currentNode: TreeTag): string[] => {
-    const hierarchy: string[] = [currentNode.id];
-
-    const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
-      for (const tag of tags) {
-        if (tag.children?.some((child: TreeTag) => child.id === targetId)) {
-          return tag;
-        }
-        if (tag.children) {
-          const found = findParent(tag.children, targetId);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    let parentTag = findParent(allTags, currentNode.id);
-    while (parentTag) {
-      hierarchy.unshift(parentTag.id);
-      parentTag = findParent(allTags, parentTag.id);
-    }
-    return hierarchy;
-  };
-
-  return {
-    id: uuidv4(),
-    title: newTitle,
-    tag_id: node.id,
-    hierarchy: getTagHierarchy(node),
-    folder_id: null,
-  };
-};
 
 const TreeNode: React.FC<{
   node: TreeTag;
   level: number;
   allTags: TreeTag[];
   userId: string;
-}> = ({ node, level, allTags, userId }) => {
+  onLongPress?: (
+    type: "tag" | "folder" | "page",
+    data: TreeTag | TreeFolder | TreePage,
+  ) => void;
+  onOpenDrawer: (
+    type: "tag" | "folder" | "page",
+    data: TreeTag | TreeFolder | TreePage,
+  ) => void;
+}> = ({ node, level, allTags, userId, onOpenDrawer }) => {
   const hasChildren = node.children && node.children.length > 0;
   const hasPages = node.pages && node.pages.length > 0;
   const hasFolders = node.folders && node.folders.length > 0;
   const [isLoading, setIsLoading] = useState(false);
-  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [selectedPage, setSelectedPage] = useState<{
     id: string;
@@ -134,6 +84,24 @@ const TreeNode: React.FC<{
       node.folders?.filter((f) => !f.is_collapsed).map((f) => f.id) ?? [],
     ),
   );
+
+  const longPressTimeout = useRef<NodeJS.Timeout>();
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    longPressTimeout.current = setTimeout(() => {
+      onOpenDrawer("tag", node);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    clearTimeout(longPressTimeout.current);
+  };
+
+  const handleTouchMove = () => {
+    clearTimeout(longPressTimeout.current);
+  };
+
   const handleItemClick = async (
     e: React.MouseEvent,
     pageId: string,
@@ -160,35 +128,6 @@ const TreeNode: React.FC<{
     }
   };
 
-  const getTagHierarchy = (
-    currentNode: TreeTag,
-    allTags: TreeTag[],
-  ): string[] => {
-    //TODO: There is another function like this in createUntitledPage
-    const hierarchy: string[] = [currentNode.id];
-
-    const findParent = (tags: TreeTag[], targetId: string): TreeTag | null => {
-      for (const tag of tags) {
-        if (tag.children?.some((child: TreeTag) => child.id === targetId)) {
-          return tag;
-        }
-        if (tag.children) {
-          const found = findParent(tag.children, targetId);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    let parentTag = findParent(allTags, currentNode.id);
-    while (parentTag) {
-      hierarchy.unshift(parentTag.id);
-      parentTag = findParent(allTags, parentTag.id);
-    }
-
-    return hierarchy;
-  };
-
   const handleCreatePage = async (type: "page" | "canvas") => {
     try {
       setIsLoading(true);
@@ -205,59 +144,8 @@ const TreeNode: React.FC<{
     }
   };
 
-  const createUntitledPageInFolder = (folder: TreeFolder, tagId: string) => {
-    // Get all untitled pages in the folder
-    const untitledPages = folder.pages.filter((page: { title: string }) =>
-      page.title.toLowerCase().startsWith("untitled"),
-    );
-
-    // Create new page title using array length
-    const newTitle =
-      untitledPages.length === 0
-        ? "untitled"
-        : `untitled ${untitledPages.length}`;
-
-    const currentTag = getCurrentTagNode(allTags, tagId);
-    if (!currentTag) {
-      throw new Error("Tag not found");
-    }
-
-    return {
-      id: uuidv4(),
-      title: newTitle,
-      tag_id: tagId,
-      folder_id: folder.id,
-      hierarchy: getTagHierarchy(currentTag, allTags),
-    };
-  };
-
-  const calculateOrphanedPages = (tag: TreeTag): number => {
-    let count = tag.pages.length;
-    if (tag.children) {
-      for (const child of tag.children) {
-        count += calculateOrphanedPages(child);
-      }
-    }
-    return count;
-  };
-
-  const handleDeleteTag = async () => {
-    setShowDeleteAlert(true);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      const result = await deleteTag({ id: node.id });
-      if (!result.success) {
-        toast.error("Failed to delete tag");
-        return;
-      }
-    } catch (error) {
-      console.error("Error deleting tag:", error);
-      toast.error("Failed to delete tag");
-    } finally {
-      setShowDeleteAlert(false);
-    }
+  const handleArchiveTag = async () => {
+    await toggleTagArchived({ tagId: node.id, isArchived: true });
   };
 
   const handleToggleExpand = async () => {
@@ -346,7 +234,7 @@ const TreeNode: React.FC<{
   ) => {
     try {
       setIsLoading(true);
-      const pageInput = createUntitledPageInFolder(folder, node.id);
+      const pageInput = createUntitledPageInFolder(folder, node.id, allTags);
       const result = await createPage(pageInput, type);
 
       if (!result.success) {
@@ -404,7 +292,7 @@ const TreeNode: React.FC<{
 
       if (!result.success) {
         throw new Error(
-          "error" in result ? result.error : "Failed to move page",
+          "error" in result ? String(result.error) : "Failed to move page",
         );
       }
 
@@ -423,26 +311,6 @@ const TreeNode: React.FC<{
 
   return (
     <>
-      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {node.pages.length === 0
-                ? "Are you sure you want to delete this tag?"
-                : `This will archive ${calculateOrphanedPages(node)} page${
-                    calculateOrphanedPages(node) === 1 ? "" : "s"
-                  }.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       <MoveToDialog
         open={showMoveDialog}
         onOpenChange={(isOpen: boolean) => {
@@ -460,7 +328,12 @@ const TreeNode: React.FC<{
       />
       <ContextMenu>
         <ContextMenuTrigger>
-          <div className="select-none">
+          <div
+            className="touch-action-none select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+          >
             <div
               className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
               style={{ paddingLeft: `${level * 16}px` }}
@@ -493,9 +366,10 @@ const TreeNode: React.FC<{
                       key={page.id}
                       page={{
                         id: page.id,
-                        title: page.title,
+                        title: page.title || "",
                         folder_id: page.folder_id,
                         primary_tag_id: page.primary_tag_id,
+                        content_type: page.content_type || "page",
                       }}
                       level={level}
                       currentPageId={currentPageId}
@@ -509,6 +383,7 @@ const TreeNode: React.FC<{
                         setShowMoveDialog(true);
                       }}
                       handleItemClick={handleItemClick}
+                      onOpenDrawer={onOpenDrawer}
                     />
                   ))}
                 {/* First render folders */}
@@ -535,6 +410,7 @@ const TreeNode: React.FC<{
                       onCreatePageInFolder={handleCreatePageInFolder}
                       onCreateSubfolder={handleCreateSubfolder}
                       isLoading={isLoading}
+                      onOpenDrawer={onOpenDrawer}
                     />
                   ))}
 
@@ -547,6 +423,7 @@ const TreeNode: React.FC<{
                       level={level + 1}
                       allTags={allTags}
                       userId={userId}
+                      onOpenDrawer={onOpenDrawer}
                     />
                   ))}
               </div>
@@ -578,9 +455,9 @@ const TreeNode: React.FC<{
             <FolderPlus className="mr-2 h-4 w-4" />
             <span>Create folder</span>
           </ContextMenuItem>
-          <ContextMenuItem onSelect={handleDeleteTag} className="text-red-600">
-            <Trash className="mr-2 h-4 w-4" />
-            <span>Delete tag</span>
+          <ContextMenuItem onSelect={handleArchiveTag}>
+            <Archive className="mr-2 h-4 w-4" />
+            <span>Archive tag</span>
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
@@ -588,13 +465,25 @@ const TreeNode: React.FC<{
   );
 };
 
-const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
-  data,
-  userId,
-}) => {
+const MinimalistTree: React.FC<
+  TreeProps & {
+    userId: string;
+    isMobile: boolean;
+    onLongPress?: (
+      type: "tag" | "folder" | "page",
+      data: TreeTag | TreeFolder | TreePage,
+    ) => void;
+    onOpenDrawer: (
+      type: "tag" | "folder" | "page",
+      data: TreeTag | TreeFolder | TreePage,
+    ) => void;
+  }
+> = ({ data, userId, isMobile, onLongPress, onOpenDrawer }) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="custom-scrollbar h-screen overflow-y-auto p-4">
+      <div
+        className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto p-4`}
+      >
         {data.map((node) => (
           <TreeNode
             key={node.id}
@@ -602,6 +491,7 @@ const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
             level={0}
             allTags={data}
             userId={userId}
+            onOpenDrawer={onOpenDrawer}
           />
         ))}
       </div>
@@ -629,6 +519,12 @@ const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
             background-color: rgba(156, 163, 175, 0.5);
           }
         }
+        .touch-action-none {
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: none;
+        }
       `}</style>
     </div>
   );
@@ -637,15 +533,142 @@ const MinimalistTree: React.FC<TreeProps & { userId: string }> = ({
 export default function TagTreeNav({
   userTagTree,
   userId,
+  isMobile = false,
 }: {
   userTagTree: TreeTag[];
   userId: string;
+  isMobile: boolean;
 }) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCreateRootPage = async (type: "page" | "canvas") => {
+    try {
+      setIsLoading(true);
+      const result = await createRootPage(type);
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create page");
+      }
+    } catch (error) {
+      console.error("Error creating page:", error);
+      toast.error("Failed to create page");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateRootFolder = async () => {
+    try {
+      setIsLoading(true);
+      const result = await createRootFolder();
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create folder");
+      }
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      toast.error("Failed to create folder");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const [drawerState, setDrawerState] = useState<DrawerState>({
+    isOpen: false,
+    type: null,
+    data: null,
+  });
+
+  // Function to open drawer from child components
+  const handleOpenDrawer = (
+    type: "tag" | "folder" | "page",
+    data: TreeTag | TreeFolder | TreePage,
+  ) => {
+    setDrawerState({ isOpen: true, type, data });
+  };
+
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen flex-col">
       <div className="w-64 overflow-hidden border-r">
-        <MinimalistTree data={userTagTree} userId={userId} />
+        <Drawer
+          open={drawerState.isOpen}
+          onOpenChange={(open) =>
+            setDrawerState((prev) => ({ ...prev, isOpen: open }))
+          }
+        >
+          <DrawerContent>
+            {drawerState.type === "tag" && (
+              <TagDrawer
+                tag={drawerState.data as TreeTag}
+                allTags={userTagTree}
+                onOpenChange={(open) =>
+                  setDrawerState((prev) => ({ ...prev, isOpen: open }))
+                }
+              />
+            )}
+            {drawerState.type === "folder" && (
+              <FolderDrawer
+                folder={drawerState.data as TreeFolder}
+                allTags={userTagTree}
+                onOpenChange={(open) =>
+                  setDrawerState((prev) => ({ ...prev, isOpen: open }))
+                }
+              />
+            )}
+            {drawerState.type === "page" && (
+              <PageDrawer
+                page={drawerState.data as TreePage}
+                onOpenChange={(open) =>
+                  setDrawerState((prev) => ({ ...prev, isOpen: open }))
+                }
+                allTags={userTagTree}
+                currentTagId={
+                  (drawerState.data as TreePage).primary_tag_id ||
+                  userTagTree[0]?.id ||
+                  ""
+                }
+              />
+            )}
+          </DrawerContent>
+        </Drawer>
+        <MinimalistTree
+          data={userTagTree}
+          userId={userId}
+          isMobile={isMobile ? true : false}
+          onOpenDrawer={handleOpenDrawer}
+        />
       </div>
+      {isMobile && (
+        <div className="mb-4 bg-background px-4 py-3 md:hidden">
+          <div className="flex w-full justify-between space-x-1">
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => handleCreateRootPage("page")}
+              disabled={isLoading}
+            >
+              <FilePlus className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => handleCreateRootPage("canvas")}
+              disabled={isLoading}
+            >
+              <Palette className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => handleCreateRootFolder()}
+              disabled={isLoading}
+            >
+              <FolderPlus className="h-6 w-6" />
+            </Button>
+            <Button variant="ghost" className="flex-1">
+              {/* <Archive className="h-6 w-6" /> */}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { SelectTag } from "~/server/queries/tag";
 import { buildUserTagTree } from "../explore/(ExploreTagTree)/buildUserTagTree";
 import { updateUserTags } from "~/server/actions/usersTags";
@@ -10,7 +10,7 @@ interface ExploreStateProps {
   tag: SelectTag[];
   userTags: SelectTag[];
   userId: string | null;
-  status: string;
+  goToNextStep: () => void;
 }
 
 interface TagNode extends SelectTag {
@@ -22,23 +22,21 @@ export default function ChannelFrameTags({
   tag,
   userTags,
   userId,
-  status,
+  goToNextStep,
 }: ExploreStateProps) {
-  const [flatRootTag] = useState<SelectTag[]>(tag);
-  const [flatUserTags, setFlatUserTags] = useState<SelectTag[]>(userTags);
-  const [initialUserTags, setInitialUserTags] = useState<SelectTag[]>(userTags);
+  const [flatRootTag] = useState<SelectTag[]>(tag ?? []);
+  const [flatUserTags, setFlatUserTags] = useState<SelectTag[]>(userTags ?? []);
+  const [initialUserTags, setInitialUserTags] = useState<SelectTag[]>(
+    userTags ?? [],
+  );
   const [newlyAddedTags, setNewlyAddedTags] = useState<SelectTag[]>([]);
   const [removedTags, setRemovedTags] = useState<SelectTag[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const tagTree = useMemo(
     () => createTagTree(flatRootTag, flatUserTags),
     [flatRootTag, flatUserTags],
-  );
-
-  const userTagTree = useMemo(
-    () => buildUserTagTree(flatUserTags),
-    [flatUserTags],
   );
 
   async function handleUpdateUserTags(
@@ -73,13 +71,13 @@ export default function ChannelFrameTags({
   const handleSaveChanges = async () => {
     if (!hasChanged) return;
     if (!userId) return;
-    if (status !== "authenticated") return;
     setIsSaving(true);
     try {
       await handleUpdateUserTags(userId, newlyAddedTags, removedTags);
       setInitialUserTags([...flatUserTags]);
       setNewlyAddedTags([]);
       setRemovedTags([]);
+      setSaveSuccess(true);
     } catch (error) {
       console.error("Failed to save changes:", error);
       toast.error("Failed to save changes");
@@ -110,6 +108,13 @@ export default function ChannelFrameTags({
     return buildTree(rootTags);
   }
 
+  // Reset saveSuccess when changes occur
+  useEffect(() => {
+    if (hasChanged) {
+      setSaveSuccess(false);
+    }
+  }, [hasChanged]);
+
   return (
     <div>
       <ChannelTagTree
@@ -119,7 +124,8 @@ export default function ChannelFrameTags({
         hasChanged={hasChanged}
         handleSaveChanges={handleSaveChanges}
         isSaving={isSaving}
-        status={status}
+        saveSuccess={saveSuccess}
+        goToNextStep={goToNextStep}
       />
     </div>
   );

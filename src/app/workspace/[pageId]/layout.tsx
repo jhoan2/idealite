@@ -4,6 +4,7 @@ import { getUserTagTree } from "~/server/queries/usersTags";
 import { auth } from "~/app/auth";
 import { getResourcesForPage, Resource } from "~/server/queries/resource";
 import { getPageTags } from "~/server/queries/page";
+
 export default async function WorkspacePageLayout({
   children,
   params,
