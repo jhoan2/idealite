@@ -24,6 +24,7 @@ export const env = createEnv({
     NEYNAR_WEBHOOK_SECRET: z.string(),
     ROOT_TAG_ID: z.string(),
     ADMIN_USER_ID: z.string(),
+    ANTHROPIC_API_KEY: z.string(),
   },
 
   /**
@@ -70,6 +71,7 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     ADMIN_USER_ID: process.env.ADMIN_USER_ID,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   },
   /**
 
