@@ -2,8 +2,7 @@ import { createQuestionAndAnswer } from "~/server/actions/card";
 import FlashCards from "./flashcards";
 import { auth } from "~/app/auth";
 import { getUserPlayStats } from "~/server/queries/user";
-import CardsDone from "./cardsDone";
-
+import NoCardsDue from "./NoCardsDue";
 export default async function FlashcardsPage() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -13,14 +12,7 @@ export default async function FlashcardsPage() {
   const userPlayStats = await getUserPlayStats(session.user.id);
 
   if (flashcards.length === 0) {
-    return (
-      <CardsDone
-        cashEarned={0}
-        pendingUpdates={[]}
-        setPendingUpdates={() => {}}
-        setCashEarned={() => {}}
-      />
-    );
+    return <NoCardsDue />;
   }
 
   return (
