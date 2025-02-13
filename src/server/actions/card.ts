@@ -6,6 +6,7 @@ import { auth } from "~/app/auth";
 import { db } from "~/server/db";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
+import { getDueFlashCards } from "../queries/card";
 
 const createCardSchema = z.object({
   pageId: z.string().uuid(),
@@ -172,6 +173,46 @@ export async function createQuestionAndAnswer() {
   const data = await response.json();
   return data.flashcards;
 }
+
+export async function createClozeCards() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const dueCards = await getDueFlashCards();
+
+  if (!dueCards.length) {
+    return [];
+  }
+
+  const response = await fetch(`${process.env.APP_URL}/api/flashcards`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      cards: dueCards,
+      type: "cloze",
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to generate flashcards");
+  }
+
+  const data = await response.json();
+  return data.flashcards;
+}
+
+const processFlashCardsSchema = z.object({
+  id: z.string().uuid(),
+  content: z.string().optional(),
+  prompt: z.string().optional(),
+  description: z.string().optional(),
+  status: z.enum(["active", "mastered", "suspended"]).optional(),
+});
+
 // Accept either a single update or an array of updates
 export async function processFlashCards(
   input:
