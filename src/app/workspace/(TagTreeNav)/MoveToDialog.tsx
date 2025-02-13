@@ -3,21 +3,15 @@
 import React, { useState } from "react";
 import { Check, Folder, Tag } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
-import {
-  Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
+  CommandDialog,
 } from "~/components/ui/command";
 import { Button } from "~/components/ui/button";
+import { DialogDescription, DialogTitle } from "~/components/ui/dialog";
 import type { TreeTag } from "~/server/queries/usersTags";
 import type { TreeFolder } from "~/server/queries/usersTags";
 import { cn } from "~/lib/utils";
@@ -183,66 +177,62 @@ export const MoveToDialog = ({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] md:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Move to Location</DialogTitle>
-          <DialogDescription>
-            Select a destination tag or folder to move the page to.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Command>
-            <CommandInput placeholder="Search locations..." />
-            <CommandList>
-              <CommandEmpty>No location found.</CommandEmpty>
-              <CommandGroup>
-                {moveOptions.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    onSelect={() => {
-                      setSelectedLocation(
-                        option.value === selectedLocation ? null : option.value,
-                      );
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        selectedLocation === option.value
-                          ? "opacity-100"
-                          : "opacity-0",
-                      )}
-                    />
-                    {option.type === "folder" ? (
-                      <Folder className="mr-2 h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Tag className="mr-2 h-4 w-4 text-gray-400" />
-                    )}
-                    {option.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </div>
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={async () => {
-              if (selectedLocation) {
-                await onMove(selectedLocation);
-                onOpenChange(false);
-              }
-            }}
-            disabled={!selectedLocation || isLoading}
-          >
-            {isLoading ? "Moving..." : "Move"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <CommandDialog open={open} onOpenChange={onOpenChange}>
+      <div className="flex flex-col gap-2 p-4">
+        <DialogTitle>Move to Location</DialogTitle>
+        <DialogDescription>
+          Select a destination tag or folder to move the page to.
+        </DialogDescription>
+      </div>
+      <div className="grid gap-4 py-4">
+        <CommandInput placeholder="Search locations..." />
+        <CommandList>
+          <CommandEmpty>No location found.</CommandEmpty>
+          <CommandGroup>
+            {moveOptions.map((option) => (
+              <CommandItem
+                key={option.value}
+                onSelect={() => {
+                  setSelectedLocation(
+                    option.value === selectedLocation ? null : option.value,
+                  );
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    selectedLocation === option.value
+                      ? "opacity-100"
+                      : "opacity-0",
+                  )}
+                />
+                {option.type === "folder" ? (
+                  <Folder className="mr-2 h-4 w-4 text-gray-400" />
+                ) : (
+                  <Tag className="mr-2 h-4 w-4 text-gray-400" />
+                )}
+                {option.label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </div>
+      <div className="flex justify-end space-x-2 pb-4 pr-4">
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
+          Cancel
+        </Button>
+        <Button
+          onClick={async () => {
+            if (selectedLocation) {
+              await onMove(selectedLocation);
+              onOpenChange(false);
+            }
+          }}
+          disabled={!selectedLocation || isLoading}
+        >
+          {isLoading ? "Moving..." : "Move"}
+        </Button>
+      </div>
+    </CommandDialog>
   );
 };

@@ -21,6 +21,7 @@ export async function getTagWithChildren(tagId: string): Promise<SelectTag[]> {
     )
     SELECT * FROM tag_tree
     WHERE NOT deleted
+    AND is_template = true
     ORDER BY name
   `;
 

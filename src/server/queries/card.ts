@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "~/server/db";
-import { cards, tags } from "~/server/db/schema";
+import { cards } from "~/server/db/schema";
 import { auth } from "~/app/auth";
-import { and, eq } from "drizzle-orm";
+import { and, eq, lte, isNotNull, not } from "drizzle-orm";
 
 export type Card = typeof cards.$inferSelect & {
   tags: {
@@ -49,4 +49,26 @@ export async function getPageCards(pageId: string): Promise<Card[]> {
       deleted: tag.deleted,
     })),
   }));
+}
+
+export async function getDueFlashCards() {
+  //Flashcards are cards that have content, which is different from those cards with images.
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  return await db.query.cards.findMany({
+    where: and(
+      eq(cards.user_id, session.user.id),
+      eq(cards.status, "active"),
+      eq(cards.deleted, false),
+      lte(cards.next_review, new Date()),
+      // Ignore cards with empty content
+      not(eq(cards.content, "")),
+      isNotNull(cards.content),
+    ),
+    limit: 20,
+  });
 }

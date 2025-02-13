@@ -14,6 +14,11 @@ declare module "next-auth" {
       display_name: string;
       pfp_url: string;
       bio: string;
+      role: string;
+      created_at: string;
+      storage_used: number;
+      storage_limit: number;
+      updated_at: string;
     };
   }
 }

@@ -2,7 +2,15 @@
 
 import { and, eq, exists, inArray } from "drizzle-orm";
 import { db } from "../db";
-import { pages, users_pages, pages_tags, tags, users_tags } from "../db/schema";
+import {
+  pages,
+  users_pages,
+  pages_tags,
+  tags,
+  users_tags,
+  cards_tags,
+  folders,
+} from "../db/schema";
 import { revalidatePath } from "next/cache";
 import { auth } from "~/app/auth";
 import { z } from "zod";
@@ -344,6 +352,7 @@ export async function createTagForUser(input: CreateTagInput) {
           name: validatedInput.name,
           parent_id: validatedInput.parentId || null,
           deleted: false,
+          is_template: false,
         })
         .returning();
 
@@ -376,6 +385,209 @@ export async function createTagForUser(input: CreateTagInput) {
     return {
       success: false,
       error: "Failed to create tag",
+    };
+  }
+}
+
+export async function changeTagRelations({
+  sourceTagId,
+  targetTagId,
+}: {
+  sourceTagId: string;
+  targetTagId: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+
+  if (session?.user?.id !== process.env.ADMIN_USER_ID) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    // Validate inputs
+    if (sourceTagId === targetTagId) {
+      return {
+        success: false,
+        error: "Source and target tags cannot be the same",
+      };
+    }
+
+    return await db.transaction(async (tx) => {
+      // Verify both tags exist and source isn't already deleted
+      const [sourceTag, targetTag] = await Promise.all([
+        tx.query.tags.findFirst({
+          where: and(eq(tags.id, sourceTagId), eq(tags.deleted, false)),
+        }),
+        tx.query.tags.findFirst({
+          where: eq(tags.id, targetTagId),
+        }),
+      ]);
+
+      if (!sourceTag) {
+        return {
+          success: false,
+          error: "Source tag not found or already deleted",
+        };
+      }
+
+      if (!targetTag) {
+        return { success: false, error: "Target tag not found" };
+      }
+
+      // First, handle folder transfers since they have direct tag references
+      // Get all folders for the source tag
+      const sourceFolders = await tx
+        .select()
+        .from(folders)
+        .where(eq(folders.tag_id, sourceTagId));
+
+      // For each folder, we need to:
+      // 1. Check for name conflicts in the target tag
+      // 2. Update the folder's tag_id
+      for (const folder of sourceFolders) {
+        // Check for name conflicts
+        const existingFolder = await tx
+          .select()
+          .from(folders)
+          .where(
+            and(eq(folders.tag_id, targetTagId), eq(folders.name, folder.name)),
+          )
+          .limit(1);
+
+        if (existingFolder.length > 0) {
+          // If there's a conflict, append a number to the name
+          let counter = 1;
+          let newName = `${folder.name} (${counter})`;
+          while (
+            await tx
+              .select()
+              .from(folders)
+              .where(
+                and(eq(folders.tag_id, targetTagId), eq(folders.name, newName)),
+              )
+              .limit(1)
+              .then((rows) => rows.length > 0)
+          ) {
+            counter++;
+            newName = `${folder.name} (${counter})`;
+          }
+
+          // Update folder with new name and tag
+          await tx
+            .update(folders)
+            .set({
+              name: newName,
+              tag_id: targetTagId,
+              updated_at: new Date(),
+            })
+            .where(eq(folders.id, folder.id));
+        } else {
+          // No conflict, just update the tag
+          await tx
+            .update(folders)
+            .set({
+              tag_id: targetTagId,
+              updated_at: new Date(),
+            })
+            .where(eq(folders.id, folder.id));
+        }
+      }
+
+      // Transfer user-tag relations
+      const userTagRelations = await tx
+        .select()
+        .from(users_tags)
+        .where(eq(users_tags.tag_id, sourceTagId));
+
+      if (userTagRelations.length > 0) {
+        await tx
+          .insert(users_tags)
+          .values(
+            userTagRelations.map((relation) => ({
+              user_id: relation.user_id,
+              tag_id: targetTagId,
+              is_collapsed: relation.is_collapsed,
+              is_archived: relation.is_archived,
+            })),
+          )
+          .onConflictDoNothing();
+      }
+
+      // Transfer page-tag relations
+      const pageTagRelations = await tx
+        .select()
+        .from(pages_tags)
+        .where(eq(pages_tags.tag_id, sourceTagId));
+
+      if (pageTagRelations.length > 0) {
+        await tx
+          .insert(pages_tags)
+          .values(
+            pageTagRelations.map((relation) => ({
+              page_id: relation.page_id,
+              tag_id: targetTagId,
+            })),
+          )
+          .onConflictDoNothing();
+      }
+
+      // Transfer card-tag relations
+      const cardTagRelations = await tx
+        .select()
+        .from(cards_tags)
+        .where(eq(cards_tags.tag_id, sourceTagId));
+
+      if (cardTagRelations.length > 0) {
+        await tx
+          .insert(cards_tags)
+          .values(
+            cardTagRelations.map((relation) => ({
+              card_id: relation.card_id,
+              tag_id: targetTagId,
+            })),
+          )
+          .onConflictDoNothing();
+      }
+
+      // Update pages where this was the primary tag
+      await tx
+        .update(pages)
+        .set({
+          primary_tag_id: targetTagId,
+          updated_at: new Date(),
+        })
+        .where(eq(pages.primary_tag_id, sourceTagId));
+
+      // Update child tags to point to the new parent
+      await tx
+        .update(tags)
+        .set({
+          parent_id: targetTagId,
+          updated_at: new Date(),
+        })
+        .where(and(eq(tags.parent_id, sourceTagId), eq(tags.deleted, false)));
+
+      // Mark the source tag as deleted
+      await tx
+        .update(tags)
+        .set({
+          deleted: true,
+          updated_at: new Date(),
+        })
+        .where(eq(tags.id, sourceTagId));
+
+      revalidatePath("/workspace");
+      revalidatePath("/explore");
+
+      return { success: true };
+    });
+  } catch (error) {
+    console.error("Error changing tag relations:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to change tag relations",
     };
   }
 }

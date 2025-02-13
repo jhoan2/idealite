@@ -6,6 +6,7 @@ import { ThemeProvider } from "~/app/ThemeProvider";
 import NeynarProvider from "~/app/NeynarProvider";
 import { Toaster } from "~/components/ui/sonner";
 import { SessionProvider } from "next-auth/react";
+import BottomNav from "./BottomNav";
 
 export const metadata = {
   title: "idealite",
@@ -39,6 +40,7 @@ export default function RootLayout({
                     <SideNav />
                   </div>
                   <div className="flex-1 overflow-y-auto">{children}</div>
+                  <BottomNav />
                   <Toaster />
                 </div>
               </PHProvider>

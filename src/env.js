@@ -23,6 +23,8 @@ export const env = createEnv({
     PERSONAL_NEYNAR_SIGNER_UUID: z.string(),
     NEYNAR_WEBHOOK_SECRET: z.string(),
     ROOT_TAG_ID: z.string(),
+    ADMIN_USER_ID: z.string(),
+    ANTHROPIC_API_KEY: z.string(),
   },
 
   /**
@@ -68,8 +70,11 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_DISABLED: process.env.NEXT_PUBLIC_POSTHOG_DISABLED,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    ADMIN_USER_ID: process.env.ADMIN_USER_ID,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   },
   /**
+
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
    * useful for Docker builds.
    */

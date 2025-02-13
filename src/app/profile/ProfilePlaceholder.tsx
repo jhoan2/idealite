@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardContent, CardTitle } from "~/components/ui/card";
 import { User } from "lucide-react";
 import { Separator } from "~/components/ui/separator";
-
+import MobileSignIn from "./MobileSignIn";
 export default function ProfilePlaceholder() {
   return (
     <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12">
@@ -28,6 +28,7 @@ export default function ProfilePlaceholder() {
                 <p className="text-sm text-muted-foreground">
                   Sign in to view your profile
                 </p>
+                <MobileSignIn />
               </div>
             </div>
           </CardContent>

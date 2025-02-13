@@ -108,6 +108,27 @@ export default {
           },
         },
       }),
+      keyframes: {
+        "float-up": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(0)",
+          },
+          "20%": {
+            opacity: "1",
+          },
+          "80%": {
+            opacity: "1",
+          },
+          "100%": {
+            opacity: "0",
+            transform: "translateY(-100px)",
+          },
+        },
+      },
+      animation: {
+        "float-up": "float-up 1s ease-out forwards",
+      },
     },
   },
   plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],

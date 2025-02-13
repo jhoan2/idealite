@@ -31,7 +31,8 @@ export default function Welcome({
       });
 
       if (signInResult?.error) {
-        throw new Error(signInResult.error);
+        console.log("Sign in cancelled or failed:", signInResult.error);
+        return;
       }
 
       goToNextStep();
