@@ -3,6 +3,7 @@ import { getUserPlayStats } from "~/server/queries/user";
 import { auth } from "~/app/auth";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
+import { trackEvent } from "~/lib/posthog/server";
 
 const ClozeFrame = dynamic(() => import("./ClozeFrame"), {
   ssr: false,
@@ -48,6 +49,10 @@ export default async function ClozePage() {
   if (!session?.user?.id) {
     return <div>Check out the channel frame at /idealite</div>;
   }
+
+  trackEvent(session.user.fid, "cloze_page_viewed", {
+    username: session.user.username,
+  });
 
   const userPlayStats = await getUserPlayStats(session.user.id);
   const flashcards = await createClozeCards();
