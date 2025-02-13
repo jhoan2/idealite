@@ -14,11 +14,11 @@
     "start": "next start"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.36.3",
     "@farcaster/auth-client": "^0.3.0",
     "@farcaster/frame-core": "^0.0.21",
     "@farcaster/frame-sdk": "^0.0.26",
     "@farcaster/frame-wagmi-connector": "^0.0.14",
+    "@google/generative-ai": "^0.21.0",
     "@next/bundle-analyzer": "^15.1.4",
     "@neynar/nodejs-sdk": "^1.54.1",
     "@neynar/react": "^0.9.5",

@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { type Card } from "~/server/queries/card";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 const cardSchema = z.object({
   id: z.string(),
@@ -120,62 +119,6 @@ ${paragraphs}
 7. Output all flashcards you create, ensuring that each one follows the specified format and guidelines.`;
 }
 
-// Helper function to extract text content from Anthropic response
-function extractTextContent(response: Anthropic.Message) {
-  return response.content
-    .filter((block) => block.type === "text")
-    .map((block) => block.text)
-    .join("");
-}
-
-// Parser for question-answer format
-function parseQAResponse(response: Anthropic.Message) {
-  const textContent = extractTextContent(response);
-  const flashcards: { id: string; question: string; answer: string }[] = [];
-
-  const regex =
-    /<flashcard>\s*<id>(.*?)<\/id>\s*<question>(.*?)<\/question>\s*<answer>(.*?)<\/answer>\s*<\/flashcard>/gs;
-
-  let match;
-  while ((match = regex.exec(textContent)) !== null) {
-    flashcards.push({
-      id: match[1]?.trim() ?? "",
-      question: match[2]?.trim() ?? "",
-      answer: match[3]?.trim() ?? "",
-    });
-  }
-
-  if (flashcards.length === 0) {
-    throw new Error("No flashcards found in response");
-  }
-
-  return flashcards;
-}
-
-// Parser for cloze format
-function parseClozeResponse(response: Anthropic.Message) {
-  const textContent = extractTextContent(response);
-  const flashcards: { id: string; question: string; answer: string }[] = [];
-
-  const regex =
-    /<flashcard>\s*<id>(.*?)<\/id>\s*<question>(.*?)<\/question>\s*<answer>(.*?)<\/answer>\s*<\/flashcard>/gs;
-
-  let match;
-  while ((match = regex.exec(textContent)) !== null) {
-    flashcards.push({
-      id: match[1]?.trim() ?? "",
-      question: match[2]?.trim() ?? "",
-      answer: match[3]?.trim() ?? "",
-    });
-  }
-
-  if (flashcards.length === 0) {
-    throw new Error("No flashcards found in response");
-  }
-
-  return flashcards;
-}
-
 export async function POST(req: Request) {
   try {
     const body: RequestBody = await req.json();
@@ -187,18 +130,24 @@ export async function POST(req: Request) {
         ? constructQAPrompt(cards)
         : constructClozePrompt(cards);
 
-    const response = await anthropic.messages.create({
-      model: "claude-3-5-haiku-20241022",
-      max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
-      temperature: 1,
-    });
+    const response = await model.generateContent(prompt);
 
-    // Parse response based on type
-    const flashcards =
-      type === "question-answer"
-        ? parseQAResponse(response)
-        : parseClozeResponse(response);
+    const regex =
+      /<flashcard>\s*<id>(.*?)<\/id>\s*<question>(.*?)<\/question>\s*<answer>(.*?)<\/answer>\s*<\/flashcard>/gs;
+
+    const flashcards: { id: string; question: string; answer: string }[] = [];
+    let match;
+    while ((match = regex.exec(response.response.text())) !== null) {
+      flashcards.push({
+        id: match[1]?.trim() ?? "",
+        question: match[2]?.trim() ?? "",
+        answer: match[3]?.trim() ?? "",
+      });
+    }
+
+    if (flashcards.length === 0) {
+      throw new Error("No flashcards found in response");
+    }
 
     const flashcardMap = new Map(
       flashcards.map((card) => [
