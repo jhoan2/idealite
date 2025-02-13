@@ -141,3 +141,91 @@ export async function deleteCard(cardId: string) {
   revalidatePath(`/workspace/${deletedCard.page_id}`);
   return deletedCard;
 }
+
+export async function createQuestionAndAnswer() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const dueCards = await getDueFlashCards();
+
+  if (!dueCards.length) {
+    return [];
+  }
+
+  const response = await fetch(`${process.env.APP_URL}/api/flashcards`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      cards: dueCards,
+      type: "question-answer",
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to generate flashcards");
+  }
+
+  const data = await response.json();
+  return data.flashcards;
+}
+// Accept either a single update or an array of updates
+export async function processFlashCards(
+  input:
+    | z.infer<typeof processFlashCardsSchema>
+    | Array<Pick<z.infer<typeof processFlashCardsSchema>, "id" | "status">>,
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  // Handle batch updates
+  if (Array.isArray(input)) {
+    return await db.transaction(async (tx) => {
+      const results = await Promise.all(
+        input.map((update) =>
+          tx
+            .update(cards)
+            .set({
+              status: update.status,
+              updated_at: new Date(),
+            })
+            .where(
+              and(
+                eq(cards.id, update.id),
+                eq(cards.user_id, session?.user?.id || ""),
+              ),
+            )
+            .returning(),
+        ),
+      );
+
+      // Revalidate paths if needed
+      revalidatePath(`/play`);
+      return results.map(([card]) => card);
+    });
+  }
+
+  // Handle single update
+  const validatedInput = processFlashCardsSchema.parse(input);
+  const [updatedCard] = await db
+    .update(cards)
+    .set({
+      ...validatedInput,
+      updated_at: new Date(),
+    })
+    .where(
+      and(
+        eq(cards.id, validatedInput.id),
+        eq(cards.user_id, session?.user?.id || ""),
+      ),
+    )
+    .returning();
+
+  revalidatePath(`/play`);
+  return updatedCard;
+}
