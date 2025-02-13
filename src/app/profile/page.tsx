@@ -3,7 +3,6 @@ import { auth } from "~/app/auth";
 import ProfilePlaceholder from "./ProfilePlaceholder";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-
 export default async function ProfilePage() {
   const session = await auth();
   if (!session) {
