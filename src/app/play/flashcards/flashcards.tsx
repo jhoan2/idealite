@@ -11,7 +11,7 @@ import {
   FileText,
   Ellipsis,
 } from "lucide-react";
-import CardsDone from "./cardsDone";
+import CardsDone from "./CardsDone";
 import { DropdownMenu } from "~/components/ui/dropdown-menu";
 import {
   DropdownMenuContent,
