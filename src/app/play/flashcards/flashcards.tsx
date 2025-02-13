@@ -11,7 +11,6 @@ import {
   FileText,
   Ellipsis,
 } from "lucide-react";
-import CardsDone from "./CardsDone";
 import { DropdownMenu } from "~/components/ui/dropdown-menu";
 import {
   DropdownMenuContent,
@@ -19,6 +18,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { CardSchema } from "~/app/api/flashcards/route";
+import CardsDone from "../flashcards/CardsDone";
 
 interface FlashCard extends CardSchema {
   question: string;
