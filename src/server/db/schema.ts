@@ -40,6 +40,8 @@ export const users = createTable("user", {
   updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
     () => new Date(),
   ),
+  points: integer("points").notNull().default(0),
+  cash: integer("cash").notNull().default(0),
 });
 
 export const images = createTable("images", {

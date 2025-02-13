@@ -19,3 +19,18 @@ export async function createUser(userData: InsertUser): Promise<SelectUser> {
   const result = await db.insert(users).values(userData).returning();
   return result[0]!;
 }
+
+export async function getUserPlayStats(
+  userId: string,
+): Promise<{ points: number; cash: number }> {
+  const result = await db
+    .select({
+      points: users.points,
+      cash: users.cash,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  return result[0] || { points: 0, cash: 0 };
+}
