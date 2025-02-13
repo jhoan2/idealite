@@ -18,7 +18,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { CardSchema } from "~/app/api/flashcards/route";
-import CardsDone from "../flashcards/CardsDone";
+import CardsDone from "./CardsDone";
 
 interface FlashCard extends CardSchema {
   question: string;
