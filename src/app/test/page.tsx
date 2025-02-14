@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { searchPages } from "~/server/actions/page";
-import { createQuestionAndAnswer } from "~/server/actions/card";
+import { createClozeCards } from "~/server/actions/card";
 
 export default function TestPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,7 +27,7 @@ export default function TestPage() {
 
   const handleGenerateFlashcards = async () => {
     try {
-      const cards = await createQuestionAndAnswer();
+      const cards = await createClozeCards();
       setFlashcards(cards);
     } catch (error) {
       console.error("Error generating flashcards:", error);

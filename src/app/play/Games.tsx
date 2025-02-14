@@ -14,12 +14,12 @@ export default function Games({
       icon: "/games/question-and-answer.png",
       href: "/play/flashcards",
     },
-    {
-      id: "2",
-      title: "Fill in the Blank",
-      icon: "/games/fill-in-the-blank.png",
-      href: "/play/cloze",
-    },
+    // {
+    //   id: "2",
+    //   title: "Fill in the Blank",
+    //   icon: "/games/fill-in-the-blank.png",
+    //   href: "/play/cloze",
+    // },
     // {
     //   id: "3",
     //   title: "Friend Clash",
