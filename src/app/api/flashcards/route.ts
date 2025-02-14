@@ -119,31 +119,63 @@ ${paragraphs}
 7. Output all flashcards you create, ensuring that each one follows the specified format and guidelines.`;
 }
 
+function parseQAResponse(text: string) {
+  const regex =
+    /<flashcard>\s*<id>(.*?)<\/id>\s*<question>(.*?)<\/question>\s*<answer>(.*?)<\/answer>\s*<\/flashcard>/gs;
+
+  const flashcards: { id: string; question: string; answer: string }[] = [];
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    flashcards.push({
+      id: match[1]?.trim() ?? "",
+      question: match[2]?.trim() ?? "",
+      answer: match[3]?.trim() ?? "",
+    });
+  }
+  return flashcards;
+}
+
+function parseClozeResponse(text: string) {
+  const regex =
+    /<flashcard>\s*<id>(.*?)<\/id>\s*<question>(.*?)<\/question>\s*<answer>(.*?)<\/answer>\s*<\/flashcard>/gs;
+
+  const flashcards: { id: string; question: string; answer: string }[] = [];
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    // For cloze, we want to ensure the blank is represented consistently
+    const question = match[2]?.trim().replace(/_{3,}/g, "_____") ?? "";
+    const answer = match[3]?.trim() ?? "";
+
+    flashcards.push({
+      id: match[1]?.trim() ?? "",
+      question,
+      answer,
+    });
+  }
+  return flashcards;
+}
+
 export async function POST(req: Request) {
   try {
     const body: RequestBody = await req.json();
     const { cards, type } = requestSchema.parse(body);
 
-    // Choose prompt based on type
     const prompt =
       type === "question-answer"
         ? constructQAPrompt(cards)
         : constructClozePrompt(cards);
 
     const response = await model.generateContent(prompt);
+    const textContent = response.response.text();
+    console.log(textContent, "textContent");
 
-    const regex =
-      /<flashcard>\s*<id>(.*?)<\/id>\s*<question>(.*?)<\/question>\s*<answer>(.*?)<\/answer>\s*<\/flashcard>/gs;
+    // Parse response based on type
+    const flashcards =
+      type === "question-answer"
+        ? parseQAResponse(textContent)
+        : parseClozeResponse(textContent);
 
-    const flashcards: { id: string; question: string; answer: string }[] = [];
-    let match;
-    while ((match = regex.exec(response.response.text())) !== null) {
-      flashcards.push({
-        id: match[1]?.trim() ?? "",
-        question: match[2]?.trim() ?? "",
-        answer: match[3]?.trim() ?? "",
-      });
-    }
+    console.log(flashcards, "flashcards");
 
     if (flashcards.length === 0) {
       throw new Error("No flashcards found in response");

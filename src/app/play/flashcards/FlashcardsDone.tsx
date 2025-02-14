@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { incrementUserCash } from "~/server/actions/user";
 import { processFlashCards } from "~/server/actions/card";
 
-export default function CardsDone({
+export default function FlashcardsDone({
   cashEarned,
   pendingUpdates,
   setPendingUpdates,
