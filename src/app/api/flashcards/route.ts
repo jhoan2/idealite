@@ -167,15 +167,12 @@ export async function POST(req: Request) {
 
     const response = await model.generateContent(prompt);
     const textContent = response.response.text();
-    console.log(textContent, "textContent");
 
     // Parse response based on type
     const flashcards =
       type === "question-answer"
         ? parseQAResponse(textContent)
         : parseClozeResponse(textContent);
-
-    console.log(flashcards, "flashcards");
 
     if (flashcards.length === 0) {
       throw new Error("No flashcards found in response");
