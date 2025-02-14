@@ -2,7 +2,7 @@
 
 import { sdk } from "@farcaster/frame-sdk";
 import { useEffect, useState } from "react";
-import FlashCards from "../flashcards/flashcards";
+// import FlashCards from "../flashcards/flashcards";
 import { CardSchema } from "~/app/api/flashcards/route";
 import NoCardsDue from "../flashcards/NoCardsDue";
 
@@ -48,7 +48,8 @@ export default function ClozeFrame({
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
-      <FlashCards flashcards={flashcards} userPlayStats={userPlayStats} />
+      {/* <FlashCards flashcards={flashcards} userPlayStats={userPlayStats} /> */}
+      <div>Test</div>
     </div>
   );
 }
