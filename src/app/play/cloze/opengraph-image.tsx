@@ -16,7 +16,8 @@ export default async function Image() {
       <div
         tw="h-full w-full flex flex-col justify-center items-center relative"
         style={{
-          backgroundImage: "url(/games/fill-in-the-blank.png)",
+          backgroundImage:
+            "url(https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreihdu6kg342z66ptqpwuem2433qtfcrkchslaf5vfbf5ww27jvm574)",
           backgroundSize: "cover",
           backgroundPosition: "100% 140%",
         }}
