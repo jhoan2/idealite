@@ -13,6 +13,7 @@ import {
   boolean,
   AnyPgColumn,
   primaryKey,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -601,3 +602,95 @@ export const cardsTagsRelations = relations(cards_tags, ({ one }) => ({
     references: [tags.id],
   }),
 }));
+
+// =====================
+// Games Related Schema
+// =====================
+
+export const game_status_enum = pgEnum("game_status", [
+  "created",
+  "in_progress",
+  "completed",
+  "abandoned",
+]);
+
+export type GameSession = typeof game_session.$inferSelect;
+export const game_session = createTable(
+  "game_session",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    playerCount: integer("player_count").notNull(),
+    players: uuid("players").array().notNull(),
+    eliminatedPlayers: uuid("eliminated_players")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::uuid[]`),
+    currentTurnPlayerIndex: integer("current_turn_player_index")
+      .notNull()
+      .default(0),
+    notificationIds: text("notification_ids").array(),
+    status: game_status_enum("status").notNull().default("created"),
+    turnDeadline: timestamp("turn_deadline", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (table) => ({
+    playersIdx: index("game_session_players_idx").on(table.players),
+    statusIdx: index("game_session_status_idx").on(table.status),
+    turnDeadlineIdx: index("game_session_turn_deadline_idx").on(
+      table.turnDeadline,
+    ),
+    playerCountIdx: index("game_session_player_count_idx").on(
+      table.playerCount,
+    ),
+  }),
+);
+
+export type GameMove = typeof game_move.$inferSelect;
+export const game_move = createTable(
+  "game_move",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => game_session.id, { onDelete: "cascade" }),
+    playerId: uuid("player_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    contentId: text("content_id").notNull(),
+    question: text("question").notNull(),
+    correctAnswer: text("correct_answer").notNull(),
+    answer: text("answer").notNull(),
+    isCorrect: boolean("is_correct").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => ({
+    sessionIdIdx: index("game_move_session_idx").on(table.sessionId),
+    playerIdIdx: index("game_move_player_idx").on(table.playerId),
+  }),
+);
+
+export const game_sessions_relations = relations(game_session, ({ many }) => ({
+  moves: many(game_move),
+}));
+
+export const game_moves_relations = relations(game_move, ({ one }) => ({
+  session: one(game_session, {
+    fields: [game_move.sessionId],
+    references: [game_session.id],
+  }),
+  player: one(users, {
+    fields: [game_move.playerId],
+    references: [users.id],
+  }),
+}));
+
+// =====================
+// =====================
+// =====================
