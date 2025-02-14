@@ -18,7 +18,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { CardSchema } from "~/app/api/flashcards/route";
-import CardsDone from "./CardsDone";
+import FlashcardsDone from "./FlashcardsDone";
 interface FlashCard extends CardSchema {
   question: string;
   answer: string;
@@ -148,7 +148,7 @@ export default function FlashCards({
 
   if (isDone) {
     return (
-      <CardsDone
+      <FlashcardsDone
         cashEarned={cashEarned}
         pendingUpdates={pendingUpdates}
         setPendingUpdates={setPendingUpdates}
