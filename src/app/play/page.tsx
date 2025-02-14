@@ -5,7 +5,7 @@ import { auth } from "../auth";
 export default async function PlayPage() {
   const session = await auth();
   if (!session?.user?.id) {
-    throw new Error("Unauthorized");
+    return <Games userPlayStats={{ points: 0, cash: 0 }} />;
   }
   const userPlayStats = await getUserPlayStats(session.user.id);
   return <Games userPlayStats={userPlayStats} />;
