@@ -26,12 +26,12 @@ export default function Games({
       icon: "/games/friend-clash.png",
       href: "/play/friend-clash",
     },
-    // {
-    //   id: "4",
-    //   title: "Spin the Wheel",
-    //   icon: "/games/spin-the-wheel.png",
-    //   href: "/play/spin-the-wheel",
-    // },
+    {
+      id: "4",
+      title: "Spin the Wheel",
+      icon: "/games/spin-the-wheel.png",
+      href: "/play/spin-the-wheel",
+    },
     // {
     //   id: "5",
     //   title: "Target Practice",
