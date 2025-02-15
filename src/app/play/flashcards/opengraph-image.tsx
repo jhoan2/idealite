@@ -3,8 +3,8 @@ import { ImageResponse } from "next/og";
 export const dynamic = "force-dynamic";
 export const alt = "idealite flashcards game";
 export const size = {
-  width: 1260,
-  height: 660,
+  width: 600,
+  height: 600,
 };
 
 export const contentType = "image/png";
@@ -18,8 +18,8 @@ export default async function Image() {
         style={{
           backgroundImage:
             "url(https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreifwxkjn2ckhokmew27s6vwiiar2pfkwivbz4x5nhevo27nznrq454)",
-          backgroundSize: "cover",
-          backgroundPosition: "100% 140%",
+          backgroundSize: "600px 600px",
+          backgroundPosition: "100% 100%",
         }}
       ></div>
     ),
