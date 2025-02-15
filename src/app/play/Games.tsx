@@ -20,12 +20,12 @@ export default function Games({
       icon: "/games/fill-in-the-blank.png",
       href: "/play/cloze",
     },
-    // {
-    //   id: "3",
-    //   title: "Friend Clash",
-    //   icon: "/games/friend-clash.png",
-    //   href: "/play/friend-clash",
-    // },
+    {
+      id: "3",
+      title: "Friend Clash",
+      icon: "/games/friend-clash.png",
+      href: "/play/friend-clash",
+    },
     // {
     //   id: "4",
     //   title: "Spin the Wheel",
