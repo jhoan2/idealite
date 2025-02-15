@@ -2,7 +2,7 @@
 
 import { sdk } from "@farcaster/frame-sdk";
 import { useEffect, useState } from "react";
-
+import SpinWheel from "./SpinWheel";
 export default function SpinWheelFrame() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
 
@@ -22,6 +22,8 @@ export default function SpinWheelFrame() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center"></div>
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <SpinWheel />
+    </div>
   );
 }
