@@ -2,6 +2,7 @@
 
 import { sdk } from "@farcaster/frame-sdk";
 import { useEffect, useState } from "react";
+import FriendClash from "./FriendClash";
 
 export default function FriendClashFrame() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
@@ -22,6 +23,8 @@ export default function FriendClashFrame() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center"></div>
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <FriendClash />
+    </div>
   );
 }
