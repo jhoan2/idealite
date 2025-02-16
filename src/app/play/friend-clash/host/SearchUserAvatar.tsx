@@ -7,11 +7,13 @@ import { SearchUserContent, FarcasterUser } from "./SearchUserContent";
 interface SearchUserAvatarProps {
   isMobile: boolean;
   onSelect: (friend: string) => void;
+  onRemove: (friend: string) => void;
 }
 
 export const SearchUserAvatar = ({
   isMobile,
   onSelect,
+  onRemove,
 }: SearchUserAvatarProps) => {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<FarcasterUser | null>(null);
@@ -23,11 +25,24 @@ export const SearchUserAvatar = ({
     setOpen(false);
   };
 
+  const handleAvatarClick = (e: React.MouseEvent) => {
+    if (selectedUser) {
+      onRemove(selectedUser.username);
+      setSelectedUser(null);
+    } else {
+      setOpen(true); // Only open modal if no user is selected
+    }
+  };
+
   return (
     <SearchUserContainer
       isMobile={isMobile}
-      open={open}
-      onOpenChange={setOpen}
+      open={open && !selectedUser}
+      onOpenChange={(isOpen) => {
+        if (!selectedUser) {
+          setOpen(isOpen);
+        }
+      }}
       content={
         <SearchUserContent
           search={search}
@@ -36,7 +51,10 @@ export const SearchUserAvatar = ({
         />
       }
     >
-      <Avatar className="h-24 w-24 cursor-pointer bg-white/30">
+      <Avatar
+        className="h-24 w-24 cursor-pointer bg-white/30"
+        onClick={handleAvatarClick}
+      >
         {selectedUser ? (
           <>
             <AvatarImage
