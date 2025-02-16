@@ -620,7 +620,7 @@ export const game_session = createTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     playerCount: integer("player_count").notNull(),
-    players: uuid("players").array().notNull(),
+    players: text("players").array().notNull(),
     eliminatedPlayers: uuid("eliminated_players")
       .array()
       .notNull()
