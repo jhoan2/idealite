@@ -96,7 +96,7 @@ type FarcasterManifest = {
 };
 
 // Store manifests for different domains
-const manifestConfigs: Record<string, FarcasterManifest> = {
+export const manifestConfigs: Record<string, FarcasterManifest> = {
   "idealite.xyz": {
     accountAssociation: {
       header:
@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
   const domain = host.split(":")[0];
 
   // Get the correct manifest for the domain
-  const manifest = manifestConfigs[domain];
+  const manifest = manifestConfigs[domain as keyof typeof manifestConfigs];
 
   if (!manifest) {
     return Response.json(
