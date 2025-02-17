@@ -36,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Friend Clash",
     openGraph: {
       title: "Friend Clash",
-      description: "idealite friend clash game",
+      description: "Friend Clash",
     },
     other: {
       "fc:frame": JSON.stringify(frame),
