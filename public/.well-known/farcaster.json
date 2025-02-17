@@ -1,58 +1,18 @@
 {
-  "domains": [
-    {
-      "accountAssociation": {
-        "header": "eyJmaWQiOjIwNzAsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhFM2I4ZDQ5Mzg5MEE3MkRmNzg2NTEyMkMwY0JjZDA1NGJkMTYyNzk4In0",
-        "payload": "eyJkb21haW4iOiJpZGVhbGl0ZS54eXoifQ",
-        "signature": "MHgwNjNhZTM2ZThjYTgwZWIxOTNjMTQ0ZjMxNzU2YjQ0OTI2ZDQyZWE1ZjJmOTNiMjE5MTE3NDllYjE4NWVhNWZmMTMyYTRiZDAyNzA3MTdkZmZlY2VkZDUyOTZhOTQyZDdjNWM1MDkxNmQxOTk3OTQ5MTAzZjAyMzI4MGFmNTgyMDFi"
-      },
-      "frame": {
-        "version": "1",
-        "name": "Channel Frame",
-        "iconUrl": "https://idealite.xyz/icon48.png",
-        "homeUrl": "https://idealite.xyz/channelFrame/",
-        "imageUrl": "https://gateway.pinata.cloud/ipfs/bafkreifcxtpzwappwtqn4lp2kupefzcqh4szk7kluky4abg6ywaew4chyy",
-        "buttonTitle": "Check this out",
-        "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
-        "splashBackgroundColor": "#f7f7f7",
-        "webhookUrl": "https://api.neynar.com/f/app/9dca5c14-0de2-4f0c-9542-b51dea4a8474/event"
-      }
-    },
-    {
-      "accountAssociation": {
-        "header": "eyJmaWQiOjIwNzAsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhFM2I4ZDQ5Mzg5MEE3MkRmNzg2NTEyMkMwY0JjZDA1NGJkMTYyNzk4In0",
-        "payload": "eyJkb21haW4iOiJmbGFzaGNhcmRzLmlkZWFsaXRlLnh5eiJ9",
-        "signature": "MHhhNzM1OTliMzVjOTk2NGQ0ZjQxZDRiMzYxZmMxMGVhMmU3YzFlYzc5OGNiZGVjMTc5YjBkMmMxNjcxNzc3MTllNDc5MmQzNzMyNjA2Zjc3NjI4NzcwNDA4MGYyNjMzYjgwYmVhZDEwZTU4NzkxMjZmZDgxYjkxNzcxM2ZlZmE5MzFj"
-      },
-      "frame": {
-        "version": "1",
-        "name": "Example Frame",
-        "iconUrl": "https://flashcards.idealite.xyz/icon.png",
-        "homeUrl": "https://flashcards.idealite.xyz",
-        "imageUrl": "https://flashcards.idealite.xyz/image.png",
-        "buttonTitle": "Check this out",
-        "splashImageUrl": "https://flashcards.idealite.xyz/splash.png",
-        "splashBackgroundColor": "#eeccff",
-        "webhookUrl": "https://flashcards.idealite.xyz/api/webhook"
-      }
-    },
-    {
-      "accountAssociation": {
-        "header": "eyJmaWQiOjIwNzAsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhFM2I4ZDQ5Mzg5MEE3MkRmNzg2NTEyMkMwY0JjZDA1NGJkMTYyNzk4In0",
-        "payload": "eyJkb21haW4iOiJjbG96ZS5pZGVhbGl0ZS54eXoifQ",
-        "signature": "MHhlMDIyMGFhNzU1ODhkMDY1ZWM3MzUxYzliOWMxZmE4MGNkYjk5MTc3ODEzYWE2OGM0YjQ2MGQ3MzBhMDhhNzlhMjE3NjU5ODIzMWJmZWJjNDBmM2E1YjRiNGFlMzljMjdlZWMyY2VjNGYwOWI3MjJkODkyZDUzOWE0M2Y3NzMzNTFi"
-      },
-      "frame": {
-        "version": "1",
-        "name": "Example Frame",
-        "iconUrl": "https://cloze.idealite.xyz/icon.png",
-        "homeUrl": "https://cloze.idealite.xyz",
-        "imageUrl": "https://cloze.idealite.xyz/image.png",
-        "buttonTitle": "Check this out",
-        "splashImageUrl": "https://cloze.idealite.xyz/splash.png",
-        "splashBackgroundColor": "#eeccff",
-        "webhookUrl": "https://cloze.idealite.xyz/api/webhook"
-      }
-    }
-  ]
+  "accountAssociation": {
+    "header": "eyJmaWQiOjIwNzAsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhFM2I4ZDQ5Mzg5MEE3MkRmNzg2NTEyMkMwY0JjZDA1NGJkMTYyNzk4In0",
+    "payload": "eyJkb21haW4iOiJpZGVhbGl0ZS54eXoifQ",
+    "signature": "MHgwNjNhZTM2ZThjYTgwZWIxOTNjMTQ0ZjMxNzU2YjQ0OTI2ZDQyZWE1ZjJmOTNiMjE5MTE3NDllYjE4NWVhNWZmMTMyYTRiZDAyNzA3MTdkZmZlY2VkZDUyOTZhOTQyZDdjNWM1MDkxNmQxOTk3OTQ5MTAzZjAyMzI4MGFmNTgyMDFi"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Channel Frame",
+    "iconUrl": "https://idealite.xyz/icon48.png",
+    "homeUrl": "https://idealite.xyz/channelFrame/",
+    "imageUrl": "https://gateway.pinata.cloud/ipfs/bafkreifcxtpzwappwtqn4lp2kupefzcqh4szk7kluky4abg6ywaew4chyy",
+    "buttonTitle": "Check this out",
+    "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+    "splashBackgroundColor": "#f7f7f7",
+    "webhookUrl": "https://api.neynar.com/f/app/9dca5c14-0de2-4f0c-9542-b51dea4a8474/event"
+  }
 }
