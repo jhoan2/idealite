@@ -4,6 +4,7 @@ import { getUserPlayStats } from "~/server/queries/user";
 import { trackEvent } from "~/lib/posthog/server";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
+import WarpcastReady from "~/app/WarpcastReady";
 
 const FlashcardFrame = dynamic(() => import("./FlashcardFrame"), {
   ssr: false,
@@ -47,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function FlashcardsPage() {
   const session = await auth();
   if (!session?.user?.id) {
-    return <div>Check out the channel frame at /idealite</div>;
+    return <WarpcastReady />;
   }
 
   trackEvent(session.user.fid, "questions_and_answers_page_viewed", {
