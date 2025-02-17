@@ -97,7 +97,7 @@ type FarcasterManifest = {
 
 // Store manifests for different domains
 const manifestConfigs: Record<string, FarcasterManifest> = {
-  "idealite.xyz/channelFrame": {
+  "idealite.xyz": {
     accountAssociation: {
       header:
         "eyJmaWQiOjIwNzAsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhFM2I4ZDQ5Mzg5MEE3MkRmNzg2NTEyMkMwY0JjZDA1NGJkMTYyNzk4In0",
@@ -183,18 +183,13 @@ export async function GET(request: NextRequest) {
   const manifest = manifestConfigs[domain];
 
   if (!manifest) {
-    return new NextResponse(JSON.stringify({ error: "Manifest not found" }), {
-      status: 404,
-      headers: {
-        "Content-Type": "application/json",
+    return Response.json(
+      { error: "Manifest not found" },
+      {
+        status: 404,
       },
-    });
+    );
   }
 
-  return new NextResponse(JSON.stringify(manifest), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+  return Response.json(manifest);
 }
