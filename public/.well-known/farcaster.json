@@ -4,15 +4,61 @@
     "payload": "eyJkb21haW4iOiJpZGVhbGl0ZS54eXoifQ",
     "signature": "MHgwNjNhZTM2ZThjYTgwZWIxOTNjMTQ0ZjMxNzU2YjQ0OTI2ZDQyZWE1ZjJmOTNiMjE5MTE3NDllYjE4NWVhNWZmMTMyYTRiZDAyNzA3MTdkZmZlY2VkZDUyOTZhOTQyZDdjNWM1MDkxNmQxOTk3OTQ5MTAzZjAyMzI4MGFmNTgyMDFi"
   },
-  "frame": {
-    "version": "1",
-    "name": "Channel Frame",
-    "iconUrl": "https://idealite.xyz/icon48.png",
-    "homeUrl": "https://idealite.xyz/channelFrame/",
-    "imageUrl": "https://gateway.pinata.cloud/ipfs/bafkreifcxtpzwappwtqn4lp2kupefzcqh4szk7kluky4abg6ywaew4chyy",
-    "buttonTitle": "Check this out",
-    "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
-    "splashBackgroundColor": "#f7f7f7",
-    "webhookUrl": "https://api.neynar.com/f/app/9dca5c14-0de2-4f0c-9542-b51dea4a8474/event"
-  }
+  "frame": [
+    {
+      "version": "1",
+      "name": "Channel Frame",
+      "iconUrl": "https://idealite.xyz/icon48.png",
+      "homeUrl": "https://idealite.xyz/channelFrame/",
+      "imageUrl": "https://gateway.pinata.cloud/ipfs/bafkreifcxtpzwappwtqn4lp2kupefzcqh4szk7kluky4abg6ywaew4chyy",
+      "buttonTitle": "Check this out",
+      "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+      "splashBackgroundColor": "#f7f7f7",
+      "webhookUrl": "https://api.neynar.com/f/app/9dca5c14-0de2-4f0c-9542-b51dea4a8474/event"
+    },
+    {
+      "version": "1",
+      "name": "Q/A",
+      "iconUrl": "https://idealite.xyz/icon48.png",
+      "homeUrl": "https://idealite.xyz/play/flashcards",
+      "imageUrl": "https://gateway.pinata.cloud/ipfs/bafkreifwxkjn2ckhokmew27s6vwiiar2pfkwivbz4x5nhevo27nznrq454",
+      "buttonTitle": "Review",
+      "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+      "splashBackgroundColor": "#f7f7f7",
+      "webhookUrl": "https://api.neynar.com/f/app/9dca5c14-0de2-4f0c-9542-b51dea4a8474/event"
+    },
+    {
+      "version": "1",
+      "name": "Fill in the blank",
+      "iconUrl": "https://idealite.xyz/icon48.png",
+      "homeUrl": "https://idealite.xyz/play/fill-in-the-blank",
+      "imageUrl": "https://gateway.pinata.cloud/ipfs/bafkreihdu6kg342z66ptqpwuem2433qtfcrkchslaf5vfbf5ww27jvm574",
+      "buttonTitle": "Review",
+      "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+      "splashBackgroundColor": "#f7f7f7",
+      "webhookUrl": "https://api.neynar.com/f/app/9dca5c14-0de2-4f0c-9542-b51dea4a8474/event"
+    },
+    {
+      "version": "1",
+      "name": "Friend Clash",
+      "iconUrl": "https://idealite.xyz/icon48.png",
+      "homeUrl": "https://idealite.xyz/play/friend-clash",
+      "imageUrl": "https://gateway.pinata.cloud/ipfs/bafkreih6uttwztapvvo5v5el5chthzp334rwtmww3u2qdl2rtkm6ovpoiq",
+      "buttonTitle": "Play",
+      "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+      "splashBackgroundColor": "#f7f7f7",
+      "webhookUrl": "https://api.neynar.com/f/app/9dca5c14-0de2-4f0c-9542-b51dea4a8474/event"
+    },
+    {
+      "version": "1",
+      "name": "Spin the Wheel",
+      "iconUrl": "https://idealite.xyz/icon48.png",
+      "homeUrl": "https://idealite.xyz/play/spin-the-wheel",
+      "imageUrl": "https://gateway.pinata.cloud/ipfs/bafkreida2vb6qyeisbm4f25fri3nr6tvcdxqhdnk77wtjddexhmwxtreta",
+      "buttonTitle": "Spin",
+      "splashImageUrl": "https://gateway.pinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+      "splashBackgroundColor": "#f7f7f7",
+      "webhookUrl": "https://api.neynar.com/f/app/9dca5c14-0de2-4f0c-9542-b51dea4a8474/event"
+    }
+  ]
 }

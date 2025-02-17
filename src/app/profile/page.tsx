@@ -3,8 +3,15 @@ import { auth } from "~/app/auth";
 import ProfilePlaceholder from "./ProfilePlaceholder";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
+import SignOut from "./SignOut";
+import { headers } from "next/headers";
+
 export default async function ProfilePage() {
   const session = await auth();
+  const headersList = headers();
+  const userAgent = headersList.get("user-agent");
+  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
+
   if (!session) {
     return <ProfilePlaceholder />;
   }
@@ -12,13 +19,16 @@ export default async function ProfilePage() {
   return (
     <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12">
       <div className="mx-auto max-w-2xl space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Account Settings
-          </h1>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences
-          </p>
+        <div className="flex items-center justify-between space-y-2">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Account Settings
+            </h1>
+            <p className="text-muted-foreground">
+              Manage your account settings and preferences
+            </p>
+          </div>
+          {isWarpcast && <SignOut />}
         </div>
         <Separator />
         <Card>

@@ -3,24 +3,23 @@ import { getUserPlayStats } from "~/server/queries/user";
 import { trackEvent } from "~/lib/posthog/server";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
-import WarpcastLogin from "~/app/WarpcastLogin";
 
-const FriendClashFrame = dynamic(() => import("./FriendClashFrame"), {
+const SpinWheelFrame = dynamic(() => import("./SpinWheelFrame"), {
   ssr: false,
 });
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_DEPLOYMENT_URL || process.env.VERCEL_URL;
 const domain = BASE_URL ? `https://${BASE_URL}` : "http://localhost:3000";
-const route = `${domain}/play/friend-clash`;
+const route = `${domain}/play/spin-wheel`;
 const frame = {
   version: "next",
   imageUrl: `${route}/opengraph-image`,
   button: {
-    title: "Friend Clash",
+    title: "Spin Wheel",
     action: {
       type: "launch_frame",
-      name: "friend_clash",
+      name: "spin_wheel",
       url: route,
       splashImageUrl:
         "https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
@@ -33,10 +32,10 @@ export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Friend Clash",
+    title: "Spin Wheel",
     openGraph: {
-      title: "Friend Clash",
-      description: "idealite friend clash game",
+      title: "Spin Wheel",
+      description: "idealite spin wheel game",
     },
     other: {
       "fc:frame": JSON.stringify(frame),
@@ -44,15 +43,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function FriendClashPage() {
+export default async function SpinWheelPage() {
   const session = await auth();
   if (!session?.user?.id) {
-    return <WarpcastLogin />;
+    return <div>Check out the channel frame at /idealite</div>;
   }
 
-  trackEvent(session.user.fid, "friend_clash_page_viewed", {
+  trackEvent(session.user.fid, "spin_wheel_page_viewed", {
     username: session.user.username,
   });
 
-  return <FriendClashFrame />;
+  return <SpinWheelFrame />;
 }

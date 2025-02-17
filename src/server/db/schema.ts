@@ -620,7 +620,7 @@ export const game_session = createTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     playerCount: integer("player_count").notNull(),
-    players: uuid("players").array().notNull(),
+    players: text("players").array().notNull(),
     eliminatedPlayers: uuid("eliminated_players")
       .array()
       .notNull()
@@ -631,6 +631,7 @@ export const game_session = createTable(
     notificationIds: text("notification_ids").array(),
     status: game_status_enum("status").notNull().default("created"),
     turnDeadline: timestamp("turn_deadline", { withTimezone: true }).notNull(),
+    topics: text("topics").array(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

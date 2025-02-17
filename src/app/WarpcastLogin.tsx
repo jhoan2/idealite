@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { useCallback, useState } from "react";
 import sdk from "@farcaster/frame-sdk";
@@ -8,11 +7,7 @@ import { signIn, getCsrfToken } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
 
-export default function Welcome({
-  goToNextStep,
-}: {
-  goToNextStep: () => void;
-}) {
+export default function WarpcastLogin() {
   const [signingIn, setSigningIn] = useState(false);
   const getNonce = useCallback(async () => {
     const nonce = await getCsrfToken();
@@ -36,39 +31,32 @@ export default function Welcome({
         console.log("Sign in cancelled or failed:", signInResult.error);
         return;
       }
-
-      goToNextStep();
+      window.location.reload();
     } finally {
       setSigningIn(false);
     }
   }, [getNonce]);
+
   return (
     <div className="text-center">
-      {/* Main Content */}
       <main className="flex flex-col items-center px-6 pt-12">
-        {/* Hero Image */}
         <div className="relative mb-8 flex aspect-square w-full max-w-md items-center justify-center">
-          <Image
+          <img
             src="/icon256.png"
             alt="Mathematical rocket illustration"
-            className="object-contain"
-            priority
-            width={256}
-            height={268}
+            className="h-64 w-64 object-contain"
           />
         </div>
 
-        {/* Text Content */}
         <div className="mb-8 space-y-4 text-center">
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-            An MMO Learning Game
+            Friend Clash
           </h1>
           <p className="mx-auto max-w-md text-lg text-muted-foreground">
-            The MMO where knowledge is your superpower.
+            Challenge your friends to a knowledge battle!
           </p>
         </div>
 
-        {/* Buttons */}
         <div className="w-full max-w-md space-y-4">
           <Button
             onClick={handleSignIn}

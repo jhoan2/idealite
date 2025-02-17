@@ -11,13 +11,14 @@ export const contentType = "image/png";
 export const revalidate = 300;
 
 export default async function Image() {
+  //To style this image, go to the route /play/friend-clash/opengraph-image
   return new ImageResponse(
     (
       <div
         tw="h-full w-full flex flex-col justify-center items-center relative"
         style={{
           backgroundImage:
-            "url(https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreifwxkjn2ckhokmew27s6vwiiar2pfkwivbz4x5nhevo27nznrq454)",
+            "url(https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreih6uttwztapvvo5v5el5chthzp334rwtmww3u2qdl2rtkm6ovpoiq)",
           backgroundSize: "600px 600px",
           backgroundPosition: "100% 100%",
         }}
