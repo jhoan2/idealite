@@ -27,10 +27,6 @@ const coreConfig = {
         source: "/ingest/:path*",
         destination: "https://us.i.posthog.com/:path*",
       },
-      {
-        source: "/.well-known/farcaster.json",
-        destination: "/.well-known/farcaster",
-      },
     ];
   },
   webpack: (config) => {
