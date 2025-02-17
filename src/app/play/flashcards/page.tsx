@@ -12,7 +12,7 @@ const FlashcardFrame = dynamic(() => import("./FlashcardFrame"), {
 const BASE_URL =
   process.env.NEXT_PUBLIC_DEPLOYMENT_URL || process.env.VERCEL_URL;
 const domain = BASE_URL ? `https://${BASE_URL}` : "http://localhost:3000";
-const route = `${domain}/play/flashcards`;
+const route = `flashcards.${domain}`;
 const frame = {
   version: "next",
   imageUrl: `${route}/opengraph-image`,
