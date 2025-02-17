@@ -55,6 +55,7 @@ export default function ChannelHome({
   const [isOnboarding, setIsOnboarding] = useState(
     !session || userTags.length === 0,
   );
+
   const handleJoinChannel = async () => {
     const response = await fetch("/api/channelMembership", {
       method: "POST",
@@ -77,24 +78,17 @@ export default function ChannelHome({
         displayName: frameContext?.user?.displayName,
         username: frameContext?.user?.username,
       });
-      if (status !== "loading" && session && userTags.length > 0) {
-        router.push("/workspace");
-      }
     };
 
     if (sdk && !isSDKLoaded) {
       setIsSDKLoaded(true);
       load();
     }
-  }, [isSDKLoaded]);
 
-  if (!isSDKLoaded) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isOnboarding && (!session || userTags.length === 0)) {
-    setIsOnboarding(true);
-  }
+    if (isSDKLoaded && status !== "loading" && session && userTags.length > 0) {
+      router.push("/workspace");
+    }
+  }, [isSDKLoaded, status, session, userTags.length, router]);
 
   if (!isSDKLoaded) {
     return <div>Loading...</div>;
@@ -111,5 +105,15 @@ export default function ChannelHome({
     );
   }
 
-  return null;
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <img
+        src="/idealite-loading-logo.gif"
+        alt="Loading"
+        width={200}
+        height={200}
+      />
+      <p className="mt-4 text-gray-600">Loading...</p>
+    </div>
+  );
 }
