@@ -10,7 +10,7 @@ export default async function ProfilePage() {
   const session = await auth();
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
-  const isMobile = userAgent?.toLowerCase().includes("mobile");
+  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
 
   if (!session) {
     return <ProfilePlaceholder />;
@@ -28,7 +28,7 @@ export default async function ProfilePage() {
               Manage your account settings and preferences
             </p>
           </div>
-          {isMobile && <SignOut />}
+          {isWarpcast && <SignOut />}
         </div>
         <Separator />
         <Card>
