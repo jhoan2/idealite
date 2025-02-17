@@ -47,6 +47,7 @@ export default async function ProfilePage() {
                   className="aspect-square rounded-full object-cover"
                   width={80}
                   height={80}
+                  priority
                 />
               </div>
               <div className="space-y-1">
