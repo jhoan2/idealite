@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import sdk from "@farcaster/frame-sdk";
 import { signIn, getCsrfToken } from "next-auth/react";
 import { Loader2 } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 export default function Welcome({
   goToNextStep,
@@ -31,6 +32,7 @@ export default function Welcome({
       });
 
       if (signInResult?.error) {
+        Sentry.captureException(signInResult.error);
         console.log("Sign in cancelled or failed:", signInResult.error);
         return;
       }
