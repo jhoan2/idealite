@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
-import { getGameSessionData } from "~/server/queries/gameSession";
-
+import {
+  getGamePlayerInfo,
+  type GamePlayer,
+} from "~/server/queries/gameSession";
 export const dynamic = "force-dynamic";
 export const alt = "idealite flashcards game";
 export const size = {
@@ -17,8 +19,8 @@ export default async function Image({
   params: { gameId: string };
 }) {
   //To style this image, go to the route /play/friend-clash/opengraph-image
-  const result = await getGameSessionData(params.gameId);
-  const players = result.success ? result.data?.players : [];
+  const result = await getGamePlayerInfo(params.gameId);
+  const players = result.success ? result.data : [];
   const leftPlayers = players?.slice(0, 2);
   const rightPlayers = players?.slice(2, 4);
   return new ImageResponse(
@@ -32,28 +34,36 @@ export default async function Image({
           backgroundPosition: "100% 100%",
         }}
       >
-        <div tw="flex flex-row justify-between items-center w-full">
+        <div tw="flex flex-row justify-between items-center w-full px-4">
           {/* Left side names */}
-          <div tw="flex flex-col items-end mr-24">
-            {leftPlayers?.map((player: string, index: number) => (
-              <p
-                key={index}
-                tw="text-4xl text-black font-bold mb-2  px-4 py-1 rounded"
-              >
-                {player}
-              </p>
+          <div tw="flex flex-col items-start w-1/2">
+            {leftPlayers?.map((player: GamePlayer, index: number) => (
+              <div key={index} tw="flex flex-row items-center mb-4">
+                <img
+                  src={player.pfp_url || "/placeholder.svg?height=40&width=40"}
+                  tw="w-10 h-10 rounded-full mr-2"
+                  alt={player.username}
+                />
+                <p tw="text-xl text-black font-bold truncate max-w-[180px]">
+                  {player.username}
+                </p>
+              </div>
             ))}
           </div>
 
           {/* Right side names */}
-          <div tw="flex flex-col items-start ml-12">
-            {rightPlayers?.map((player: string, index: number) => (
-              <p
-                key={index}
-                tw="text-4xl text-black font-bold mb-2  px-4 py-1 rounded"
-              >
-                {player}
-              </p>
+          <div tw="flex flex-col items-end w-1/2">
+            {rightPlayers?.map((player: GamePlayer, index: number) => (
+              <div key={index} tw="flex flex-row-reverse items-center mb-4">
+                <img
+                  src={player.pfp_url || "/placeholder.svg?height=40&width=40"}
+                  tw="w-10 h-10 rounded-full ml-2"
+                  alt={player.username}
+                />
+                <p tw="text-xl text-black font-bold truncate max-w-[180px]">
+                  {player.username}
+                </p>
+              </div>
             ))}
           </div>
         </div>
