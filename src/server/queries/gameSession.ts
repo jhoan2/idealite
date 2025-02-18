@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { db } from "~/server/db";
-import { game_session } from "~/server/db/schema";
+import { game_session, GameType } from "~/server/db/schema";
 import { desc, sql } from "drizzle-orm";
 import type { GameSession } from "~/server/db/schema";
 import * as Sentry from "@sentry/nextjs";
@@ -23,6 +23,7 @@ export type GetUserGameSessionsResponse =
 
 export async function getUserGameSessions(
   username: string,
+  gameType: GameType,
 ): Promise<GetUserGameSessionsResponse> {
   try {
     const { username: validatedUsername } = getUserGameSessionsSchema.parse({
@@ -30,7 +31,7 @@ export async function getUserGameSessions(
     });
 
     const sessions = await db.query.game_session.findMany({
-      where: sql`${validatedUsername}::text = ANY(${game_session.players})`,
+      where: sql`${validatedUsername}::text = ANY(${game_session.players}) AND ${game_session.game_type} = ${gameType}`,
       orderBy: [desc(game_session.created_at)],
     });
 

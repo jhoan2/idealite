@@ -9,7 +9,10 @@ export default async function FriendClashJoin() {
     return <WarpcastLogin />;
   }
 
-  const gameSessions = await getUserGameSessions(session.user.username);
+  const gameSessions = await getUserGameSessions(
+    session.user.username,
+    "friend-clash",
+  );
   if (!gameSessions.success) {
     return <div>Error: {gameSessions.error}</div>;
   }

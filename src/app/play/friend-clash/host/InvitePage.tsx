@@ -50,6 +50,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
       const gameSession = await createGameSession({
         playerCount: players.length,
         players,
+        gameType: "friend-clash",
       });
 
       const formattedInvites = invitees

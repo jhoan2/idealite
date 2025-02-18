@@ -615,6 +615,14 @@ export const game_status_enum = pgEnum("game_status", [
   "abandoned",
 ]);
 
+export const game_type_enum = pgEnum("game_type", [
+  "friend-clash",
+  "spin-wheel",
+  "memory-mansion",
+  "two-truths-one-lie",
+]);
+
+export type GameType = (typeof game_type_enum.enumValues)[number];
 export type GameSession = typeof game_session.$inferSelect;
 export const game_session = createTable(
   "game_session",
@@ -629,6 +637,7 @@ export const game_session = createTable(
     current_turn_player_index: integer("current_turn_player_index")
       .notNull()
       .default(0),
+    game_type: game_type_enum("game_type").notNull(),
     notification_ids: text("notification_ids").array(),
     status: game_status_enum("status").notNull().default("created"),
     turn_deadline: timestamp("turn_deadline", { withTimezone: true }).notNull(),
