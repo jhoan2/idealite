@@ -1,23 +1,56 @@
+"use server";
+
+import { z } from "zod";
 import { db } from "~/server/db";
 import { game_session } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
+import type { GameSession } from "~/server/db/schema";
+import * as Sentry from "@sentry/nextjs";
 
-export async function getGameSessionData(gameId: string) {
+const getUserGameSessionsSchema = z.object({
+  username: z.string(),
+});
+
+export type GetUserGameSessionsResponse =
+  | {
+      success: true;
+      data: GameSession[];
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+export async function getUserGameSessions(
+  username: string,
+): Promise<GetUserGameSessionsResponse> {
   try {
-    const [session] = await db
-      .select({
-        players: game_session.players,
-      })
-      .from(game_session)
-      .where(eq(game_session.id, gameId));
+    const { username: validatedUsername } = getUserGameSessionsSchema.parse({
+      username,
+    });
 
-    if (!session) {
-      return { success: false, error: "Game session not found" };
+    const sessions = await db.query.game_session.findMany({
+      where: sql`${validatedUsername}::text = ANY(${game_session.players})`,
+      orderBy: [desc(game_session.created_at)],
+    });
+
+    return {
+      success: true,
+      data: sessions,
+    };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: "Invalid username format",
+      };
     }
 
-    return { success: true, data: session };
-  } catch (error) {
-    console.error("Error fetching game session:", error);
-    return { success: false, error: "Failed to fetch game session" };
+    Sentry.captureException(error);
+
+    return {
+      success: false,
+      error: "Failed to fetch game sessions",
+    };
   }
 }
