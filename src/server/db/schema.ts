@@ -14,6 +14,7 @@ import {
   AnyPgColumn,
   primaryKey,
   pgEnum,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -630,6 +631,16 @@ export const game_session = createTable(
     id: uuid("id").defaultRandom().primaryKey(),
     player_count: integer("player_count").notNull(),
     players: text("players").array().notNull(),
+    player_info: jsonb("player_info").array().notNull().$type<
+      {
+        username: string;
+        display_name: string | null;
+        fid: number;
+        pfp_url: string | null;
+        avatar_url: string | null;
+        user_id: string;
+      }[]
+    >(),
     eliminated_players: uuid("eliminated_players")
       .array()
       .notNull()
