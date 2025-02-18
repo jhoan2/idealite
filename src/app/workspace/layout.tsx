@@ -6,6 +6,7 @@ import { SidebarProvider } from "~/components/ui/sidebar";
 import { RightSideBar } from "./(Page)/(RightSidebar)/RightSideBar";
 import { headers } from "next/headers";
 import { TagTreeContainer } from "./(TagTreeNav)/TagTreeContainer";
+import { trackEvent } from "~/lib/posthog/server";
 
 export default async function WorkspaceLayout({
   children,
@@ -23,6 +24,12 @@ export default async function WorkspaceLayout({
   const userAgent = headersList.get("user-agent");
 
   const isMobile = userAgent?.toLowerCase().includes("mobile");
+
+  if (userId) {
+    trackEvent(Number(userId), "workspace_viewed", {
+      username: session?.user?.username,
+    });
+  }
 
   return (
     <SidebarProvider
