@@ -1,5 +1,8 @@
+"use client";
+
+import { sdk } from "@farcaster/frame-sdk";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 
 export default function Games({
@@ -7,6 +10,7 @@ export default function Games({
 }: {
   userPlayStats: { points: number; cash: number };
 }) {
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const items = [
     {
       id: "1",
@@ -51,6 +55,18 @@ export default function Games({
     //   href: "/play/memory-mansion",
     // },
   ];
+
+  useEffect(() => {
+    const load = async () => {
+      const frameContext = await sdk.context;
+      sdk.actions.ready();
+    };
+
+    if (sdk && !isSDKLoaded) {
+      setIsSDKLoaded(true);
+      load();
+    }
+  }, [isSDKLoaded]);
 
   return (
     <div className="p-6">

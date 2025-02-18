@@ -3,7 +3,7 @@ import { getUserPlayStats } from "~/server/queries/user";
 import { trackEvent } from "~/lib/posthog/server";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
-import WarpcastLogin from "~/app/WarpcastLogin";
+import WarpcastReady from "~/app/WarpcastReady";
 
 const FriendClashFrame = dynamic(() => import("./FriendClashFrame"), {
   ssr: false,
@@ -36,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Friend Clash",
     openGraph: {
       title: "Friend Clash",
-      description: "idealite friend clash game",
+      description: "Friend Clash",
     },
     other: {
       "fc:frame": JSON.stringify(frame),
@@ -47,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function FriendClashPage() {
   const session = await auth();
   if (!session?.user?.id) {
-    return <WarpcastLogin />;
+    return <WarpcastReady />;
   }
 
   trackEvent(session.user.fid, "friend_clash_page_viewed", {

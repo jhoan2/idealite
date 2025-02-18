@@ -3,6 +3,7 @@ import { getUserPlayStats } from "~/server/queries/user";
 import { trackEvent } from "~/lib/posthog/server";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
+import WarpcastReady from "~/app/WarpcastReady";
 
 const SpinWheelFrame = dynamic(() => import("./SpinWheelFrame"), {
   ssr: false,
@@ -46,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SpinWheelPage() {
   const session = await auth();
   if (!session?.user?.id) {
-    return <div>Check out the channel frame at /idealite</div>;
+    return <WarpcastReady />;
   }
 
   trackEvent(session.user.fid, "spin_wheel_page_viewed", {

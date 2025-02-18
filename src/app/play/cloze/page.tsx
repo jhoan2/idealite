@@ -4,6 +4,7 @@ import { auth } from "~/app/auth";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import { trackEvent } from "~/lib/posthog/server";
+import WarpcastReady from "~/app/WarpcastReady";
 
 const ClozeFrame = dynamic(() => import("./ClozeFrame"), {
   ssr: false,
@@ -12,7 +13,7 @@ const ClozeFrame = dynamic(() => import("./ClozeFrame"), {
 const BASE_URL =
   process.env.NEXT_PUBLIC_DEPLOYMENT_URL || process.env.VERCEL_URL;
 const domain = BASE_URL ? `https://${BASE_URL}` : "http://localhost:3000";
-const route = `cloze.${domain}`;
+const route = `${domain}/play/cloze`;
 const frame = {
   version: "next",
   imageUrl: `${route}/opengraph-image`,
@@ -47,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ClozePage() {
   const session = await auth();
   if (!session?.user?.id) {
-    return <div>Check out the channel frame at /idealite</div>;
+    return <WarpcastReady />;
   }
 
   trackEvent(session.user.fid, "cloze_page_viewed", {

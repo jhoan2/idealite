@@ -4,6 +4,7 @@ import { getUserPlayStats } from "~/server/queries/user";
 import { trackEvent } from "~/lib/posthog/server";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
+import WarpcastReady from "~/app/WarpcastReady";
 
 const FlashcardFrame = dynamic(() => import("./FlashcardFrame"), {
   ssr: false,
@@ -12,7 +13,7 @@ const FlashcardFrame = dynamic(() => import("./FlashcardFrame"), {
 const BASE_URL =
   process.env.NEXT_PUBLIC_DEPLOYMENT_URL || process.env.VERCEL_URL;
 const domain = BASE_URL ? `https://${BASE_URL}` : "http://localhost:3000";
-const route = `flashcards.${domain}`;
+const route = `${domain}/play/flashcards`;
 const frame = {
   version: "next",
   imageUrl: `${route}/opengraph-image`,
@@ -33,10 +34,10 @@ export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Q/A",
+    title: "Questions and Answers",
     openGraph: {
-      title: "Q/A",
-      description: "idealite flashcards game",
+      title: "Questions and Answers",
+      description: "Questions and Answers",
     },
     other: {
       "fc:frame": JSON.stringify(frame),
@@ -47,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function FlashcardsPage() {
   const session = await auth();
   if (!session?.user?.id) {
-    return <div>Check out the channel frame at /idealite</div>;
+    return <WarpcastReady />;
   }
 
   trackEvent(session.user.fid, "questions_and_answers_page_viewed", {
