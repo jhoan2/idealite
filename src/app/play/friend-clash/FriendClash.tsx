@@ -23,7 +23,7 @@ export default function FriendClash() {
               <Link href="/play/friend-clash/host">Host a Game</Link>
             </Button>
             <Button variant="secondary" className="w-full">
-              <Link href="/play/friend-clash/games">Join Current Games</Link>
+              <Link href="/play/friend-clash/games">Your Games</Link>
             </Button>
           </div>
         </div>
