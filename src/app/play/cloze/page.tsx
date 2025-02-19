@@ -4,7 +4,7 @@ import { auth } from "~/app/auth";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import { trackEvent } from "~/lib/posthog/server";
-import WarpcastReady from "~/app/WarpcastReady";
+import PleaseLogin from "~/app/PleaseLogin";
 
 const ClozeFrame = dynamic(() => import("./ClozeFrame"), {
   ssr: false,
@@ -48,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ClozePage() {
   const session = await auth();
   if (!session?.user?.id) {
-    return <WarpcastReady />;
+    return <PleaseLogin />;
   }
 
   trackEvent(session.user.fid, "cloze_page_viewed", {
