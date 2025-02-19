@@ -1,9 +1,9 @@
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import { auth } from "~/app/auth";
-import WarpcastReady from "~/app/WarpcastReady";
+import PleaseLogin from "~/app/PleaseLogin";
 import { trackEvent } from "~/lib/posthog/server";
-
+import { getGameSession } from "~/server/queries/gameSession";
 const ClashGameFrame = dynamic(() => import("./ClashGameFrame"), {
   ssr: false,
 });
@@ -55,12 +55,25 @@ export default async function FriendClashPage({
 }) {
   const session = await auth();
   if (!session?.user?.id) {
-    return <WarpcastReady />;
+    return <PleaseLogin />;
   }
+
+  const response = await getGameSession(params.gameId);
+
+  if (!response.success) {
+    throw new Error(response.error);
+  }
+
+  const gameSession = response.data;
 
   trackEvent(session.user.fid, "friend_clash_game_viewed", {
     username: session.user.username,
   });
 
-  return <ClashGameFrame />;
+  return (
+    <ClashGameFrame
+      gameSession={gameSession}
+      currentUsername={session.user.username}
+    />
+  );
 }

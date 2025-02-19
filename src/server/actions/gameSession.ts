@@ -5,6 +5,7 @@ import { auth } from "~/app/auth";
 import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { users } from "~/server/db/schema";
+import { revalidatePath } from "next/cache";
 
 /**
  * Helper function that takes a username, looks up the user's information,
@@ -52,11 +53,6 @@ async function getPlayerInfo(username: string): Promise<{
   };
 }
 
-/**
- * Creates a new game session.
- * It accepts a player count, an array of usernames, and a game type.
- * The helper function populates the "player_info" JSONB field using the supplied usernames.
- */
 export async function createGameSession({
   playerCount,
   players,
@@ -90,4 +86,104 @@ export async function createGameSession({
     .returning();
 
   return newGameSession;
+}
+
+export async function removePlayerFromGame({
+  gameId,
+  username,
+}: {
+  gameId: string;
+  username: string;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const [gameSession] = await db
+    .select()
+    .from(game_session)
+    .where(eq(game_session.id, gameId));
+
+  if (!gameSession) {
+    throw new Error("Game session not found");
+  }
+
+  if (gameSession.players[0] !== session.user.username) {
+    throw new Error("Only the host can remove players");
+  }
+
+  const updatedPlayers = gameSession.players.filter(
+    (player) => player !== username,
+  );
+  const updatedPlayerInfo = gameSession.player_info.filter(
+    (player) => player.username !== username,
+  );
+
+  await db
+    .update(game_session)
+    .set({
+      players: updatedPlayers,
+      player_info: updatedPlayerInfo,
+      player_count: updatedPlayers.length,
+    })
+    .where(eq(game_session.id, gameId));
+
+  revalidatePath(`/play/friend-clash/games/${gameId}`);
+
+  return { success: true };
+}
+
+export async function startGame(gameId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const [gameSession] = await db
+    .select()
+    .from(game_session)
+    .where(eq(game_session.id, gameId));
+
+  if (!gameSession) {
+    throw new Error("Game session not found");
+  }
+
+  if (gameSession.players[0] !== session.user.username) {
+    throw new Error("Only the host can start the game");
+  }
+
+  await db
+    .update(game_session)
+    .set({
+      status: "in_progress",
+    })
+    .where(eq(game_session.id, gameId));
+
+  revalidatePath(`/play/friend-clash/games/${gameId}`);
+
+  return { success: true };
+}
+
+export async function endGame(gameId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const [gameSession] = await db
+    .select()
+    .from(game_session)
+    .where(eq(game_session.id, gameId));
+
+  if (!gameSession) {
+    throw new Error("Game session not found");
+  }
+
+  if (gameSession.players[0] !== session.user.username) {
+    throw new Error("Only the host can end the game");
+  }
+
+  await db
+    .update(game_session)
+    .set({
+      status: "abandoned",
+    })
+    .where(eq(game_session.id, gameId));
+
+  revalidatePath(`/play/friend-clash/games/${gameId}`);
 }

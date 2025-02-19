@@ -97,3 +97,36 @@ export async function getGamePlayerInfo(
     };
   }
 }
+
+export type GetGameSessionResponse =
+  | {
+      success: true;
+      data: GameSession;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+export async function getGameSession(
+  id: string,
+): Promise<GetGameSessionResponse> {
+  try {
+    const [session] = await db
+      .select()
+      .from(game_session)
+      .where(eq(game_session.id, id));
+
+    if (!session) {
+      return { success: false as const, error: "Game session not found" };
+    }
+
+    return { success: true as const, data: session };
+  } catch (error) {
+    console.error("Error fetching game session:", error);
+    return {
+      success: false as const,
+      error: "Failed to fetch game session",
+    };
+  }
+}
