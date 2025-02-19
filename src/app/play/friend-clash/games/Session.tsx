@@ -75,7 +75,7 @@ export default function Session({ session }: SessionProps) {
 
   return (
     <Link
-      href={`/play/friend-clash/${session.id}`}
+      href={`/play/friend-clash/games/${session.id}`}
       className="block rounded-lg border bg-card text-card-foreground shadow-lg transition-transform hover:scale-105"
     >
       <div
