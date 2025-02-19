@@ -1,12 +1,13 @@
-import WarpcastLogin from "~/app/WarpcastLogin";
 import { auth } from "~/app/auth";
+import PleaseLogin from "~/app/PleaseLogin";
 import { getUserGameSessions } from "~/server/queries/gameSession";
 import SessionsList from "./SessionsList";
 
 export default async function FriendClashJoin() {
   const session = await auth();
+
   if (!session?.user?.id) {
-    return <WarpcastLogin />;
+    return <PleaseLogin />;
   }
 
   const gameSessions = await getUserGameSessions(
