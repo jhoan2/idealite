@@ -4,7 +4,11 @@ import { Avatar } from "~/components/ui/avatar";
 import { AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { GameSession } from "~/server/db/schema";
-import { removePlayerFromGame, endGame } from "~/server/actions/gameSession";
+import {
+  removePlayerFromGame,
+  endGame,
+  startGame,
+} from "~/server/actions/gameSession";
 
 export default function Lobby({
   gameSession,
@@ -17,10 +21,6 @@ export default function Lobby({
 }) {
   const removePlayer = async (playerId: string, gameId: string) => {
     await removePlayerFromGame({ gameId, username: playerId });
-  };
-
-  const startGame = async (gameId: string) => {
-    await startGame(gameId);
   };
 
   return (
