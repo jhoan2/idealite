@@ -232,9 +232,14 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
   }
 
   function buildTagTree(parentId: string | null): TreeTag[] {
-    const children = userTags.filter((tag) => tag.parent_id === parentId);
+    const directChildren = userTags.filter((tag) => tag.parent_id === parentId);
 
-    return children.map((tag) => {
+    const orphanedGroups =
+      parentId === null ? findOrphanedTagGroups(userTags) : [];
+
+    const allChildren = [...directChildren, ...orphanedGroups];
+
+    return allChildren.map((tag) => {
       const folders = buildFolderTree(foldersByTag.get(tag.id) || []);
       const pages = unfolderedPagesByTag.get(tag.id) || [];
 
@@ -250,6 +255,18 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
     });
   }
 
+  function findOrphanedTagGroups(tags: typeof userTags) {
+    const orphans = tags.filter(
+      (tag) => tag.parent_id && !tags.some((t) => t.id === tag.parent_id),
+    );
+
+    return orphans
+      .filter((tag) => !orphans.some((o) => o.id === tag.parent_id))
+      .map((tag) => ({
+        ...tag,
+        isOrphaned: true,
+      }));
+  }
   const result = buildTagTree(null);
   return result;
 }
