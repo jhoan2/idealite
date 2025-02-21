@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { stopEventPropagation, Tldraw } from "tldraw";
 import "tldraw/tldraw.css";
-import * as d3 from "d3";
+import { hierarchy, pack } from "d3-hierarchy";
+import { scaleOrdinal } from "d3-scale";
 import { toast } from "sonner";
 import { addUserTag } from "~/server/actions/usersTags";
 interface TreeNodeData {
@@ -82,17 +83,15 @@ function CirclePack({ width = 600, height = 600, tagTree }: CirclePackProps) {
     return d;
   };
 
-  const hierarchy = d3
-    .hierarchy(data)
-    .sum(() => 1) // Give each node a value of 1
+  // Use imported hierarchy function instead of d3.hierarchy
+  const hierarchyData = hierarchy(data)
+    .sum(() => 1)
     .sort((a, b) => b.value! - a.value!);
 
-  const packGenerator = d3
-    .pack<TreeNodeData>()
-    .size([width, height])
-    .padding(15);
+  // Use imported pack function instead of d3.pack
+  const packGenerator = pack<TreeNodeData>().size([width, height]).padding(15);
 
-  const root = packGenerator(hierarchy);
+  const root = packGenerator(hierarchyData);
 
   const handleCircleClick = async (
     event: React.MouseEvent,
@@ -111,9 +110,10 @@ function CirclePack({ width = 600, height = 600, tagTree }: CirclePackProps) {
     }
   };
 
-  const firstLevelGroups = hierarchy?.children?.map((child) => child.data.name);
-  const colorScale = d3
-    .scaleOrdinal<string>()
+  const firstLevelGroups = hierarchyData?.children?.map(
+    (child) => child.data.name,
+  );
+  const colorScale = scaleOrdinal<string>()
     .domain(firstLevelGroups || [])
     .range(colors);
 
