@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Redis } from "@upstash/redis";
 import * as Sentry from "@sentry/nextjs";
 import { v4 as uuidv4 } from "uuid";
@@ -38,21 +38,78 @@ export async function generateAndCacheQuestions(topic: string) {
   }
 }
 
-function parseLLMOutput(text: string): any {
-  // Check for markdown code fences and remove them.
-  if (text.startsWith("```")) {
-    const regex = /```(?:json)?\s*([\s\S]*?)```/m;
-    const match = text.match(regex);
-    if (match && match[1]) {
-      text = match[1].trim();
-    }
-  }
-  return JSON.parse(text);
-}
-
 async function generateQuestionsWithLLM(topic: string) {
+  const schema = {
+    description: "List of multiple choice trivia questions",
+    type: SchemaType.ARRAY,
+    items: {
+      type: SchemaType.OBJECT,
+      properties: {
+        question: {
+          type: SchemaType.STRING,
+          description: "The text of the question",
+          nullable: false,
+        },
+        options: {
+          type: SchemaType.OBJECT,
+          description:
+            "An object with keys A, B, C, and D, each containing a string value for the respective option",
+          nullable: false,
+          properties: {
+            A: {
+              type: SchemaType.STRING,
+              description: "The text of option A",
+            },
+            B: {
+              type: SchemaType.STRING,
+              description: "The text of option B",
+            },
+            C: {
+              type: SchemaType.STRING,
+              description: "The text of option C",
+            },
+            D: {
+              type: SchemaType.STRING,
+              description: "The text of option D",
+            },
+          },
+          required: ["A", "B", "C", "D"],
+        },
+        correctAnswer: {
+          type: SchemaType.STRING,
+          description:
+            "The correct answer option (string, either 'A', 'B', 'C', or 'D')",
+          nullable: false,
+        },
+        metadata: {
+          type: SchemaType.OBJECT,
+          description: "An object with keys difficulty and category",
+          nullable: false,
+          properties: {
+            difficulty: {
+              type: SchemaType.STRING,
+              description: "The difficulty of the question",
+            },
+            category: {
+              type: SchemaType.STRING,
+              description: "The category of the question",
+            },
+          },
+          required: ["difficulty", "category"],
+        },
+      },
+      required: ["question", "options", "correctAnswer", "metadata"],
+    },
+  };
+
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: schema,
+    },
+  });
 
   const prompt = `
     You are tasked with generating 30 basic multiple-choice questions on a given topic. 
@@ -115,16 +172,6 @@ async function generateQuestionsWithLLM(topic: string) {
 
   const response = await model.generateContent(prompt);
   const textContent = response.response.text();
-
-  // Parse the text to JSON
-  let questions: TriviaQuestion[];
-  try {
-    questions = parseLLMOutput(textContent);
-  } catch (err) {
-    console.error("Error parsing JSON:", err, textContent);
-    Sentry.captureException(err);
-    throw new Error("Failed to parse generated questions");
-  }
-
-  return questions;
+  const jsonContent = JSON.parse(textContent);
+  return jsonContent;
 }
