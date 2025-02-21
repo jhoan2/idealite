@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { sdk } from "@farcaster/frame-sdk";
 import Lobby from "./Lobby";
 import ClashInProgress from "./ClashInProgress";
-import { GameSession } from "~/server/db/schema";
+import { GameSessionWithMoves } from "~/server/queries/gameSession";
 
 interface ClashGameFrameProps {
-  gameSession: GameSession;
+  gameSession: GameSessionWithMoves;
   currentUsername: string;
 }
 
@@ -52,6 +52,13 @@ export default function ClashGameFrame({
     );
   }
 
-  // Handle other states (completed, abandoned)
-  return <div>Game has ended</div>;
+  if (gameSession.status === "completed") {
+    return <div className="">Game has ended</div>;
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <h1 className="text-4xl font-bold">Game has ended</h1>
+    </div>
+  );
 }
