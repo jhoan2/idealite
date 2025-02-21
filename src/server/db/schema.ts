@@ -683,6 +683,7 @@ export const game_move = createTable(
     player_id: uuid("player_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    player_username: text("player_username").notNull(),
     points: integer("points").notNull().default(0),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
