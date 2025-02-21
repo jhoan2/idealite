@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Redis } from "@upstash/redis";
+import * as Sentry from "@sentry/nextjs";
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -32,6 +33,7 @@ export async function generateAndCacheQuestions(topic: string) {
     );
   } catch (error) {
     console.error("Failed to generate questions:", error);
+    Sentry.captureException(error);
   }
 }
 
@@ -119,6 +121,7 @@ async function generateQuestionsWithLLM(topic: string) {
     questions = parseLLMOutput(textContent);
   } catch (err) {
     console.error("Error parsing JSON:", err, textContent);
+    Sentry.captureException(err);
     throw new Error("Failed to parse generated questions");
   }
 
