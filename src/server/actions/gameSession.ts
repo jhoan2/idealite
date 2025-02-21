@@ -187,3 +187,38 @@ export async function endGame(gameId: string) {
 
   revalidatePath(`/play/friend-clash/games/${gameId}`);
 }
+
+export async function addTopicToGame(gameId: string, topic: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const [gameSession] = await db
+    .select()
+    .from(game_session)
+    .where(eq(game_session.id, gameId));
+
+  if (!gameSession) {
+    throw new Error("Game session not found");
+  }
+
+  if (!gameSession.players.includes(session.user.username)) {
+    throw new Error("Only players can add topics");
+  }
+
+  // Calculate the next turn using modulo. This will cycle through the players.
+  const currentTurn = gameSession.current_turn_player_index;
+  const playersCount = gameSession.players.length;
+  const nextTurnIndex = (currentTurn + 1) % playersCount;
+
+  await db
+    .update(game_session)
+    .set({
+      topics: [...(gameSession.topics || []), topic],
+      current_turn_player_index: nextTurnIndex,
+    })
+    .where(eq(game_session.id, gameId));
+
+  revalidatePath(`/play/friend-clash/games/${gameId}`);
+
+  return { success: true };
+}
