@@ -2,10 +2,18 @@
 
 import { z } from "zod";
 import { db } from "~/server/db";
-import { game_session, GameType } from "~/server/db/schema";
-import { desc, eq, sql } from "drizzle-orm";
-import type { GameSession } from "~/server/db/schema";
+import {
+  game_session,
+  GameType,
+  tags,
+  users,
+  users_tags,
+  game_move,
+} from "~/server/db/schema";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
+import type { GameSession, GameMove } from "~/server/db/schema";
 import * as Sentry from "@sentry/nextjs";
+import { auth } from "~/app/auth";
 
 const getUserGameSessionsSchema = z.object({
   username: z.string(),
@@ -91,6 +99,7 @@ export async function getGamePlayerInfo(
     return { success: true as const, data: session.player_info };
   } catch (error) {
     console.error("Error fetching game player info:", error);
+    Sentry.captureException(error);
     return {
       success: false as const,
       error: "Failed to fetch game player info",
@@ -98,10 +107,14 @@ export async function getGamePlayerInfo(
   }
 }
 
+export type GameSessionWithMoves = GameSession & {
+  moves: GameMove[];
+};
+
 export type GetGameSessionResponse =
   | {
       success: true;
-      data: GameSession;
+      data: GameSessionWithMoves;
     }
   | {
       success: false;
@@ -121,12 +134,78 @@ export async function getGameSession(
       return { success: false as const, error: "Game session not found" };
     }
 
-    return { success: true as const, data: session };
+    const moves = await db
+      .select()
+      .from(game_move)
+      .where(eq(game_move.session_id, id))
+      .orderBy(desc(game_move.created_at));
+
+    const sessionWithMoves: GameSessionWithMoves = {
+      ...session,
+      moves,
+    };
+
+    return { success: true as const, data: sessionWithMoves };
   } catch (error) {
-    console.error("Error fetching game session:", error);
+    console.error("Error fetching game session with moves:", error);
+    Sentry.captureException(error);
     return {
       success: false as const,
       error: "Failed to fetch game session",
+    };
+  }
+}
+
+export async function getPlayersRecentTags(usernames: string[]) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const userTagsPromises = usernames.map(async (username) => {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username));
+
+      if (!user) {
+        return [];
+      }
+
+      const recentTags = await db
+        .select({
+          id: tags.id,
+          name: tags.name,
+        })
+        .from(users_tags)
+        .innerJoin(tags, eq(users_tags.tag_id, tags.id))
+        .where(
+          and(
+            eq(users_tags.user_id, user.id),
+            eq(users_tags.is_archived, false),
+            ne(tags.id, "fbb1f204-6500-4b60-ab64-e1a9b3a5da88"),
+          ),
+        )
+        .orderBy(desc(users_tags.created_at))
+        .limit(10);
+
+      return {
+        username,
+        tags: recentTags,
+      };
+    });
+
+    const allUserTags = await Promise.all(userTagsPromises);
+
+    return {
+      success: true,
+      data: allUserTags,
+    };
+  } catch (error) {
+    console.error("Error fetching players recent tags:", error);
+    Sentry.captureException(error);
+    return {
+      success: false,
+      error: "Failed to fetch players recent tags",
     };
   }
 }
