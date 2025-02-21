@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Redis } from "@upstash/redis";
 import * as Sentry from "@sentry/nextjs";
+import { v4 as uuidv4 } from "uuid";
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -26,11 +27,11 @@ export interface TriviaQuestion {
 export async function generateAndCacheQuestions(topic: string) {
   try {
     const questions = await generateQuestionsWithLLM(topic);
-
-    await redis.sadd(
-      `trivia:questions:${topic}`,
-      questions.map((q: TriviaQuestion) => JSON.stringify(q)),
-    );
+    for (const q of questions) {
+      let id = uuidv4();
+      q.id = id;
+      await redis.set(`trivia:${topic}:${id}`, JSON.stringify(q));
+    }
   } catch (error) {
     console.error("Failed to generate questions:", error);
     Sentry.captureException(error);
