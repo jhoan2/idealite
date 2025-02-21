@@ -24,7 +24,7 @@ export default function SelectTopic({
   const handleSubmit = async () => {
     fetch("/api/trivia/ensureCache", {
       method: "POST",
-      body: JSON.stringify({ topic: selectedTopic }),
+      body: JSON.stringify({ topic: selectedTopic.toLowerCase() }),
     });
     await addTopicToGame(gameSession.id, selectedTopic);
   };
