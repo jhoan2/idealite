@@ -10,8 +10,11 @@ const redis = new Redis({
 
 export async function POST(req: Request) {
   const { topic } = await req.json();
-  const cacheSize = await redis.scard(`trivia:questions:${topic}`);
-  if (cacheSize < 200) {
+  const pattern = `trivia:${topic}:*`;
+
+  const keys = await redis.keys(pattern);
+
+  if (keys.length < 150) {
     generateAndCacheQuestions(topic);
   }
 
