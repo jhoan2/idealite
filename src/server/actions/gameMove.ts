@@ -1,16 +1,93 @@
 "use server";
 
 import { db } from "~/server/db";
-import { game_move, game_session } from "~/server/db/schema";
+import {
+  game_move,
+  game_session,
+  points_history,
+  users,
+} from "~/server/db/schema";
 import { auth } from "~/app/auth";
 import { z } from "zod";
 import * as Sentry from "@sentry/nextjs";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 const createGameMoveSchema = z.object({
   sessionId: z.string().uuid(),
   points: z.number().int(),
 });
+
+async function distributeGamePoints(sessionId: string) {
+  try {
+    // Get all moves for this session
+    const moves = await db.query.game_move.findMany({
+      where: eq(game_move.session_id, sessionId),
+    });
+
+    // Calculate total points per player
+    const playerScores = moves.reduce(
+      (acc, move) => {
+        acc[move.player_id] = (acc[move.player_id] || 0) + move.points;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    // Find highest score
+    const highestScore = Math.max(...Object.values(playerScores));
+
+    // Identify winners and losers
+    const winners = Object.entries(playerScores)
+      .filter(([_, score]) => score === highestScore)
+      .map(([playerId]) => playerId);
+
+    const losers = Object.entries(playerScores)
+      .filter(([_, score]) => score < highestScore)
+      .map(([playerId]) => playerId);
+
+    // Start a transaction to update points
+    await db.transaction(async (tx) => {
+      // Award points to winners (5 points each)
+      for (const winnerId of winners) {
+        await tx.insert(points_history).values({
+          user_id: winnerId,
+          points: 5,
+          source_type: "game_move",
+          source_id: sessionId,
+        });
+
+        await tx
+          .update(users)
+          .set({
+            points: sql`${users.points} + 5`,
+          })
+          .where(eq(users.id, winnerId));
+      }
+
+      // Award points to losers (1 point each)
+      for (const loserId of losers) {
+        await tx.insert(points_history).values({
+          user_id: loserId,
+          points: 1,
+          source_type: "game_move",
+          source_id: sessionId,
+        });
+
+        await tx
+          .update(users)
+          .set({
+            points: sql`${users.points} + 1`,
+          })
+          .where(eq(users.id, loserId));
+      }
+    });
+
+    return true;
+  } catch (error) {
+    Sentry.captureException(error);
+    return false;
+  }
+}
 
 export async function createGameMove(
   input: z.infer<typeof createGameMoveSchema>,
@@ -56,19 +133,27 @@ export async function createGameMove(
     });
 
     // If this is the last move of the last round, update game session status
-    await db
-      .update(game_session)
-      .set(
-        isLastRound && isLastPlayer
-          ? {
-              status: "completed",
-              current_turn_player_index: gameSession.current_turn_player_index,
-            }
-          : {
-              current_turn_player_index: nextPlayerIndex,
-            },
-      )
-      .where(eq(game_session.id, sessionId));
+    if (isLastRound && isLastPlayer) {
+      // Update game session status
+      await db
+        .update(game_session)
+        .set({
+          status: "completed",
+          current_turn_player_index: gameSession.current_turn_player_index,
+        })
+        .where(eq(game_session.id, sessionId));
+
+      // Distribute points to players
+      await distributeGamePoints(sessionId);
+    } else {
+      // Just update the turn index
+      await db
+        .update(game_session)
+        .set({
+          current_turn_player_index: nextPlayerIndex,
+        })
+        .where(eq(game_session.id, sessionId));
+    }
 
     return { success: true };
   } catch (error) {
