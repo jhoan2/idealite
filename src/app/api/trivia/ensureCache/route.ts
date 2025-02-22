@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     if (keys.length < 150 && !isGenerating) {
       const BASE_URL =
         //comment NEXT_PUBLIC_DEPLOYMENT_URL out for local testing with ngrok
-        // process.env.NEXT_PUBLIC_DEPLOYMENT_URL ??
+        process.env.NEXT_PUBLIC_DEPLOYMENT_URL ??
         "99e4-2601-646-8900-8b60-2864-1002-4368-e3ed.ngrok-free.app";
 
       if (!BASE_URL) {
