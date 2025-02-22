@@ -11,6 +11,7 @@ const redis = new Redis({
 export interface TriviaQuestion {
   id: string;
   question: string;
+  topicId: string;
   options: {
     A: string;
     B: string;
@@ -24,13 +25,18 @@ export interface TriviaQuestion {
   };
 }
 
-export async function generateAndCacheQuestions(topic: string) {
+export async function generateAndCacheQuestions(
+  topicName: string,
+  topicId: string,
+) {
   try {
-    const questions = await generateQuestionsWithLLM(topic);
+    const questions = await generateQuestionsWithLLM(topicName);
     for (const q of questions) {
       let id = uuidv4();
       q.id = id;
-      await redis.set(`trivia:${topic}:${id}`, JSON.stringify(q));
+      q.topicId = topicId;
+      //this is the id of the question
+      await redis.set(`trivia:${topicName}:${id}`, JSON.stringify(q));
     }
   } catch (error) {
     console.error("Failed to generate questions:", error);
@@ -48,6 +54,11 @@ async function generateQuestionsWithLLM(topic: string) {
         question: {
           type: SchemaType.STRING,
           description: "The text of the question",
+          nullable: false,
+        },
+        topicId: {
+          type: SchemaType.STRING,
+          description: "The ID of the topic this question belongs to",
           nullable: false,
         },
         options: {

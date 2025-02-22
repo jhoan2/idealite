@@ -16,8 +16,8 @@ interface PlayerTags {
 
 interface TopicListProps {
   players: PlayerTags[];
-  onTopicSelect: (topic: string) => void;
-  selectedTopic: string;
+  onTopicSelect: (topic: Tag) => void;
+  selectedTopic: Tag;
 }
 
 export default function TopicList({
@@ -35,13 +35,15 @@ export default function TopicList({
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {player.tags.map((tag) => {
-                const isSelected = selectedTopic === tag.name;
+                const isSelected = selectedTopic.name === tag.name;
                 return (
                   <Button
                     key={tag.id}
                     variant={isSelected ? "secondary" : "outline"}
                     size="sm"
-                    onClick={() => onTopicSelect(tag.name)}
+                    onClick={() =>
+                      onTopicSelect({ name: tag.name, id: tag.id })
+                    }
                     className="rounded-full transition-all duration-200"
                   >
                     {tag.name}

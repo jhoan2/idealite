@@ -10,16 +10,16 @@ const redis = new Redis({
 });
 
 export async function POST(req: Request) {
-  const { topic } = await req.json();
+  const { topicName, topicId } = await req.json();
 
   try {
     // Set lock with 1 hour TTL
-    await redis.set(`trivia:generating:${topic}`, "1", { ex: 3600 });
+    await redis.set(`trivia:generating:${topicName}`, "1", { ex: 3600 });
 
-    await generateAndCacheQuestions(topic);
+    await generateAndCacheQuestions(topicName, topicId);
 
     // Clear lock on success
-    await redis.del(`trivia:generating:${topic}`);
+    await redis.del(`trivia:generating:${topicName}`);
 
     return NextResponse.json({ success: true });
   } catch (error) {

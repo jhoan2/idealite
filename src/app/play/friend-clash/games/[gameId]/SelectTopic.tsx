@@ -6,6 +6,12 @@ import { GameSession } from "~/server/db/schema";
 import TopicList from "./TopicList";
 import { Button } from "~/components/ui/button";
 import { addTopicToGame } from "~/server/actions/gameSession";
+import { Loader2 } from "lucide-react";
+
+interface Topic {
+  id: string;
+  name: string;
+}
 
 export default function SelectTopic({
   gameSession,
@@ -15,18 +21,24 @@ export default function SelectTopic({
   currentUsername: string;
 }) {
   const [playersRecentTags, setPlayersRecentTags] = useState<any>(null);
-  const [selectedTopic, setSelectedTopic] = useState<string>("");
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleTopicSelect = (topic: string) => {
+  const handleTopicSelect = (topic: Topic) => {
     setSelectedTopic(topic);
   };
 
   const handleSubmit = async () => {
+    setIsGenerating(true);
     fetch("/api/trivia/ensureCache", {
       method: "POST",
-      body: JSON.stringify({ topic: selectedTopic.toLowerCase() }),
+      body: JSON.stringify({
+        topicName: selectedTopic?.name,
+        topicId: selectedTopic?.id,
+      }),
     });
-    await addTopicToGame(gameSession.id, selectedTopic);
+    await addTopicToGame(gameSession.id, selectedTopic?.name || "");
+    setIsGenerating(false);
   };
 
   useEffect(() => {
@@ -47,12 +59,24 @@ export default function SelectTopic({
       <TopicList
         players={playersRecentTags}
         onTopicSelect={handleTopicSelect}
-        selectedTopic={selectedTopic}
+        selectedTopic={selectedTopic || { name: "", id: "" }}
       />
       {selectedTopic && (
         <div className="flex justify-end">
-          <Button className="mt-6" size="lg" onClick={handleSubmit}>
-            Submit
+          <Button
+            className="mt-6"
+            size="lg"
+            onClick={handleSubmit}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit"
+            )}
           </Button>
         </div>
       )}

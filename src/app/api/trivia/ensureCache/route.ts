@@ -12,18 +12,18 @@ const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
 
 export async function POST(req: Request) {
   try {
-    const { topic } = await req.json();
-    const pattern = `trivia:${topic}:*`;
+    const { topicName, topicId } = await req.json();
+    const pattern = `trivia:${topicName}:*`;
 
     // Check cache and lock atomically
     const keys = await redis.keys(pattern);
-    const isGenerating = await redis.get(`trivia:generating:${topic}`);
+    const isGenerating = await redis.get(`trivia:generating:${topicName}`);
 
     if (keys.length < 150 && !isGenerating) {
       const BASE_URL =
         //comment NEXT_PUBLIC_DEPLOYMENT_URL out for local testing with ngrok
         // process.env.NEXT_PUBLIC_DEPLOYMENT_URL ??
-        "2492-2601-646-8900-8b60-2864-1002-4368-e3ed.ngrok-free.app";
+        "99e4-2601-646-8900-8b60-2864-1002-4368-e3ed.ngrok-free.app";
 
       if (!BASE_URL) {
         console.error("Missing BASE_URL environment variable");
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       const destinationUrl = `${domain}/api/trivia/generate`;
       await qstash.publish({
         url: destinationUrl,
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ topicName, topicId }),
         retries: 3,
         deadline: "1h",
       });
