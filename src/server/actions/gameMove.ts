@@ -43,6 +43,10 @@ export async function createGameMove(
     const isLastRound = currentRound === totalPlayers - 1;
     const isLastPlayer = (existingMoves.length + 1) % totalPlayers === 0;
 
+    // Calculate next player's turn
+    const nextPlayerIndex =
+      (gameSession.current_turn_player_index + 1) % totalPlayers;
+
     // Create the move
     await db.insert(game_move).values({
       session_id: sessionId,
@@ -52,12 +56,19 @@ export async function createGameMove(
     });
 
     // If this is the last move of the last round, update game session status
-    if (isLastRound && isLastPlayer) {
-      await db
-        .update(game_session)
-        .set({ status: "completed" })
-        .where(eq(game_session.id, sessionId));
-    }
+    await db
+      .update(game_session)
+      .set(
+        isLastRound && isLastPlayer
+          ? {
+              status: "completed",
+              current_turn_player_index: gameSession.current_turn_player_index,
+            }
+          : {
+              current_turn_player_index: nextPlayerIndex,
+            },
+      )
+      .where(eq(game_session.id, sessionId));
 
     return { success: true };
   } catch (error) {
