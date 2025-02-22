@@ -1,13 +1,13 @@
 "use server";
 
-import { cards, cards_tags, pages_tags } from "~/server/db/schema";
+import { cards, cards_tags, pages_tags, users } from "~/server/db/schema";
 import { z } from "zod";
 import { auth } from "~/app/auth";
 import { db } from "~/server/db";
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { getDueFlashCards } from "../queries/card";
-
+import * as Sentry from "@sentry/nextjs";
 const createCardSchema = z.object({
   pageId: z.string().uuid(),
   content: z.string().min(1).optional(),
@@ -269,4 +269,55 @@ export async function processFlashCards(
 
   revalidatePath(`/play`);
   return updatedCard;
+}
+
+export async function createCardFromGame(content: string, tagId: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+
+    const twoWeeksFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    return await db.transaction(async (tx) => {
+      // Create the new card
+      const [newCard] = await tx
+        .insert(cards)
+        .values({
+          content,
+          user_id: session?.user?.id || "",
+          created_at: new Date(),
+          updated_at: new Date(),
+          next_review: twoWeeksFromNow,
+          status: "active",
+        })
+        .returning();
+
+      if (!newCard) {
+        throw new Error("Failed to create card");
+      }
+
+      // Create card-tag relationship
+      await tx.insert(cards_tags).values({
+        card_id: newCard.id,
+        tag_id: tagId,
+      });
+
+      // Increment user's cash by 1
+      await tx
+        .update(users)
+        .set({
+          cash: sql`${users.cash} + 1`,
+          updated_at: new Date(),
+        })
+        .where(eq(users.id, session?.user?.id || ""));
+
+      return newCard;
+    });
+  } catch (error) {
+    Sentry.captureException(error);
+    throw error;
+  }
 }

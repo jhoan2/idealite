@@ -7,11 +7,16 @@ import { type TriviaQuestion } from "~/server/services/trivia/generation";
 import { DigitalCountdown } from "./DigitalCountdown";
 import { Button } from "~/components/ui/button";
 import { createGameMove } from "~/server/actions/gameMove";
+import { toast } from "sonner";
+import { Save } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
+import { createCardFromGame } from "~/server/actions/card";
+
 interface AnsweredQuestion {
   question: TriviaQuestion;
   userAnswer: string;
   correct: boolean;
+  savedToCard?: boolean;
 }
 interface ClashGameRoundProps {
   gameSession: GameSessionWithMoves;
@@ -58,6 +63,53 @@ export default function ClashGameRound({
 
     fetchCards();
   }, [currentTopic]);
+
+  const handleSaveToCards = async (
+    question: AnsweredQuestion,
+    index: number,
+  ) => {
+    try {
+      const contentString = `Q: ${question.question.question}\nA: ${
+        question.question.options[question.question.correctAnswer]
+      }`;
+      const tagId = question.question.topicId;
+
+      const newCard = await createCardFromGame(contentString, tagId);
+
+      if (!newCard) {
+        throw new Error("Failed to create new card");
+      }
+
+      // Update local state to mark as saved
+      setAnsweredQuestions((prev) =>
+        prev.map((q, i) => (i === index ? { ...q, savedToCard: true } : q)),
+      );
+
+      toast("Added +1 cash", {
+        style: {
+          backgroundColor: "#4CAF50",
+          color: "#fff",
+          borderRadius: "8px",
+          padding: "12px",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+          fontSize: "16px",
+        },
+        position: "top-right",
+        icon: (
+          <img
+            src="/cash/Blue Cash 1st Outline 64px.png"
+            alt="cash"
+            width={24}
+            height={24}
+            style={{ marginRight: "8px" }}
+          />
+        ),
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+      toast.error("Failed to save card");
+    }
+  };
 
   const submitGameMove = async () => {
     if (moveSubmittingRef.current) return;
@@ -202,7 +254,15 @@ export default function ClashGameRound({
             key={index}
             className={`rounded-lg p-4 ${card.correct ? "bg-green-100" : "bg-red-100"} text-black`}
           >
-            <p className="font-bold">{card.question.question}</p>
+            <div className="flex justify-between">
+              <p className="font-bold">{card.question.question}</p>
+              {!card.savedToCard && (
+                <Button onClick={() => handleSaveToCards(card, index)}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save
+                </Button>
+              )}
+            </div>
             <p>
               Your answer: {card.userAnswer} -{" "}
               {
