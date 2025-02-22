@@ -42,7 +42,10 @@ export default function TopicList({
                     variant={isSelected ? "secondary" : "outline"}
                     size="sm"
                     onClick={() =>
-                      onTopicSelect({ name: tag.name, id: tag.id })
+                      onTopicSelect({
+                        name: tag.name.toLowerCase(),
+                        id: tag.id,
+                      })
                     }
                     className="rounded-full transition-all duration-200"
                   >
