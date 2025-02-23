@@ -4,6 +4,7 @@ import { sdk } from "@farcaster/frame-sdk";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "~/components/ui/card";
+import PlayTopNav from "./PlayTopNav";
 
 export default function Games({
   userPlayStats,
@@ -92,6 +93,7 @@ export default function Games({
           </div>
         </div>
       </div>
+      {/* <PlayTopNav /> */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {items.map((item) => (
           <Link
