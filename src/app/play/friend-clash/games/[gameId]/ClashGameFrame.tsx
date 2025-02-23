@@ -5,6 +5,7 @@ import { sdk } from "@farcaster/frame-sdk";
 import Lobby from "./Lobby";
 import ClashInProgress from "./ClashInProgress";
 import { GameSessionWithMoves } from "~/server/queries/gameSession";
+import ClashCompleted from "./ClashCompleted";
 
 interface ClashGameFrameProps {
   gameSession: GameSessionWithMoves;
@@ -53,7 +54,7 @@ export default function ClashGameFrame({
   }
 
   if (gameSession.status === "completed") {
-    return <div className="">Game has ended</div>;
+    return <ClashCompleted gameSession={gameSession} />;
   }
 
   return (
