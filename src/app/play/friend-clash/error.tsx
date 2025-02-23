@@ -2,6 +2,7 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
+import { Button } from "~/components/ui/button";
 
 export default function Error({
   error,
@@ -16,16 +17,16 @@ export default function Error({
   }, [error]);
 
   return (
-    <div>
+    <div className="flex h-screen flex-col items-center justify-center">
       <h2>Something went wrong!</h2>
-      <button
+      <Button
         onClick={
           // Attempt to recover by trying to re-render the segment
           () => reset()
         }
       >
         Try again
-      </button>
+      </Button>
     </div>
   );
 }

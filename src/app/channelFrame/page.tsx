@@ -4,7 +4,10 @@ import { auth } from "~/app/auth";
 import { getTagWithChildren } from "~/server/queries/tag";
 import { getUserTags, getUserTagTree } from "~/server/queries/usersTags";
 import { checkIfMember } from "~/server/farcaster";
-
+import { headers } from "next/headers";
+import { Button } from "~/components/ui/button";
+import Link from "next/link";
+import Image from "next/image";
 const ChannelHome = dynamic(() => import("./ChannelHome"), { ssr: false });
 
 const BASE_URL =
@@ -52,6 +55,27 @@ export default async function Page() {
   const userTags = userId ? await getUserTags(userId) : [];
   const isMember = userFid ? await checkIfMember(userFid.toString()) : false;
   const userTagTree = userId ? await getUserTagTree(userId) : [];
+  const headersList = headers();
+  const userAgent = headersList.get("user-agent");
+  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
+
+  if (!isWarpcast) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+        <h1>Check out the website</h1>
+        <Image
+          src="/icon256.png"
+          alt="idealite logo"
+          width={100}
+          height={100}
+        />
+        <Button>
+          <Link href="https://idealite.xyz">idealite.xyz</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <ChannelHome
       session={session}

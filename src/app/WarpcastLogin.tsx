@@ -50,11 +50,8 @@ export default function WarpcastLogin() {
 
         <div className="mb-8 space-y-4 text-center">
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-            Friend Clash
+            Please login
           </h1>
-          <p className="mx-auto max-w-md text-lg text-muted-foreground">
-            Challenge your friends to a knowledge battle!
-          </p>
         </div>
 
         <div className="w-full max-w-md space-y-4">

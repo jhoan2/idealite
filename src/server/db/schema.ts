@@ -14,6 +14,7 @@ import {
   AnyPgColumn,
   primaryKey,
   pgEnum,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -31,6 +32,7 @@ export const users = createTable("user", {
   username: varchar("username", { length: 256 }),
   display_name: varchar("display_name", { length: 256 }),
   pfp_url: varchar("pfp_url", { length: 256 }),
+  avatar_url: varchar("avatar_url", { length: 256 }),
   bio: text("bio"),
   role: varchar("role", { length: 50 }).default("user").notNull(),
   created_at: timestamp("created_at", { withTimezone: true })
@@ -614,39 +616,58 @@ export const game_status_enum = pgEnum("game_status", [
   "abandoned",
 ]);
 
+export const game_type_enum = pgEnum("game_type", [
+  "friend-clash",
+  "spin-wheel",
+  "memory-mansion",
+  "two-truths-one-lie",
+]);
+
+export type GameType = (typeof game_type_enum.enumValues)[number];
 export type GameSession = typeof game_session.$inferSelect;
 export const game_session = createTable(
   "game_session",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    playerCount: integer("player_count").notNull(),
+    player_count: integer("player_count").notNull(),
     players: text("players").array().notNull(),
-    eliminatedPlayers: uuid("eliminated_players")
+    player_info: jsonb("player_info").array().notNull().$type<
+      {
+        username: string;
+        display_name: string | null;
+        fid: number;
+        pfp_url: string | null;
+        avatar_url: string | null;
+        user_id: string;
+      }[]
+    >(),
+    eliminated_players: uuid("eliminated_players")
       .array()
       .notNull()
       .default(sql`ARRAY[]::uuid[]`),
-    currentTurnPlayerIndex: integer("current_turn_player_index")
+    current_turn_player_index: integer("current_turn_player_index")
       .notNull()
       .default(0),
-    notificationIds: text("notification_ids").array(),
+    game_type: game_type_enum("game_type").notNull(),
+    notification_ids: text("notification_ids").array(),
     status: game_status_enum("status").notNull().default("created"),
-    turnDeadline: timestamp("turn_deadline", { withTimezone: true }).notNull(),
+    turn_deadline: timestamp("turn_deadline", { withTimezone: true }).notNull(),
     topics: text("topics").array(),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
   },
   (table) => ({
     playersIdx: index("game_session_players_idx").on(table.players),
     statusIdx: index("game_session_status_idx").on(table.status),
-    turnDeadlineIdx: index("game_session_turn_deadline_idx").on(
-      table.turnDeadline,
+    turn_deadline_idx: index("game_session_turn_deadline_idx").on(
+      table.turn_deadline,
     ),
-    playerCountIdx: index("game_session_player_count_idx").on(
-      table.playerCount,
+    player_count_idx: index("game_session_player_count_idx").on(
+      table.player_count,
     ),
   }),
 );
@@ -656,24 +677,21 @@ export const game_move = createTable(
   "game_move",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    sessionId: uuid("session_id")
+    session_id: uuid("session_id")
       .notNull()
       .references(() => game_session.id, { onDelete: "cascade" }),
-    playerId: uuid("player_id")
+    player_id: uuid("player_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    contentId: text("content_id").notNull(),
-    question: text("question").notNull(),
-    correctAnswer: text("correct_answer").notNull(),
-    answer: text("answer").notNull(),
-    isCorrect: boolean("is_correct").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    player_username: text("player_username").notNull(),
+    points: integer("points").notNull().default(0),
+    created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
   (table) => ({
-    sessionIdIdx: index("game_move_session_idx").on(table.sessionId),
-    playerIdIdx: index("game_move_player_idx").on(table.playerId),
+    session_id_idx: index("game_move_session_idx").on(table.session_id),
+    player_id_idx: index("game_move_player_idx").on(table.player_id),
   }),
 );
 
@@ -683,11 +701,49 @@ export const game_sessions_relations = relations(game_session, ({ many }) => ({
 
 export const game_moves_relations = relations(game_move, ({ one }) => ({
   session: one(game_session, {
-    fields: [game_move.sessionId],
+    fields: [game_move.session_id],
     references: [game_session.id],
   }),
   player: one(users, {
-    fields: [game_move.playerId],
+    fields: [game_move.player_id],
+    references: [users.id],
+  }),
+}));
+
+export const points_history = createTable(
+  "points_history",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    points: integer("points").notNull(),
+    week_start: timestamp("week_start", { withTimezone: true })
+      .notNull()
+      .$default(() => sql`date_trunc('week', CURRENT_TIMESTAMP)`),
+    source_type: varchar("source_type", {
+      enum: ["game_move", "achievement", "bonus", "other"],
+    }).notNull(),
+    source_id: uuid("source_id"),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (table) => ({
+    user_idx: index("points_history_user_idx").on(table.user_id),
+    week_start_idx: index("points_history_week_start_idx").on(table.week_start),
+    source_type_idx: index("points_history_source_type_idx").on(
+      table.source_type,
+    ),
+  }),
+);
+
+export const pointsHistoryRelations = relations(points_history, ({ one }) => ({
+  user: one(users, {
+    fields: [points_history.user_id],
     references: [users.id],
   }),
 }));

@@ -135,7 +135,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               username: farcasterUser.username,
               display_name: farcasterUser.display_name,
               pfp_url: farcasterUser.pfp_url,
-              bio: farcasterUser.profile.bio,
+              bio: farcasterUser.profile.bio.text,
             });
             return newUser;
           }

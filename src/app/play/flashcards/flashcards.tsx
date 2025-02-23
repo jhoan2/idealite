@@ -170,7 +170,7 @@ export default function FlashCards({
           }}
         >
           <img
-            src="/cash/Golden Cash 1st Outline 64px.png"
+            src="/cash/Blue Cash 1st Outline 64px.png"
             alt="coin"
             className="h-5 w-5"
           />
@@ -190,7 +190,7 @@ export default function FlashCards({
           </div>
           <div className="flex items-center gap-2" data-cash-counter>
             <img
-              src="/cash/Golden Cash 1st Outline 64px.png"
+              src="/cash/Blue Cash 1st Outline 64px.png"
               alt="cash"
               className="h-8 w-8"
             />

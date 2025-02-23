@@ -17,7 +17,7 @@ export default async function Image() {
         tw="h-full w-full flex flex-col justify-center items-center relative"
         style={{
           backgroundImage:
-            "url(https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreifwxkjn2ckhokmew27s6vwiiar2pfkwivbz4x5nhevo27nznrq454)",
+            "url(https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreigpuni3hgi67dyeqfonib6drtej7ehmnbj2d7hu4anacvnpan5kry)",
           backgroundSize: "600px 600px",
           backgroundPosition: "100% 100%",
         }}
