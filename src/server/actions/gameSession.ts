@@ -85,6 +85,8 @@ export async function createGameSession({
     })
     .returning();
 
+  revalidatePath(`/play/friend-clash/games`);
+
   return newGameSession;
 }
 
