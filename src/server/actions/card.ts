@@ -155,16 +155,19 @@ export async function createQuestionAndAnswer() {
     return [];
   }
 
-  const response = await fetch(`${process.env.APP_URL}/api/flashcards`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/flashcards`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cards: dueCards,
+        type: "question-answer",
+      }),
     },
-    body: JSON.stringify({
-      cards: dueCards,
-      type: "question-answer",
-    }),
-  });
+  );
 
   if (!response.ok) {
     throw new Error("Failed to generate flashcards");
@@ -186,16 +189,19 @@ export async function createClozeCards() {
     return [];
   }
 
-  const response = await fetch(`${process.env.APP_URL}/api/flashcards`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/flashcards`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cards: dueCards,
+        type: "cloze",
+      }),
     },
-    body: JSON.stringify({
-      cards: dueCards,
-      type: "cloze",
-    }),
-  });
+  );
 
   if (!response.ok) {
     throw new Error("Failed to generate flashcards");
