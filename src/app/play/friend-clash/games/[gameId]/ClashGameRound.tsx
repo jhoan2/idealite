@@ -6,7 +6,7 @@ import ClashIntro from "./ClashIntro";
 import { type TriviaQuestion } from "~/server/services/trivia/generation";
 import { DigitalCountdown } from "./DigitalCountdown";
 import { Button } from "~/components/ui/button";
-import { completeTurn } from "~/server/services/trivia/deadlines";
+import { completeTurn } from "~/server/services/trivia/completeTurn";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";

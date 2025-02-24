@@ -10,7 +10,7 @@ import {
 
 const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
 
-function isLastTurn(game: GameSession, moves: GameMove[]) {
+export function isLastTurn(game: GameSession, moves: GameMove[]) {
   // Calculate total expected turns
   const totalTurns = game.player_count * game.player_count;
 
@@ -56,7 +56,6 @@ export async function processExpiredTurn(game: GameSession) {
   const moves = await db.query.game_move.findMany({
     where: eq(game_move.session_id, game.id),
   });
-  console.log(moves.length);
   // Check if this will be the last turn before processing
   const isLast = isLastTurn(game, moves);
 
@@ -116,6 +115,17 @@ export async function processExpiredTurn(game: GameSession) {
           current_turn_player_index: game.current_turn_player_index,
         })
         .where(eq(game_session.id, game.id));
+      const BASE_URL = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+
+      await fetch(`https://${BASE_URL}/api/notifications`, {
+        method: "POST",
+        body: JSON.stringify({
+          type: "GAME_COMPLETED",
+          gameId: game.id,
+          targetFids: game.player_info.map((player) => player.fid),
+          username: game.players.join(","),
+        }),
+      });
     } else {
       // Schedule next turn's deadline
       const nextDeadline = await scheduleNextTurnDeadline(
@@ -131,62 +141,19 @@ export async function processExpiredTurn(game: GameSession) {
           turn_deadline: nextDeadline,
         })
         .where(eq(game_session.id, game.id));
-    }
-  });
-}
 
-export async function completeTurn(gameId: string, points: number) {
-  const game = await db.query.game_session.findFirst({
-    where: eq(game_session.id, gameId),
-  });
+      const nextPlayer = game.player_info[nextPlayerIndex];
+      const BASE_URL = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
 
-  if (!game) throw new Error("Game not found");
-
-  // Get all moves to determine if this will be the last turn
-  const moves = await db.query.game_move.findMany({
-    where: eq(game_move.session_id, gameId),
-  });
-
-  const lastTurn = isLastTurn(game, moves);
-  const nextPlayerIndex = lastTurn
-    ? game.current_turn_player_index
-    : (game.current_turn_player_index + 1) % game.player_count;
-
-  await db.transaction(async (tx) => {
-    // Record completed turn
-    await tx.insert(game_move).values({
-      session_id: game.id,
-      player_id:
-        game.player_info[game.current_turn_player_index]?.user_id ?? "",
-      player_username:
-        game.player_info[game.current_turn_player_index]?.username ?? "",
-      points: points,
-    } as GameMove);
-
-    if (lastTurn) {
-      // Mark game as completed if this was the last turn
-      await tx
-        .update(game_session)
-        .set({
-          status: "completed",
-          current_turn_player_index: game.current_turn_player_index,
-        })
-        .where(eq(game_session.id, game.id));
-    } else {
-      // Schedule next turn's deadline
-      const nextDeadline = await scheduleNextTurnDeadline(
-        gameId,
-        nextPlayerIndex,
-      );
-
-      // Update game session for next turn
-      await tx
-        .update(game_session)
-        .set({
-          current_turn_player_index: nextPlayerIndex,
-          turn_deadline: nextDeadline,
-        })
-        .where(eq(game_session.id, game.id));
+      await fetch(`https://${BASE_URL}/api/notifications`, {
+        method: "POST",
+        body: JSON.stringify({
+          type: "NEW_TURN",
+          gameId: game.id,
+          targetFids: [nextPlayer?.fid],
+          username: nextPlayer?.username,
+        }),
+      });
     }
   });
 }

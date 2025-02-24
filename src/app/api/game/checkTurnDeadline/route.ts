@@ -57,6 +57,7 @@ async function handler(req: Request) {
 
   // Mark this turn as processed
   await redis.setex(processedKey, 24 * 60 * 60, "true"); // 24hr TTL
+  // await redis.setex(processedKey, 10, "true"); // 10s TTL for testing
 
   return new Response("Success", { status: 200 });
 }
