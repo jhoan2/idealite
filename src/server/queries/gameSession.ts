@@ -121,38 +121,33 @@ export type GetGameSessionResponse =
       error: string;
     };
 
-export async function getGameSession(
-  id: string,
-): Promise<GetGameSessionResponse> {
+export async function getGameSession(id: string) {
   try {
-    const [session] = await db
-      .select()
-      .from(game_session)
-      .where(eq(game_session.id, id));
+    const gameSession = await db.query.game_session.findFirst({
+      where: eq(game_session.id, id),
+      with: {
+        moves: true,
+      },
+    });
 
-    if (!session) {
-      return { success: false as const, error: "Game session not found" };
+    if (!gameSession) {
+      return { success: false, error: "Game session not found" };
     }
 
-    const moves = await db
-      .select()
-      .from(game_move)
-      .where(eq(game_move.session_id, id))
-      .orderBy(desc(game_move.created_at));
+    const timeRemaining =
+      new Date(gameSession.turn_deadline).getTime() - Date.now();
+    const isExpired = timeRemaining <= 0;
 
-    const sessionWithMoves: GameSessionWithMoves = {
-      ...session,
-      moves,
-    };
-
-    return { success: true as const, data: sessionWithMoves };
-  } catch (error) {
-    console.error("Error fetching game session with moves:", error);
-    Sentry.captureException(error);
     return {
-      success: false as const,
-      error: "Failed to fetch game session",
+      success: true,
+      data: {
+        ...gameSession,
+        deadlineExpired: isExpired,
+        timeRemaining,
+      },
     };
+  } catch (error) {
+    return { success: false, error: "Failed to fetch game session" };
   }
 }
 

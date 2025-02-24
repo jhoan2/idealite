@@ -6,6 +6,7 @@ import { db } from "~/server/db";
 import { eq } from "drizzle-orm";
 import { users } from "~/server/db/schema";
 import { revalidatePath } from "next/cache";
+import { scheduleNextTurnDeadline } from "../services/trivia/deadlines";
 
 /**
  * Helper function that takes a username, looks up the user's information,
@@ -151,10 +152,13 @@ export async function startGame(gameId: string) {
     throw new Error("Only the host can start the game");
   }
 
+  const deadline = await scheduleNextTurnDeadline(gameId, 0);
+
   await db
     .update(game_session)
     .set({
       status: "in_progress",
+      turn_deadline: deadline,
     })
     .where(eq(game_session.id, gameId));
 
