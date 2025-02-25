@@ -24,7 +24,7 @@ export default async function Host() {
   }
 
   return (
-    <div className="h-[100dvh] w-full bg-[#CC412F]">
+    <div className="h-[100dvh] w-full bg-[#33A33C]">
       <InvitePage isMobile={isMobile ?? false} />
     </div>
   );
