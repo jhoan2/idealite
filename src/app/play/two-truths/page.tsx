@@ -23,7 +23,7 @@ const frame = {
       name: "two_truths",
       url: route,
       splashImageUrl:
-        "https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreidlqpger2bsx56loncfxllrhx3y3msugosybbd5gjqudmirehs7xy",
+        "https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/bafkreifksrq64hydxsfve56bvoidvfgkvzxcq6kwyfhwkdapfyiscnlllm",
       splashBackgroundColor: "#f7f7f7",
     },
   },
