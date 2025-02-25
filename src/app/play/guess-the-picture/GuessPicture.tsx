@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function GuessPicture() {
   return (
-    <div className="h-[100dvh] w-full bg-[#33A33C]">
+    <div className="h-[100dvh] w-full bg-[#F28705]">
       <div className="flex h-full w-full flex-col items-center justify-center">
         <div className="flex flex-col items-center justify-center gap-6">
           <h1 className="text-2xl font-bold text-white">Guess the Picture</h1>
