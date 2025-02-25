@@ -748,6 +748,28 @@ export const pointsHistoryRelations = relations(points_history, ({ one }) => ({
   }),
 }));
 
+// export type InteractiveComponent = typeof interactive_components.$inferSelect;
+// export type NewInteractiveComponent =
+//   typeof interactive_components.$inferInsert;
+
+// export const interactive_components = createTable("interactive_components", {
+//   id: uuid("id").defaultRandom().primaryKey(),
+//   subject: varchar("subject", { length: 255 }).notNull(),
+//   code: text("code").notNull(),
+//   status: varchar("status", { length: 20 }).notNull().default("active"),
+//   created_by: uuid("created_by")
+//     .notNull()
+//     .references(() => users.id, { onDelete: "cascade" }),
+//   created_at: timestamp("created_at", { withTimezone: true })
+//     .default(sql`CURRENT_TIMESTAMP`)
+//     .notNull(),
+//   updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+//     () => new Date(),
+//   ),
+//   views: integer("views").default(0).notNull(),
+//   likes: integer("likes").default(0).notNull(),
+// });
+
 // =====================
 // =====================
 // =====================
