@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       }
 
       const youtubeData = await fetch(
-        `${process.env.APP_URL}/api/youtube?videoId=${videoId}`,
+        `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/youtube?videoId=${videoId}`,
       );
       return NextResponse.json(await youtubeData.json());
     }
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       const cleanedUrl = cleanUrl(query);
 
       const openGraphData = await fetch(
-        `${process.env.APP_URL}/api/openGraph?url=${cleanedUrl}`,
+        `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/openGraph?url=${cleanedUrl}`,
       );
       const resourceData = await openGraphData.json();
       const publishedDate = new Date(resourceData.result.datePublished);

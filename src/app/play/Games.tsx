@@ -25,35 +25,35 @@ export default function Games({
       icon: "/games/fill-in-the-blank.png",
       href: "/play/cloze",
     },
-    // {
-    //   id: "3",
-    //   title: "Friend Clash",
-    //   icon: "/games/friend-clash.png",
-    //   href: "/play/friend-clash",
-    // },
-    // {
-    //   id: "4",
-    //   title: "Spin the Wheel",
-    //   icon: "/games/spin-the-wheel.png",
-    //   href: "/play/spin-the-wheel",
-    // },
+    {
+      id: "3",
+      title: "Friend Clash",
+      icon: "/games/friend-clash.png",
+      href: "/play/friend-clash",
+    },
+    {
+      id: "4",
+      title: "Spin the Wheel",
+      icon: "/games/spin-the-wheel.png",
+      href: "/play/spin-wheel",
+    },
     // {
     //   id: "5",
-    //   title: "Target Practice",
-    //   icon: "/games/target.png",
-    //   href: "/play/target-practice",
-    // },
-    // {
-    //   id: "6",
     //   title: "Guess the Picture",
     //   icon: "/games/guess-the-picture.png",
     //   href: "/play/guess-the-picture",
     // },
     // {
-    //   id: "7",
+    //   id: "6",
     //   title: "Memory Mansion",
     //   icon: "/games/memory-mansion.png",
     //   href: "/play/memory-mansion",
+    // },
+    // {
+    //   id: "7",
+    //   title: "Two Truths and a Lie",
+    //   icon: "/games/two-truths.png",
+    //   href: "/play/two-truths",
     // },
   ];
 

@@ -12,12 +12,21 @@ export async function GET(req: Request) {
     // Get topic from URL params
     const { searchParams } = new URL(req.url);
     const topic = searchParams.get("topic");
+    const countParam = searchParams.get("count");
 
     if (!topic) {
       return NextResponse.json(
         { success: false, error: "Topic is required" },
         { status: 400 },
       );
+    }
+
+    let count = 20; // Default count
+    if (countParam) {
+      const parsedCount = parseInt(countParam, 10);
+      if (!isNaN(parsedCount) && parsedCount > 0) {
+        count = Math.min(parsedCount, 10); // Cap at 10
+      }
     }
 
     const pattern = `trivia:${topic}:*`;
@@ -29,7 +38,6 @@ export async function GET(req: Request) {
     }
 
     const values = await redis.mget(...keys);
-    let count = 20;
     // Cap count to available questions
     count = Math.min(count, values.length);
 

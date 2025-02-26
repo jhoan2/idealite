@@ -6,7 +6,7 @@ import ClashIntro from "./ClashIntro";
 import { type TriviaQuestion } from "~/server/services/trivia/generation";
 import { DigitalCountdown } from "./DigitalCountdown";
 import { Button } from "~/components/ui/button";
-import { createGameMove } from "~/server/actions/gameMove";
+import { completeTurn } from "~/server/services/trivia/completeTurn";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
@@ -116,20 +116,11 @@ export default function ClashGameRound({
     moveSubmittingRef.current = true;
 
     try {
-      const result = await createGameMove({
-        sessionId: gameSession.id,
-        points: score,
-      });
-
-      if (!result.success) {
-        console.error("Failed to submit game move:", result.error);
-        Sentry.captureException(result.error, {
-          extra: { info: "Failed to submit Friend Clash move" },
-        });
-      }
+      await completeTurn(gameSession.id, score);
     } catch (error) {
-      console.error("Error submitting game move:", error);
-      Sentry.captureException(error);
+      Sentry.captureException(error, {
+        extra: { info: "Failed to submit Friend Clash move" },
+      });
     }
   };
 

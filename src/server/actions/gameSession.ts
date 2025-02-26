@@ -3,9 +3,10 @@
 import { game_session, GameType } from "~/server/db/schema";
 import { auth } from "~/app/auth";
 import { db } from "~/server/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { users } from "~/server/db/schema";
 import { revalidatePath } from "next/cache";
+import { scheduleNextTurnDeadline } from "../services/trivia/deadlines";
 
 /**
  * Helper function that takes a username, looks up the user's information,
@@ -85,6 +86,60 @@ export async function createGameSession({
     })
     .returning();
 
+  revalidatePath(`/play/friend-clash/games`);
+
+  return newGameSession;
+}
+
+export async function createSpinTheWheelGameSession({
+  playerCount,
+  players,
+  gameType,
+}: {
+  playerCount: number;
+  players: string[];
+  gameType: GameType;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const turnDeadline = new Date();
+  turnDeadline.setHours(turnDeadline.getHours() + 24);
+
+  // Get 10 random template tags
+  const templateTags = await db.query.tags.findMany({
+    where: (tags, { and, eq, ne }) =>
+      and(
+        eq(tags.is_template, true),
+        eq(tags.deleted, false),
+        ne(tags.id, "fbb1f204-6500-4b60-ab64-e1a9b3a5da88"),
+      ),
+    orderBy: () => sql`RANDOM()`,
+    limit: 10,
+  });
+
+  const tagNames = templateTags.map((tag) => tag.name);
+
+  const playerInfo = await Promise.all(
+    players.map((username) => getPlayerInfo(username)),
+  );
+
+  const [newGameSession] = await db
+    .insert(game_session)
+    .values({
+      player_count: playerCount,
+      players,
+      player_info: playerInfo,
+      eliminated_players: [],
+      current_turn_player_index: 0,
+      game_type: gameType,
+      turn_deadline: turnDeadline,
+      topics: tagNames,
+    })
+    .returning();
+
+  revalidatePath(`/play/spin-wheel/games`);
+
   return newGameSession;
 }
 
@@ -149,10 +204,13 @@ export async function startGame(gameId: string) {
     throw new Error("Only the host can start the game");
   }
 
+  const deadline = await scheduleNextTurnDeadline(gameId, 0);
+
   await db
     .update(game_session)
     .set({
       status: "in_progress",
+      turn_deadline: deadline,
     })
     .where(eq(game_session.id, gameId));
 
