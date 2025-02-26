@@ -7,6 +7,7 @@ import Link from "next/link";
 
 interface SessionProps {
   session: GameSession;
+  game_type: string;
 }
 
 function getTimeRemaining(deadline: Date) {
@@ -30,7 +31,7 @@ function getTimeRemaining(deadline: Date) {
   return `${minutes}m left`;
 }
 
-export default function Session({ session }: SessionProps) {
+export default function Session({ session, game_type }: SessionProps) {
   const [timeLeft, setTimeLeft] = useState(
     getTimeRemaining(new Date(session.turn_deadline)),
   );

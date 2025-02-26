@@ -18,5 +18,5 @@ export default async function FriendClashJoin() {
     return <div>Error: {gameSessions.error}</div>;
   }
 
-  return <SessionsList sessions={gameSessions.data} />;
+  return <SessionsList sessions={gameSessions.data} game_type="friend-clash" />;
 }
