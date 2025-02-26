@@ -33,7 +33,6 @@ export default function SpinGameRound({
           topics={gameSession.topics || []}
         />
       ) : (
-        // <SpinWheelQuestion questions={gameQuestions} topic={currentTopic} />
         <SpinWheelQuestion
           questions={gameQuestions}
           topic={currentTopic || ""}

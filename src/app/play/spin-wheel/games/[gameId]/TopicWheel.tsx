@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Wheel from "./Wheel";
+import { TriviaQuestion } from "~/server/services/trivia/generation";
 
 export default function TopicWheel({
   onQuestionsLoaded,
   topics,
 }: {
-  onQuestionsLoaded: (questions: any, topic: any) => void;
+  onQuestionsLoaded: (questions: TriviaQuestion[], topic: string) => void;
   topics: string[];
 }) {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -48,8 +49,6 @@ export default function TopicWheel({
 
       if (data.success && data.data) {
         setQuestions(data.data);
-        // Pass questions up to parent component
-        onQuestionsLoaded(data.data, topic);
       } else {
         throw new Error(data.error || "Failed to load questions");
       }
@@ -104,21 +103,19 @@ export default function TopicWheel({
           )}
 
           {!isLoading && !error && questions.length > 0 && (
-            <div className="mt-4 text-green-700">
-              ✅ Loaded {questions.length} questions!
-            </div>
+            <>
+              <div className="mt-4 text-green-700">
+                ✅ Loaded {questions.length} questions!
+              </div>
+              <button
+                onClick={() => onQuestionsLoaded(questions, selectedTopic)}
+                className="mt-4 rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+              >
+                Continue with Question
+              </button>
+            </>
           )}
         </div>
-      )}
-
-      {/* Button to try again */}
-      {selectedTopic && !isLoading && (
-        <button
-          onClick={() => setSelectedTopic(null)}
-          className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-        >
-          Spin Again
-        </button>
       )}
     </div>
   );
