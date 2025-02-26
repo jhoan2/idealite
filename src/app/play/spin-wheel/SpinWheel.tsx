@@ -20,10 +20,10 @@ export default function SpinWheel() {
           />
           <div className="flex w-48 flex-col gap-4">
             <Button variant="secondary" className="w-full" asChild>
-              <Link href="/play/spin-the-wheel/host">Host a Game</Link>
+              <Link href="/play/spin-wheel/host">Host a Game</Link>
             </Button>
             <Button variant="secondary" className="w-full">
-              <Link href="/play/spin-the-wheel/games">Your Games</Link>
+              <Link href="/play/spin-wheel/games">Your Games</Link>
             </Button>
           </div>
         </div>
