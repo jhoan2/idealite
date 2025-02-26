@@ -3,7 +3,10 @@ import { Metadata } from "next";
 import { auth } from "~/app/auth";
 import PleaseLogin from "~/app/PleaseLogin";
 import { trackEvent } from "~/lib/posthog/server";
-import { getGameSession } from "~/server/queries/gameSession";
+import {
+  GameSessionWithMoves,
+  getGameSession,
+} from "~/server/queries/gameSession";
 const ClashGameFrame = dynamic(() => import("./ClashGameFrame"), {
   ssr: false,
 });
@@ -72,7 +75,7 @@ export default async function FriendClashPage({
 
   return (
     <ClashGameFrame
-      gameSession={gameSession}
+      gameSession={gameSession as GameSessionWithMoves}
       currentUsername={session.user.username}
     />
   );
