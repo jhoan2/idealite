@@ -18,7 +18,5 @@ export default async function SpinTheWheelJoin() {
     return <div>Error: {gameSessions.error}</div>;
   }
 
-  return (
-    <SessionsList sessions={gameSessions.data} game_type="spin-the-wheel" />
-  );
+  return <SessionsList sessions={gameSessions.data} game_type="spin-wheel" />;
 }
