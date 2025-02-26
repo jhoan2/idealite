@@ -2,7 +2,6 @@
 
 import { Tldraw, TLComponents } from "tldraw";
 import "tldraw/tldraw.css";
-import { CustomStylePanel } from "./CustomStylePanel";
 
 export default function CanvasEditor({
   title,
@@ -13,9 +12,7 @@ export default function CanvasEditor({
   content: any;
   pageId: string;
 }) {
-  const components: TLComponents = {
-    StylePanel: CustomStylePanel,
-  };
+  const components: TLComponents = {};
 
   return (
     <div className="relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden">
