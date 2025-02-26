@@ -36,7 +36,9 @@ export default function TopicWheel({
     setError(null);
     try {
       // Call the trivia API with the selected topic
-      const response = await fetch(`/api/trivia?topic=${topic.toLowerCase()}`);
+      const response = await fetch(
+        `/api/trivia?topic=${topic.toLowerCase()}&count=1`,
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch questions: ${response.statusText}`);
