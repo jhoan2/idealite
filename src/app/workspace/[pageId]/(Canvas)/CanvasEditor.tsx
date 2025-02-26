@@ -3,15 +3,7 @@
 import { Tldraw, TLComponents } from "tldraw";
 import "tldraw/tldraw.css";
 
-export default function CanvasEditor({
-  title,
-  content,
-  pageId,
-}: {
-  title: string;
-  content: any;
-  pageId: string;
-}) {
+export default function CanvasEditor() {
   const components: TLComponents = {};
 
   return (
