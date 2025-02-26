@@ -18,8 +18,14 @@ export default function ClashInProgress({
   const round = Math.floor(gameSession.moves.length / players.length);
 
   const isUserTurn = players[currentTurnIndex] === currentUsername;
+
   if (!isUserTurn) {
-    return <NotYourTurn />;
+    return (
+      <NotYourTurn
+        gameSession={gameSession}
+        currentUsername={currentUsername}
+      />
+    );
   }
 
   return (
