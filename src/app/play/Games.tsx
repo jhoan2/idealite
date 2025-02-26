@@ -37,24 +37,24 @@ export default function Games({
       icon: "/games/spin-the-wheel.png",
       href: "/play/spin-wheel",
     },
-    {
-      id: "5",
-      title: "Guess the Picture",
-      icon: "/games/guess-the-picture.png",
-      href: "/play/guess-the-picture",
-    },
-    {
-      id: "6",
-      title: "Memory Mansion",
-      icon: "/games/memory-mansion.png",
-      href: "/play/memory-mansion",
-    },
-    {
-      id: "7",
-      title: "Two Truths and a Lie",
-      icon: "/games/two-truths.png",
-      href: "/play/two-truths",
-    },
+    // {
+    //   id: "5",
+    //   title: "Guess the Picture",
+    //   icon: "/games/guess-the-picture.png",
+    //   href: "/play/guess-the-picture",
+    // },
+    // {
+    //   id: "6",
+    //   title: "Memory Mansion",
+    //   icon: "/games/memory-mansion.png",
+    //   href: "/play/memory-mansion",
+    // },
+    // {
+    //   id: "7",
+    //   title: "Two Truths and a Lie",
+    //   icon: "/games/two-truths.png",
+    //   href: "/play/two-truths",
+    // },
   ];
 
   useEffect(() => {
