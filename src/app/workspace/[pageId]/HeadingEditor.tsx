@@ -99,7 +99,7 @@ function isTitleUniqueInContext(
     return !folder.pages?.some(
       (page) =>
         page.id !== currentPageId &&
-        page.title.toLowerCase() === newTitle.toLowerCase(),
+        page.title?.toLowerCase() === newTitle.toLowerCase(),
     );
   }
 
@@ -108,7 +108,7 @@ function isTitleUniqueInContext(
     return !tag.pages?.some(
       (page) =>
         page.id !== currentPageId &&
-        page.title.toLowerCase() === newTitle.toLowerCase(),
+        page.title?.toLowerCase() === newTitle.toLowerCase(),
     );
   }
 
