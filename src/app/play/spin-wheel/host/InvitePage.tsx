@@ -6,7 +6,7 @@ import { SearchUserAvatar } from "../../friend-clash/host/SearchUserAvatar";
 import { useSession } from "next-auth/react";
 import { useNeynarContext } from "@neynar/react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { createGameSession } from "~/server/actions/gameSession";
+import { createSpinTheWheelGameSession } from "~/server/actions/gameSession";
 import {
   Dialog,
   DialogContent,
@@ -47,7 +47,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
 
     try {
       const players = [session.user.username, ...invitees];
-      const gameSession = await createGameSession({
+      const gameSession = await createSpinTheWheelGameSession({
         playerCount: players.length,
         players,
         gameType: "spin-wheel",
@@ -59,7 +59,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
 
       setCastText(
         `Hey ${formattedInvites}! You're invited to join my Spin the Wheel game! 🎮\n\n` +
-          `idealite.xyz/play/spin-the-wheel/${gameSession?.id}`,
+          `idealite.xyz/play/spin-wheel/${gameSession?.id}`,
       );
       setIsModalOpen(true);
     } catch (error) {
