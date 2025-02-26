@@ -1,15 +1,19 @@
 import { eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import { game_move, game_session, GameMove } from "~/server/db/schema";
-import { isLastTurn, scheduleNextTurnDeadline } from "./deadlines";
+import { isLastTurn, scheduleNextTurnDeadline } from "./deadline";
 import { distributeGamePoints } from "~/server/actions/gamePoints";
-
 export async function completeTurn(gameId: string, points: number) {
   const game = await db.query.game_session.findFirst({
     where: eq(game_session.id, gameId),
   });
 
   if (!game) throw new Error("Game not found");
+
+  // Only proceed if this is a spin-wheel game
+  if (game.game_type !== "spin-wheel") {
+    throw new Error("Invalid game type");
+  }
 
   // Get all moves to determine if this will be the last turn
   const moves = await db.query.game_move.findMany({
@@ -42,13 +46,21 @@ export async function completeTurn(gameId: string, points: number) {
         })
         .where(eq(game_session.id, game.id));
       await distributeGamePoints(game.id, tx);
-      await fetch("http://localhost:3000/api/notifications", {
+      const BASE_URL =
+        //comment NEXT_PUBLIC_DEPLOYMENT_URL out for local testing with ngrok
+        process.env.NEXT_PUBLIC_DEPLOYMENT_URL ??
+        "dfbe-2601-646-8900-8b60-3c90-252f-31fd-6c62.ngrok-free.app";
+
+      // Notify all players that the game is completed
+      await fetch(`https://${BASE_URL}/api/notifications`, {
         method: "POST",
         body: JSON.stringify({
           type: "GAME_COMPLETED",
           gameId,
-          username: game.players.join(","), // Notify all players
-          title: "Friend Clash Game Completed! 🏆",
+          targetFids: game.player_info.map((player) => player.fid),
+          username: game.players.join(","),
+          gameType: "spin-wheel",
+          title: "Spin Wheel Game Completed! 🏆",
           body: "The game has ended! Check out the results.",
         }),
       });
@@ -67,20 +79,28 @@ export async function completeTurn(gameId: string, points: number) {
           turn_deadline: nextDeadline,
         })
         .where(eq(game_session.id, game.id));
-      const nextPlayer = game.player_info[nextPlayerIndex]?.username;
-      await fetch(
-        `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/notifications`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            type: "NEW_TURN",
-            gameId,
-            username: nextPlayer,
-            title: "Your Turn in Friend Clash! 🎮",
-            body: `Hey @${nextPlayer}! It's your turn to play.`,
-          }),
-        },
-      );
+
+      const nextPlayer = game.player_info[nextPlayerIndex];
+      const BASE_URL =
+        //comment NEXT_PUBLIC_DEPLOYMENT_URL out for local testing with ngrok
+        process.env.NEXT_PUBLIC_DEPLOYMENT_URL ??
+        "dfbe-2601-646-8900-8b60-3c90-252f-31fd-6c62.ngrok-free.app";
+
+      // Notify the next player that it's their turn
+      await fetch(`https://${BASE_URL}/api/notifications`, {
+        method: "POST",
+        body: JSON.stringify({
+          type: "NEW_TURN",
+          gameId,
+          targetFids: [nextPlayer?.fid],
+          username: nextPlayer?.username,
+          gameType: "spin-wheel",
+          title: "Your Turn in Spin the Wheel! 🎮",
+          body: `Hey @${nextPlayer?.username}! It's your turn to play.`,
+        }),
+      });
     }
   });
+
+  return { success: true };
 }

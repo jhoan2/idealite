@@ -7,6 +7,7 @@ import {
   GameSession,
   GameMove,
 } from "~/server/db/schema";
+import { distributeGamePoints } from "~/server/actions/gamePoints";
 
 const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
 
@@ -115,6 +116,7 @@ export async function processExpiredTurn(game: GameSession) {
           current_turn_player_index: game.current_turn_player_index,
         })
         .where(eq(game_session.id, game.id));
+      await distributeGamePoints(game.id, tx);
       const BASE_URL = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
 
       await fetch(`https://${BASE_URL}/api/notifications`, {

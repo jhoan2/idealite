@@ -5,6 +5,7 @@ import { sdk } from "@farcaster/frame-sdk";
 import { GameSessionWithMoves } from "~/server/queries/gameSession";
 import Lobby from "./Lobby";
 import SpinWheelInProgress from "./SpinWheelInProgress";
+import SpinWheelCompleted from "./SpinWheelCompleted";
 
 interface SpinWheelGameFrameProps {
   gameSession: GameSessionWithMoves;
@@ -53,7 +54,7 @@ export default function ClashGameFrame({
   }
 
   if (gameSession.status === "completed") {
-    return <div>completed</div>;
+    return <SpinWheelCompleted gameSession={gameSession} />;
   }
 
   return (
