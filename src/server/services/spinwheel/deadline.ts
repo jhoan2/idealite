@@ -107,8 +107,8 @@ export async function processExpiredTurn(game: GameSession) {
 
 // Helper function to determine if this is the last turn
 export function isLastTurn(game: GameSession, moves: GameMove[]) {
-  //   const totalTurns = game.player_count * 3;
-  const totalTurns = game.player_count * 1; // For testing
+  const totalTurns = game.player_count * 3;
+  //   const totalTurns = game.player_count * 1; // For testing
 
   const currentTurn = moves.length + 1;
 
