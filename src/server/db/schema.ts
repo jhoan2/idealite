@@ -619,8 +619,8 @@ export const game_status_enum = pgEnum("game_status", [
 export const game_type_enum = pgEnum("game_type", [
   "friend-clash",
   "spin-wheel",
-  "memory-mansion",
-  "two-truths-one-lie",
+  "two-truths",
+  "guess-picture",
 ]);
 
 export type GameType = (typeof game_type_enum.enumValues)[number];
