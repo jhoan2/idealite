@@ -46,6 +46,8 @@ export async function completeTurn(gameId: string, points: number) {
           type: "GAME_COMPLETED",
           gameId,
           username: game.players.join(","), // Notify all players
+          title: "Friend Clash Game Completed! 🏆",
+          body: "The game has ended! Check out the results.",
         }),
       });
     } else {
@@ -72,6 +74,8 @@ export async function completeTurn(gameId: string, points: number) {
             type: "NEW_TURN",
             gameId,
             username: nextPlayer,
+            title: "Your Turn in Friend Clash! 🎮",
+            body: `Hey @${nextPlayer}! It's your turn to play.`,
           }),
         },
       );

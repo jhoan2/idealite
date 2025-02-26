@@ -124,6 +124,8 @@ export async function processExpiredTurn(game: GameSession) {
           gameId: game.id,
           targetFids: game.player_info.map((player) => player.fid),
           username: game.players.join(","),
+          title: "Friend Clash Game Completed! 🏆",
+          body: "The game has ended! Check out the results.",
         }),
       });
     } else {
@@ -152,6 +154,8 @@ export async function processExpiredTurn(game: GameSession) {
           gameId: game.id,
           targetFids: [nextPlayer?.fid],
           username: nextPlayer?.username,
+          title: "Your Turn in Friend Clash! 🎮",
+          body: `Hey @${nextPlayer?.username}! It's your turn to play.`,
         }),
       });
     }

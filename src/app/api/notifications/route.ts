@@ -3,27 +3,13 @@ import "server-only";
 import { v4 as uuidv4 } from "uuid";
 
 export async function POST(request: Request) {
-  const { type, username, gameId, targetFids } = await request.json();
+  const { type, username, gameId, targetFids, title, body } =
+    await request.json();
 
   try {
     const BASE_URL = process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
 
     const gameUrl = `https://${BASE_URL}/play/friend-clash/games/${gameId}`;
-    let title: string;
-    let body: string;
-
-    switch (type) {
-      case "NEW_TURN":
-        title = "Your Turn in Friend Clash! 🎮";
-        body = `Hey @${username}! It's your turn to play.`;
-        break;
-      case "GAME_COMPLETED":
-        title = "Friend Clash Game Completed! 🏆";
-        body = "The game has ended! Check out the results.";
-        break;
-      default:
-        throw new Error(`Invalid notification type: ${type}`);
-    }
 
     const response = await fetch(
       "https://api.neynar.com/v2/farcaster/frame/notifications",
