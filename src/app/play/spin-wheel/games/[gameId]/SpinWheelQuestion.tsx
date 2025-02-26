@@ -7,40 +7,25 @@ import * as Sentry from "@sentry/nextjs";
 import { createCardFromGame } from "~/server/actions/card";
 import { Button } from "~/components/ui/button";
 import { Save } from "lucide-react";
+import { completeSpinWheelTurn } from "~/server/actions/gameSpinWheel";
 
 export default function SpinWheelQuestion({
   questions,
   topic,
+  gameId,
 }: {
   questions: TriviaQuestion[];
   topic: string;
+  gameId: string;
 }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const questions2 = [
-    {
-      correctAnswer: "D",
-      metadata: {
-        category: "natural sciences",
-        difficulty: "medium",
-      },
-      options: {
-        A: "Cells",
-        B: "Tissues",
-        C: "Organs",
-        D: "Organ systems",
-      },
-      question: "Groups of organs working together form:",
-      topicId: "b10b2b71-9786-420e-8da3-d8d19e12837d",
-      id: "4140f760-fe8f-4600-9904-1765f10b9428",
-    },
-  ];
-
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [isSubmittingTurn, setIsSubmittingTurn] = useState(false);
 
-  const currentQuestion = questions2[currentQuestionIndex];
+  const currentQuestion = questions[currentQuestionIndex];
 
   const handleOptionSelect = (option: string) => {
     if (!hasSubmitted) {
@@ -48,12 +33,24 @@ export default function SpinWheelQuestion({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setHasSubmitted(true);
+    setIsSubmittingTurn(true);
+    try {
+      const isCorrect = selectedAnswer === currentQuestion?.correctAnswer;
+      const points = isCorrect ? 1 : 0;
+      const result = await completeSpinWheelTurn(gameId, points);
+      console.log(result);
+    } catch (error) {
+      Sentry.captureException(error);
+      toast.error("Failed to submit your turn");
+    } finally {
+      setIsSubmittingTurn(false);
+    }
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions2.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
       setHasSubmitted(false);
@@ -117,7 +114,7 @@ export default function SpinWheelQuestion({
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center p-6">
       <h2 className="mb-2 text-xl font-semibold text-foreground">
-        Question {currentQuestionIndex + 1} of {questions2.length}
+        Question {currentQuestionIndex + 1} of {questions.length}
       </h2>
 
       <div className="mb-6 w-full rounded-lg bg-card p-6 shadow-md">
@@ -156,14 +153,14 @@ export default function SpinWheelQuestion({
       {!hasSubmitted ? (
         <button
           onClick={handleSubmit}
-          disabled={!selectedAnswer}
+          disabled={!selectedAnswer || isSubmittingTurn}
           className={`rounded-md px-6 py-3 font-bold ${
-            selectedAnswer
+            selectedAnswer && !isSubmittingTurn
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "cursor-not-allowed bg-muted text-muted-foreground"
           }`}
         >
-          Submit Answer
+          {isSubmittingTurn ? "Submitting..." : "Submit Answer"}
         </button>
       ) : (
         <div className="flex flex-col items-center space-y-4">
@@ -173,7 +170,7 @@ export default function SpinWheelQuestion({
             {isCorrect ? "Correct!" : "Incorrect!"}
           </div>
 
-          {currentQuestionIndex < questions2.length - 1 && (
+          {currentQuestionIndex < questions.length - 1 && (
             <button
               onClick={handleNextQuestion}
               className="rounded-md bg-primary px-6 py-3 font-bold text-primary-foreground hover:bg-primary/90"
