@@ -69,6 +69,7 @@ export default function ChannelHome({
   useEffect(() => {
     const load = async () => {
       sdk.actions.ready();
+      sdk.actions.addFrame();
       const frameContext = await sdk.context;
       posthog.capture("channel_home_viewed", {
         distinctId: frameContext?.user?.fid,
