@@ -52,9 +52,6 @@ export default function ChannelHome({
   const router = useRouter();
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const { data: session, status } = useSession();
-  const [isOnboarding, setIsOnboarding] = useState(
-    !session || userTags.length === 0,
-  );
 
   const handleJoinChannel = async () => {
     const response = await fetch("/api/channelMembership", {
