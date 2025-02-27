@@ -18,17 +18,16 @@ import { ModeToggle } from "./NextThemeButton";
 import { NeynarAuthButton } from "@neynar/react";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { Session } from "next-auth";
 
-export default function SideNav() {
+export default function SideNav({ session }: { session: Session | null }) {
   const pathname = usePathname();
 
   if (pathname.includes("/channelFrame") || pathname === "/") {
     return null;
   }
 
-  const [isCollapsed, setIsCollapsed] = useState(
-    pathname === "/home" ? false : true,
-  );
+  const [isCollapsed, setIsCollapsed] = useState(!session ? false : true);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);

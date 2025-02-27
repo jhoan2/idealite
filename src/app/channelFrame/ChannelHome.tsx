@@ -52,9 +52,6 @@ export default function ChannelHome({
   const router = useRouter();
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const { data: session, status } = useSession();
-  const [isOnboarding, setIsOnboarding] = useState(
-    !session || userTags.length === 0,
-  );
 
   const handleJoinChannel = async () => {
     const response = await fetch("/api/channelMembership", {
@@ -72,6 +69,7 @@ export default function ChannelHome({
   useEffect(() => {
     const load = async () => {
       sdk.actions.ready();
+      sdk.actions.addFrame();
       const frameContext = await sdk.context;
       posthog.capture("channel_home_viewed", {
         distinctId: frameContext?.user?.fid,
