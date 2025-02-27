@@ -7,6 +7,7 @@ import NeynarProvider from "~/app/NeynarProvider";
 import { Toaster } from "~/components/ui/sonner";
 import { SessionProvider } from "next-auth/react";
 import BottomNav from "./BottomNav";
+import { auth } from "~/app/auth";
 
 export const metadata = {
   title: "idealite",
@@ -16,9 +17,10 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const session = await auth();
   return (
     <html
       lang="en"
@@ -37,7 +39,7 @@ export default function RootLayout({
               <PHProvider>
                 <div className="flex h-screen">
                   <div className="hidden md:block">
-                    <SideNav />
+                    <SideNav session={session} />
                   </div>
                   <div className="flex-1 overflow-y-auto">{children}</div>
                   <BottomNav />
