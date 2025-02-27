@@ -45,6 +45,14 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+function isDesktopDevice(userAgent: string | null): boolean {
+  if (!userAgent) return true;
+
+  return !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(
+    userAgent,
+  );
+}
+
 export default async function Page() {
   const session = await auth();
   const userId = session?.user?.id;
@@ -58,8 +66,9 @@ export default async function Page() {
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
   const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
+  const isDesktop = isDesktopDevice(userAgent);
 
-  if (!isWarpcast) {
+  if (!isWarpcast || isDesktop) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <h1>Check out the website</h1>
