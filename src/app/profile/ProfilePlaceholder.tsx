@@ -2,7 +2,13 @@ import { Card, CardHeader, CardContent, CardTitle } from "~/components/ui/card";
 import { User } from "lucide-react";
 import { Separator } from "~/components/ui/separator";
 import MobileSignIn from "./MobileSignIn";
+import { headers } from "next/headers";
+
 export default function ProfilePlaceholder() {
+  const headersList = headers();
+  const userAgent = headersList.get("user-agent");
+  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
+
   return (
     <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12">
       <div className="mx-auto max-w-2xl space-y-6">
@@ -28,7 +34,7 @@ export default function ProfilePlaceholder() {
                 <p className="text-sm text-muted-foreground">
                   Sign in to view your profile
                 </p>
-                <MobileSignIn />
+                <MobileSignIn isWarpcast={isWarpcast ?? false} />
               </div>
             </div>
           </CardContent>
