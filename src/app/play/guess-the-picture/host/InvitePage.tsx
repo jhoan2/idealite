@@ -50,7 +50,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
       const gameSession = await createGameSession({
         playerCount: players.length,
         players,
-        gameType: "guess-the-picture",
+        gameType: "guess-picture",
       });
 
       const formattedInvites = invitees
@@ -59,7 +59,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
 
       setCastText(
         `Hey ${formattedInvites}! You're invited to join my Guess the Picture game! 🎮\n\n` +
-          `idealite.xyz/play/guess-the-picture/${gameSession?.id}`,
+          `idealite.xyz/play/guess-the-picture/games/${gameSession?.id}`,
       );
       setIsModalOpen(true);
     } catch (error) {

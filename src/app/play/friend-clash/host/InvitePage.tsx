@@ -59,7 +59,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
 
       setCastText(
         `Hey ${formattedInvites}! You're invited to join my Friend Clash game! 🎮\n\n` +
-          `idealite.xyz/play/friend-clash/${gameSession?.id}`,
+          `idealite.xyz/play/friend-clash/games/${gameSession?.id}`,
       );
       setIsModalOpen(true);
     } catch (error) {
