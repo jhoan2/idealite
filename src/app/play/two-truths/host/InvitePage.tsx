@@ -50,7 +50,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
       const gameSession = await createGameSession({
         playerCount: players.length,
         players,
-        gameType: "two-truths-one-lie",
+        gameType: "two-truths",
       });
 
       const formattedInvites = invitees
@@ -59,7 +59,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
 
       setCastText(
         `Hey ${formattedInvites}! You're invited to join my Two Truths and a Lie game! 🎮\n\n` +
-          `idealite.xyz/play/two-truths/${gameSession?.id}`,
+          `idealite.xyz/play/two-truths/games/${gameSession?.id}`,
       );
       setIsModalOpen(true);
     } catch (error) {
