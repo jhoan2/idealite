@@ -88,6 +88,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
           embeds: [],
           parent: castParentUrl,
           parent_author_fid: user.fid,
+          channel_id: "idealite",
           idem: uuidv4(),
         }),
       });
