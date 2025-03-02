@@ -47,6 +47,7 @@ export const users = createTable("user", {
   cash: integer("cash").notNull().default(0),
 });
 
+export type Image = typeof images.$inferSelect;
 export const images = createTable("images", {
   id: uuid("id").primaryKey().defaultRandom(),
   user_id: uuid("user_id")
@@ -119,6 +120,7 @@ export const pages = createTable(
     title: text("title")
       .notNull()
       .$default(() => sql`lower(title)`),
+    canvas_image_cid: text("canvas_image_cid"),
     content: text("content"),
     content_type: varchar("content_type", { enum: ["page", "canvas"] })
       .notNull()
@@ -399,7 +401,6 @@ export const cards = createTable(
     resource_id: uuid("resource_id").references(() => resources.id),
     content: text("content"),
     image_cid: text("image_cid"),
-    canvas_image_cid: text("canvas_image_cid"),
     prompt: text("prompt"),
     description: text("description"),
     last_reviewed: timestamp("last_reviewed", { withTimezone: true }),
