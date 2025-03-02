@@ -8,6 +8,21 @@ import { images, users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { updateStorageUsed } from "~/server/actions/storage";
 import { ratelimit } from "~/server/ratelimit";
+import { type Image } from "~/server/db/schema";
+import * as Sentry from "@sentry/nextjs";
+
+// Pinata API response when uploading a file
+export interface PinataUploadResponse {
+  IpfsHash: string;
+  PinSize: number;
+  Timestamp: string;
+  isDuplicate: boolean;
+}
+
+export interface ImageResponse {
+  image: Image;
+  pinataData: PinataUploadResponse;
+}
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -89,7 +104,7 @@ export async function POST(request: NextRequest) {
       body: data,
     });
 
-    const pinataData = await res.json();
+    const pinataData: PinataUploadResponse = await res.json();
 
     if (!pinataData.IpfsHash) {
       console.log(pinataData, "pinataData");
@@ -123,6 +138,76 @@ export async function POST(request: NextRequest) {
     );
   } catch (e) {
     console.log(e);
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    // Get the image ID from the URL or request body
+    const { searchParams } = new URL(request.url);
+    const imageId = searchParams.get("id");
+
+    if (!imageId) {
+      return Response.json({ error: "Image ID is required" }, { status: 400 });
+    }
+
+    // Find the image and verify ownership
+    const [image] = await db
+      .select()
+      .from(images)
+      .where(eq(images.id, imageId));
+
+    if (!image) {
+      return Response.json({ error: "Image not found" }, { status: 404 });
+    }
+
+    if (image.user_id !== userId) {
+      return Response.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Delete from Pinata
+    const pinataRes = await fetch(
+      `https://api.pinata.cloud/pinning/unpin/${image.url}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${process.env.PINATA_JWT}`,
+        },
+      },
+    );
+
+    if (!pinataRes.ok && pinataRes.status !== 404) {
+      Sentry.captureException(new Error("Failed to delete from Pinata:"), {
+        extra: {
+          pinataResponse: await pinataRes.text(),
+        },
+      });
+      // Continue with deletion from database even if Pinata fails
+    }
+
+    // Delete from database
+    await db.delete(images).where(eq(images.id, imageId));
+
+    // Update user's storage quota by subtracting the image size
+    await updateStorageUsed(userId, -image.size);
+
+    return Response.json(
+      {
+        success: true,
+        message: "Image deleted successfully",
+      },
+      { status: 200 },
+    );
+  } catch (e) {
+    console.error("Error deleting image:", e);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
