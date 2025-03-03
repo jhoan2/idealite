@@ -217,3 +217,31 @@ export async function getPageTags(pageId: string) {
 
   return result.map(({ tag }) => tag);
 }
+
+export async function getPageType(pageId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  // Check if the user has access to the page
+  const userPage = await db.query.users_pages.findFirst({
+    where: and(
+      eq(users_pages.user_id, session.user.id),
+      eq(users_pages.page_id, pageId),
+    ),
+  });
+
+  if (!userPage) {
+    throw new Error("Page not found or user doesn't have access");
+  }
+
+  const result = await db.query.pages.findFirst({
+    where: and(eq(pages.id, pageId), eq(pages.deleted, false)),
+    columns: {
+      content_type: true,
+    },
+  });
+
+  return result?.content_type ?? null;
+}
