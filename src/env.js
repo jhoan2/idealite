@@ -29,6 +29,7 @@ export const env = createEnv({
     QSTASH_TOKEN: z.string(),
     QSTASH_CURRENT_SIGNING_KEY: z.string(),
     QSTASH_NEXT_SIGNING_KEY: z.string(),
+    STABLE_DIFFUSION_API_KEY: z.string(),
   },
 
   /**
@@ -80,6 +81,7 @@ export const env = createEnv({
     QSTASH_TOKEN: process.env.QSTASH_TOKEN,
     QSTASH_CURRENT_SIGNING_KEY: process.env.QSTASH_CURRENT_SIGNING_KEY,
     QSTASH_NEXT_SIGNING_KEY: process.env.QSTASH_NEXT_SIGNING_KEY,
+    STABLE_DIFFUSION_API_KEY: process.env.STABLE_DIFFUSION_API_KEY,
   },
   /**
 
