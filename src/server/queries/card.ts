@@ -13,6 +13,7 @@ export type Card = typeof cards.$inferSelect & {
     created_at: Date;
     updated_at: Date | null;
     deleted: boolean | null;
+    is_template: boolean | null;
   }[];
 };
 export async function getPageCards(pageId: string): Promise<Card[]> {
@@ -47,6 +48,7 @@ export async function getPageCards(pageId: string): Promise<Card[]> {
       created_at: tag.created_at,
       updated_at: tag.updated_at,
       deleted: tag.deleted,
+      is_template: tag.is_template,
     })),
   }));
 }
