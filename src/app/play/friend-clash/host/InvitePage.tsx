@@ -28,6 +28,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
   const [isCreating, setIsCreating] = useState(false);
   const [isCasting, setIsCasting] = useState(false);
   const [castText, setCastText] = useState("");
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const avatarCount = 4;
 
   const handleSelect = (friend: string) => {
@@ -61,6 +62,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
         `Hey ${formattedInvites}! You're invited to join my Friend Clash game! 🎮\n\n` +
           `idealite.xyz/play/friend-clash/games/${gameSession?.id}`,
       );
+      setGameSessionId(gameSession?.id ?? null);
       setIsModalOpen(true);
     } catch (error) {
       toast.error("Failed to create game session");
@@ -85,7 +87,11 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
         body: JSON.stringify({
           signer_uuid: user.signer_uuid,
           text: castText,
-          embeds: [],
+          embeds: [
+            {
+              url: `idealite.xyz/play/friend-clash/games/${gameSessionId}`,
+            },
+          ],
           parent: castParentUrl,
           parent_author_fid: user.fid,
           channel_id: "idealite",
