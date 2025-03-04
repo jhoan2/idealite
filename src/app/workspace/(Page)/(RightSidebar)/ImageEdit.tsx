@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
@@ -62,12 +62,29 @@ export function ImageEdit({
     setIsLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append("image", originalImage);
-    formData.append("search_prompt", searchPrompt);
-    formData.append("prompt", replacementPrompt);
-
     try {
+      const formData = new FormData();
+
+      // Use originalImage if available, otherwise use result?.image
+      if (originalImage) {
+        formData.append("image", originalImage);
+      } else if (result?.image) {
+        try {
+          // Convert the image URL/data URL to a File object
+          const response = await fetch(result.image);
+          const blob = await response.blob();
+          const imageFile = new File([blob], "image.jpg", { type: blob.type });
+          formData.append("image", imageFile);
+        } catch (error) {
+          throw new Error(
+            "Failed to process the image. Please try uploading it directly.",
+          );
+        }
+      }
+
+      formData.append("search_prompt", searchPrompt);
+      formData.append("prompt", replacementPrompt);
+
       const response = await fetch("/api/memory-palace/edit/replace", {
         method: "POST",
         body: formData,
