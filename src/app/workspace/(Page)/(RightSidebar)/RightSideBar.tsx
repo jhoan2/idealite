@@ -13,7 +13,8 @@ import { ImageIcon, WalletCards } from "lucide-react";
 import { CardList } from "./CardList";
 import { TreeTag } from "~/server/queries/usersTags";
 import { getPageType } from "~/server/queries/page";
-import { GenerateImage } from "./GenerateImage";
+import { MemoryPalace } from "./MemoryPalace";
+
 export function RightSideBar({
   userTagTree,
   isMobile,
@@ -44,7 +45,17 @@ export function RightSideBar({
         <div className="p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
-              {activeView === "cards" ? "Page Cards" : "Image Generator"}
+              {activeView === "cards" ? (
+                <div className="flex items-center gap-2">
+                  <WalletCards size={16} />
+                  Page Cards
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <ImageIcon size={16} />
+                  Image Generator
+                </div>
+              )}
             </h2>
             {pageType === "canvas" && (
               <Button
@@ -75,7 +86,7 @@ export function RightSideBar({
             isMobile={isMobile}
           />
         ) : (
-          <GenerateImage />
+          <MemoryPalace />
         )}
       </SidebarContent>
       <SidebarFooter />
