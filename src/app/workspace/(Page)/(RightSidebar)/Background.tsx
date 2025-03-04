@@ -168,14 +168,11 @@ export function Background({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">
-          Background Options
-        </label>
-        <div className="flex w-full justify-end">
+        <div className="mt-4 flex w-full justify-end">
           {isLoading ? (
             <Button
               variant="outline"
-              className="justify-start border-slate-700 bg-slate-800 hover:bg-slate-700"
+              className="justify-start border-border bg-background hover:bg-accent"
             >
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Removing Background...
@@ -183,7 +180,7 @@ export function Background({
           ) : (
             <Button
               variant="outline"
-              className="justify-start border-slate-700 bg-slate-800 hover:bg-slate-700"
+              className="justify-start border-border bg-background hover:bg-accent"
               onClick={handleRemoveBackground}
             >
               <Trash2 className="mr-2 h-4 w-4" />
@@ -261,7 +258,9 @@ export function Background({
       </form> */}
       {editedImage && (
         <div className="mt-6">
-          <h4 className="mb-2 text-sm font-medium">Edited Image:</h4>
+          <h4 className="mb-2 text-sm font-medium text-foreground">
+            Edited Image:
+          </h4>
           <img
             src={editedImage.image}
             alt="Edited image"
