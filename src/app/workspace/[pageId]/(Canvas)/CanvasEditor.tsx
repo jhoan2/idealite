@@ -8,6 +8,7 @@ import {
   getSnapshot,
   useEditor,
   TLAssetStore,
+  TLUiOverrides,
 } from "tldraw";
 import "tldraw/tldraw.css";
 import { toast } from "sonner";
@@ -235,6 +236,49 @@ export default function CanvasEditor({
       );
     },
   };
+
+  const overrides: TLUiOverrides = {
+    actions: (editor, actions) => {
+      return {
+        ...actions,
+        "copy-as-png": {
+          ...actions["copy-as-png"],
+          id: "copy-as-png",
+          onSelect: async () => {
+            const shapes = editor.getSelectedShapes();
+            if (shapes.length === 0) return;
+
+            const { blob } = await editor.toImage(
+              shapes.map((shape) => shape.id),
+              {
+                format: "png",
+                background: false,
+                padding: 0,
+              },
+            );
+
+            if (blob) {
+              try {
+                const item = new ClipboardItem({ "image/png": blob });
+                await navigator.clipboard.write([item]);
+              } catch (err) {
+                // Fallback: Create a temporary link to download the image
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "canvas.png";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+              }
+            }
+          },
+        },
+      };
+    },
+  };
+
   return (
     <div className="relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden">
       <div className="absolute bottom-10 right-2 z-50">
@@ -259,6 +303,7 @@ export default function CanvasEditor({
         persistenceKey={`${pageId}-canvas`}
         snapshot={content}
         assets={myAssetStore}
+        overrides={overrides}
       />
     </div>
   );
