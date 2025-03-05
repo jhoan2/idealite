@@ -77,7 +77,14 @@ export function MemoryPalace() {
           </TabsContent>
 
           <TabsContent value="background" className="mt-0">
-            <Background result={result} setResult={setResult} />
+            <Background
+              result={result}
+              setResult={setResult}
+              prompt={prompt}
+              setPrompt={setPrompt}
+              description={description}
+              setDescription={setDescription}
+            />
           </TabsContent>
 
           <TabsContent value="outpainting" className="mt-0">
