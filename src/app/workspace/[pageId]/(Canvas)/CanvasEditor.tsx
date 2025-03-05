@@ -17,7 +17,7 @@ import { SaveIcon } from "lucide-react";
 import { ImageResponse } from "~/app/api/image/route";
 import { saveCanvasData } from "~/server/actions/canvas";
 import { debounce } from "lodash";
-
+import * as Sentry from "@sentry/nextjs";
 interface SaveCanvasButtonProps {
   pageId: string;
   className?: string;
@@ -26,7 +26,42 @@ interface SaveCanvasButtonProps {
 
 const myAssetStore: TLAssetStore = {
   async upload(asset, file) {
-    // console.log(file, "file");
+    let metadata = {
+      prompt: "",
+      description: "",
+    };
+
+    try {
+      // Read clipboard items
+      const clipboardItems = await navigator.clipboard.read();
+
+      for (const item of clipboardItems) {
+        if (item.types.includes("text/plain")) {
+          const textBlob = await item.getType("text/plain");
+          const text = await textBlob.text();
+
+          try {
+            const parsedData = JSON.parse(text);
+            if (
+              parsedData &&
+              (parsedData.prompt !== undefined ||
+                parsedData.description !== undefined)
+            ) {
+              metadata = {
+                prompt: parsedData.prompt || "",
+                description: parsedData.description || "",
+              };
+            }
+          } catch (err) {
+            toast.error("Could not access clipboard");
+            Sentry.captureException(err);
+          }
+        }
+      }
+    } catch (err) {
+      toast.error("Could not access clipboard");
+      Sentry.captureException(err);
+    }
     const formData = new FormData();
     formData.append("file", file);
     toast.loading("Uploading image...");
@@ -46,8 +81,8 @@ const myAssetStore: TLAssetStore = {
     return {
       src: `https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/${pinataData.IpfsHash}`,
       meta: {
-        prompt: "hello",
-        description: "hello",
+        prompt: metadata.prompt,
+        description: metadata.description,
       },
     };
   },
@@ -257,9 +292,30 @@ export default function CanvasEditor({
               },
             );
 
+            let metadata = null;
+            if (
+              shapes.length === 1 &&
+              shapes[0]?.type === "image" &&
+              (shapes[0] as any).props?.assetId
+            ) {
+              const asset = editor.getAsset((shapes[0] as any).props.assetId);
+              if (asset?.meta) {
+                metadata = {
+                  prompt: asset.meta.prompt || "",
+                  description: asset.meta.description || "",
+                  // Add any other metadata fields you want to preserve
+                };
+              }
+            }
+
             if (blob) {
               try {
-                const item = new ClipboardItem({ "image/png": blob });
+                const item = new ClipboardItem({
+                  "image/png": blob,
+                  "text/plain": new Blob([JSON.stringify(metadata)], {
+                    type: "text/plain",
+                  }),
+                });
                 await navigator.clipboard.write([item]);
               } catch (err) {
                 // Fallback: Create a temporary link to download the image
