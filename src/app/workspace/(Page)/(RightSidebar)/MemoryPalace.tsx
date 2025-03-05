@@ -55,7 +55,14 @@ export function MemoryPalace() {
           </TabsList>
 
           <TabsContent value="generate" className="mt-4">
-            <Generate result={result} setResult={setResult} />
+            <Generate
+              result={result}
+              setResult={setResult}
+              prompt={prompt}
+              setPrompt={setPrompt}
+              description={description}
+              setDescription={setDescription}
+            />
           </TabsContent>
 
           <TabsContent value="edit" className="mt-4">
