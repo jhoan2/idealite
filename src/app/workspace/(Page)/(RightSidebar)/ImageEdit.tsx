@@ -4,16 +4,26 @@ import { useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
-import { Edit, X } from "lucide-react";
+import { Copy, Edit, X } from "lucide-react";
 import { GeneratedImageResult } from "./MemoryPalace";
 import Image from "next/image";
+import { toast } from "sonner";
+import { Label } from "~/components/ui/label";
 
 export function ImageEdit({
   result,
   setResult,
+  prompt,
+  setPrompt,
+  description,
+  setDescription,
 }: {
   result: GeneratedImageResult | null;
   setResult: (result: GeneratedImageResult | null) => void;
+  prompt: string;
+  setPrompt: (prompt: string) => void;
+  description: string;
+  setDescription: (description: string) => void;
 }) {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
   const [editedImage, setEditedImage] = useState<{
@@ -32,24 +42,105 @@ export function ImageEdit({
 
     const clipboardData = event.clipboardData;
 
-    const item = clipboardData.items[0];
+    let imageFile = null;
 
-    if (!item) return;
-    if (!item.type.startsWith("image/")) {
-      const inputElement = document.getElementById("paste-image");
-      if (!inputElement) return;
-      (inputElement as HTMLInputElement).value = "";
-      return;
+    // Check all clipboard items, not just the first one
+    for (let i = 0; i < clipboardData.items.length; i++) {
+      const item = clipboardData.items[i];
+
+      if (!item) continue;
+
+      // Process image items
+      if (item.type.startsWith("image/")) {
+        imageFile = item.getAsFile();
+      }
+
+      // Process text items that might contain our JSON metadata
+      if (item.type === "text/plain") {
+        item.getAsString((text) => {
+          try {
+            const parsedData = JSON.parse(text);
+
+            // If we have a prompt in the metadata, use it
+            if (parsedData && parsedData.prompt) {
+              setPrompt(parsedData.prompt);
+              setDescription(parsedData.description);
+            }
+
+            // You could also use other metadata fields like description
+            // if needed elsewhere in your component
+          } catch (err) {
+            console.error("Error parsing metadata:", err);
+            // Not JSON or invalid format, ignore
+          }
+        });
+      }
     }
 
-    const file = item.getAsFile();
-    setOriginalImage(file);
-    const inputElement = document.getElementById("input-image");
-    if (inputElement) {
-      (inputElement as HTMLInputElement).disabled = true;
+    // Process the image if we found one
+    if (imageFile) {
+      setOriginalImage(imageFile);
+      const inputElement = document.getElementById("input-image-outpaint");
+      if (inputElement) {
+        (inputElement as HTMLInputElement).disabled = true;
+      }
+    } else {
+      console.log("No image found in clipboard");
+      const inputElement = document.getElementById("paste-image-outpaint");
+      if (!inputElement) return;
+      (inputElement as HTMLInputElement).value = "";
     }
   };
 
+  const handleCopyToClipboard = async () => {
+    if (!editedImage) {
+      toast.error("No image to copy");
+      return;
+    }
+
+    try {
+      // Fetch the image (which should now be PNG format)
+      const response = await fetch(editedImage.image);
+      const blob = await response.blob();
+
+      // Create metadata object
+      const metadata = {
+        prompt: prompt || "",
+        description: description || "",
+      };
+
+      // Create ClipboardItem with the PNG image and metadata
+      const item = new ClipboardItem({
+        [blob.type]: blob,
+        "text/plain": new Blob([JSON.stringify(metadata)], {
+          type: "text/plain",
+        }),
+      });
+
+      // Write to clipboard
+      await navigator.clipboard.write([item]);
+      toast.success("Image and metadata copied to clipboard");
+    } catch (err) {
+      console.error("Error copying to clipboard:", err);
+      toast.error(
+        `Failed to copy: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+
+      // Fallback if the clipboard API fails
+      try {
+        // At least try to copy the metadata
+        await navigator.clipboard.writeText(
+          JSON.stringify({
+            prompt: prompt || "",
+            description: description || "",
+          }),
+        );
+        toast.info("Only metadata copied (image copy failed)");
+      } catch (fallbackErr) {
+        console.error("Fallback also failed:", fallbackErr);
+      }
+    }
+  };
   const handleSearchAndReplace = async (
     e: React.FormEvent<HTMLFormElement>,
   ) => {
@@ -179,12 +270,38 @@ export function ImageEdit({
       </form>
       {editedImage && (
         <div className="mt-6">
-          <h4 className="mb-2 text-sm font-medium">Edited Image:</h4>
-          <img
-            src={editedImage.image}
-            alt="Edited image"
-            className="h-auto max-w-full rounded-md"
-          />
+          <div className="flex items-center justify-between">
+            <h4 className="mb-2 text-sm font-medium text-foreground">
+              Outpainted Image:
+            </h4>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="z-10 h-6 w-6 rounded-full bg-white bg-opacity-50 p-0"
+              onClick={handleCopyToClipboard}
+              title="Copy to clipboard"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="relative">
+            <img
+              src={editedImage.image}
+              alt="Outpainted image"
+              className="h-auto max-w-full rounded-md"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Prompt</Label>
+            <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
         </div>
       )}
     </div>

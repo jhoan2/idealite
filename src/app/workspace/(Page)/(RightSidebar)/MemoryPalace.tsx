@@ -66,7 +66,14 @@ export function MemoryPalace() {
           </TabsContent>
 
           <TabsContent value="edit" className="mt-4">
-            <ImageEdit result={result} setResult={setResult} />
+            <ImageEdit
+              result={result}
+              setResult={setResult}
+              prompt={prompt}
+              setPrompt={setPrompt}
+              description={description}
+              setDescription={setDescription}
+            />
           </TabsContent>
 
           <TabsContent value="background" className="mt-0">
