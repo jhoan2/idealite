@@ -25,50 +25,48 @@ export function MemoryPalace() {
           onValueChange={setActiveTab}
           className="w-full"
         >
-          <div className="px-6">
-            <TabsList className="w-full bg-slate-800 p-1">
-              <TabsTrigger
-                value="generate"
-                className="flex-1 data-[state=active]:bg-slate-700"
-              >
-                Generate
-              </TabsTrigger>
-              <TabsTrigger
-                value="edit"
-                className="flex-1 data-[state=active]:bg-slate-700"
-              >
-                Edit
-              </TabsTrigger>
-              <TabsTrigger
-                value="background"
-                className="flex-1 data-[state=active]:bg-slate-700"
-              >
-                Background
-              </TabsTrigger>
-              <TabsTrigger
-                value="outpainting"
-                className="flex-1 data-[state=active]:bg-slate-700"
-              >
-                Outpainting
-              </TabsTrigger>
-            </TabsList>
+          <TabsList className="w-full border-border bg-background p-1">
+            <TabsTrigger
+              value="generate"
+              className="flex-1 text-foreground data-[state=active]:bg-accent"
+            >
+              Generate
+            </TabsTrigger>
+            <TabsTrigger
+              value="edit"
+              className="flex-1 text-foreground data-[state=active]:bg-accent"
+            >
+              Edit
+            </TabsTrigger>
+            <TabsTrigger
+              value="background"
+              className="flex-1 text-foreground data-[state=active]:bg-accent"
+            >
+              Background
+            </TabsTrigger>
+            <TabsTrigger
+              value="outpainting"
+              className="flex-1 text-foreground data-[state=active]:bg-accent"
+            >
+              Outpainting
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="generate" className="mt-4">
-              <Generate result={result} setResult={setResult} />
-            </TabsContent>
+          <TabsContent value="generate" className="mt-4">
+            <Generate result={result} setResult={setResult} />
+          </TabsContent>
 
-            <TabsContent value="edit" className="mt-4">
-              <ImageEdit result={result} setResult={setResult} />
-            </TabsContent>
+          <TabsContent value="edit" className="mt-4">
+            <ImageEdit result={result} setResult={setResult} />
+          </TabsContent>
 
-            <TabsContent value="background" className="mt-0">
-              <Background result={result} setResult={setResult} />
-            </TabsContent>
+          <TabsContent value="background" className="mt-0">
+            <Background result={result} setResult={setResult} />
+          </TabsContent>
 
-            <TabsContent value="outpainting" className="mt-0">
-              <Outpainting result={result} setResult={setResult} />
-            </TabsContent>
-          </div>
+          <TabsContent value="outpainting" className="mt-0">
+            <Outpainting result={result} setResult={setResult} />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
