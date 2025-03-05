@@ -15,6 +15,8 @@ export interface GeneratedImageResult {
 export function MemoryPalace() {
   const [activeTab, setActiveTab] = useState("generate");
   const [result, setResult] = useState<GeneratedImageResult | null>(null);
+  const [prompt, setPrompt] = useState("");
+  const [description, setDescription] = useState("");
 
   return (
     <div className="p-4">
@@ -65,7 +67,14 @@ export function MemoryPalace() {
           </TabsContent>
 
           <TabsContent value="outpainting" className="mt-0">
-            <Outpainting result={result} setResult={setResult} />
+            <Outpainting
+              result={result}
+              setResult={setResult}
+              prompt={prompt}
+              setPrompt={setPrompt}
+              description={description}
+              setDescription={setDescription}
+            />
           </TabsContent>
         </Tabs>
       </div>
