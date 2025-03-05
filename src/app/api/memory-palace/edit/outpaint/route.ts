@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     // Prepare payload for Stability AI API
     const apiFormData = new FormData();
     apiFormData.append("image", new Blob([imageBuffer]), imageFile.name);
-    apiFormData.append("output_format", "webp");
+    apiFormData.append("output_format", "png");
 
     // Add dimensions if provided
     if (left > 0) apiFormData.append("left", left.toString());
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Image outpainted successfully",
-      image: `data:image/webp;base64,${base64Image}`,
+      image: `data:image/png;base64,${base64Image}`,
     });
   } catch (error) {
     console.error("Error in outpaint:", error);

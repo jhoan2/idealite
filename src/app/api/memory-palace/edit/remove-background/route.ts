@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     // Prepare payload for Stability AI API
     const apiFormData = new FormData();
     apiFormData.append("image", new Blob([imageBuffer]), imageFile.name);
-    apiFormData.append("output_format", "webp");
+    apiFormData.append("output_format", "png");
 
     // Make request to Stability AI API
     const response = await fetch(
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Background removed successfully",
-      image: `data:image/webp;base64,${base64Image}`,
+      image: `data:image/png;base64,${base64Image}`,
     });
   } catch (error) {
     console.error("Error in remove background:", error);

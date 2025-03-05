@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     apiFormData.append("image", new Blob([imageBuffer]), imageFile.name);
     apiFormData.append("prompt", prompt);
     apiFormData.append("search_prompt", searchPrompt);
-    apiFormData.append("output_format", "webp");
+    apiFormData.append("output_format", "png");
 
     // Make request to Stability AI API
     const response = await fetch(
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Memory palace image updated successfully",
-      image: `data:image/webp;base64,${base64Image}`,
+      image: `data:image/png;base64,${base64Image}`,
     });
   } catch (error) {
     console.error("Error in search and replace:", error);

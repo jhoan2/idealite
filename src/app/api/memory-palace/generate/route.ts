@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     // Prepare payload for Stable Diffusion API
     const formData = new FormData();
     formData.append("prompt", prompt);
-    formData.append("output_format", "webp");
+    formData.append("output_format", "png");
 
     // Make request to Stable Diffusion API
     const response = await fetch(
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        image: `data:image/webp;base64,${base64Image}`,
+        image: `data:image/png;base64,${base64Image}`,
         description: prompt,
       },
     });
