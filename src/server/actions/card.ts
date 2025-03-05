@@ -53,7 +53,6 @@ export async function createCardFromPage(
           page_id: validatedInput.pageId,
           content: validatedInput.content,
           image_cid: validatedInput.imageCid,
-          canvas_image_cid: validatedInput.canvasImageCid,
           prompt: validatedInput.prompt,
           description: validatedInput.description,
           resource_id: validatedInput.resourceId,
