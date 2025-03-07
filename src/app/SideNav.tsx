@@ -9,7 +9,6 @@ import {
   UserRound,
   ChevronLeft,
   ChevronRight,
-  Compass,
   Gamepad2,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -37,7 +36,6 @@ export default function SideNav({ session }: { session: Session | null }) {
     { icon: Home, label: "Home", href: "/home" },
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Gamepad2, label: "Play", href: "/play" },
-    { icon: Compass, label: "Explore", href: "/explore" },
     { icon: UserRound, label: "Profile", href: "/profile" },
   ];
 

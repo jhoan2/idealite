@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import ExploreTagTree from "./ExploreTagTree";
+import GlobalTagTree from "./GlobalTagTree";
 import CirclePack from "./CirclePack";
 import { SelectTag } from "~/server/queries/tag";
 import { buildUserTagTree } from "./buildUserTagTree";
-interface ExploreStateProps {
+interface GlobalTagStateProps {
   tag: SelectTag[];
   userTags: SelectTag[];
   userId: string | null;
@@ -38,18 +38,12 @@ function createTagTree(
   return buildTree(rootTags);
 }
 
-export default function ExploreState({
-  tag,
-  userTags,
-  userId,
-}: ExploreStateProps) {
+export default function ExploreState({ tag, userTags }: GlobalTagStateProps) {
   const tagTree = useMemo(() => createTagTree(tag, userTags), [tag, userTags]);
 
-  const userTagTree = useMemo(() => buildUserTagTree(userTags), [userTags]);
-
+  console.log(tagTree);
   return (
-    <div className="flex">
-      <ExploreTagTree tagTree={userTagTree} userId={userId || ""} />
+    <div className="flex h-screen">
       <div className="flex-1">
         <CirclePack tagTree={tagTree[0]} />
       </div>

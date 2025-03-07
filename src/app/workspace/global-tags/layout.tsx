@@ -1,4 +1,4 @@
-export default function ExploreLayout({
+export default function GlobalTagsLayout({
   children,
 }: {
   children: React.ReactNode;

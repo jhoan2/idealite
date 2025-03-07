@@ -11,6 +11,7 @@ import {
   FilePlus,
   Palette,
   Tag,
+  Compass,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -51,6 +52,7 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import Link from "next/link";
 
 interface DrawerState {
   isOpen: boolean;
@@ -582,8 +584,15 @@ const MinimalistTree: React.FC<
 > = ({ data, userId, isMobile, onLongPress, onOpenDrawer }) => {
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex justify-center pt-2">
+        <Button variant="ghost" size="icon" title="Global Tags">
+          <Link href="/workspace/global-tags">
+            <Compass className="h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
       <div
-        className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto p-4`}
+        className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto pl-4`}
       >
         {data.map((node) => (
           <TreeNode
