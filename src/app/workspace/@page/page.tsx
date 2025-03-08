@@ -1,16 +1,17 @@
+import { Suspense } from "react";
 import {
   getPageContent,
   getPageTitle,
   getPageTags,
 } from "~/server/queries/page";
-// import { getPageResources } from "~/server/queries/resource";
 import { auth } from "~/app/auth";
 import { getUserTagTree } from "~/server/queries/usersTags";
 import PageEditors from "./PageEditors";
 import { PageHeader } from "~/app/workspace/(Page)/PageHeader";
 import CanvasEditor from "./(Canvas)/CanvasEditor";
 import { getResourcesForPage } from "~/server/queries/resource";
-import { Resource } from "~/server/queries/resource";
+import HeaderSkeleton from "./HeaderSkeleton";
+import EditorSkeleton from "./EditorSkeleton";
 
 export default async function PageContent({
   searchParams,
@@ -36,17 +37,24 @@ export default async function PageContent({
 
   return (
     <div className="h-full w-full">
-      <PageHeader tags={tags} userTagTree={userTagTree} resources={resources} />
-
-      {content.content_type === "canvas" ? (
-        <CanvasEditor title={title ?? ""} content={content} pageId={pageId} />
-      ) : (
-        <PageEditors
-          title={title ?? ""}
-          content={content}
+      <Suspense fallback={<HeaderSkeleton />}>
+        <PageHeader
+          tags={tags}
           userTagTree={userTagTree}
+          resources={resources}
         />
-      )}
+      </Suspense>
+      <Suspense fallback={<EditorSkeleton />}>
+        {content.content_type === "canvas" ? (
+          <CanvasEditor title={title ?? ""} content={content} pageId={pageId} />
+        ) : (
+          <PageEditors
+            title={title ?? ""}
+            content={content}
+            userTagTree={userTagTree}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }
