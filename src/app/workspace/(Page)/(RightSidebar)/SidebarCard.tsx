@@ -17,11 +17,11 @@ import { updateCard, deleteCard } from "~/server/actions/card";
 import { toast } from "sonner";
 import { Textarea } from "~/components/ui/textarea";
 import { Tag } from "~/server/db/schema";
-import { TagList } from "../../[pageId]/TagList";
 import { flattenTagTree } from "~/lib/tree";
 import { TreeTag } from "~/server/queries/usersTags";
 import { Drawer } from "~/components/ui/drawer";
-import { TagDrawer } from "../../[pageId]/TagDrawer";
+import { TagList } from "../../@page/TagList";
+import { TagDrawer } from "../../@page/TagDrawer";
 
 interface SidebarCardProps {
   id: string;

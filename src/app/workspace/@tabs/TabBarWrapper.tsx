@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { TabBar } from "./TabBar";
 import { closeTab } from "~/server/actions/tabs";
 import { toast } from "sonner";
 import { setActiveTab } from "~/server/actions/tabs";
+import { TabBar } from "./TabBar";
 
 interface Tab {
   id: string;

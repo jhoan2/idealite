@@ -25,7 +25,7 @@ export function TabBar({ tabs, activeTabId, onTabClose }: TabBarProps) {
   }
 
   return (
-    <div className="hidden border-b md:block">
+    <div className="block border-b">
       <ScrollArea className="w-full" type="scroll">
         <div className="flex h-11 items-center">
           {tabs.map((tab, index) => (

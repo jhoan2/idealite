@@ -3,7 +3,6 @@
 import { TagList } from "../TagList";
 import { Resource } from "~/server/queries/resource";
 import { TreeTag } from "~/server/queries/usersTags";
-import { useState } from "react";
 import InfoCard from "../(ResourceInfo)/InfoCard";
 import { deleteResourcePage } from "~/server/actions/pagesResource";
 import { deleteUserResource } from "~/server/actions/usersResource";
@@ -24,6 +23,7 @@ interface Tag {
   updated_at: Date | null;
   parent_id: string | null;
   deleted: boolean | null;
+  is_template: boolean;
 }
 
 export default function PageResourceInfo({

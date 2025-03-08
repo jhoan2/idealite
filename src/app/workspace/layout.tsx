@@ -1,17 +1,21 @@
 import { auth } from "~/app/auth";
 import { getUserTagTree } from "~/server/queries/usersTags";
 import { getTabs } from "~/server/queries/tabs";
-import { TabBarWrapper } from "./TabBarWrapper";
 import { SidebarProvider } from "~/components/ui/sidebar";
 import { RightSideBar } from "./(Page)/(RightSidebar)/RightSideBar";
 import { headers } from "next/headers";
 import { TagTreeContainer } from "./(TagTreeNav)/TagTreeContainer";
 import { trackEvent } from "~/lib/posthog/server";
-
 export default async function WorkspaceLayout({
   children,
+  editor,
+  tabs,
+  page,
 }: {
   children: React.ReactNode;
+  editor: React.ReactNode;
+  tabs: React.ReactNode;
+  page: React.ReactNode;
 }) {
   const session = await auth();
   const userId = session?.user?.id;
@@ -47,12 +51,13 @@ export default async function WorkspaceLayout({
           isMobile={isMobile ?? false}
         />
         <div className="custom-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto">
-          <TabBarWrapper
-            tabs={userTabs ?? []}
-            activeTabId={activeTabId ?? null}
-          />
-          <div className="w-full">{children}</div>
+          {tabs}
+          <div className="w-full">
+            {page}
+            {children}
+          </div>
         </div>
+        {editor}
         <div>
           <RightSideBar
             userTagTree={userTagTree}

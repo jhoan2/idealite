@@ -7,11 +7,11 @@ import TagCrumbs from "~/app/workspace/(Page)/TagCrumbs";
 import { Button } from "~/components/ui/button";
 import { type Tag } from "~/server/db/schema";
 import { SidebarTrigger } from "~/components/ui/sidebar";
-import AddMetadata from "~/app/workspace/[pageId]/(AddResource)/AddMetadata";
 import { usePathname } from "next/navigation";
 import { TreeTag } from "~/server/queries/usersTags";
+import AddMetadata from "../@page/(AddResource)/AddMetadata";
 import { Resource } from "~/server/queries/resource";
-import PageResourceInfo from "~/app/workspace/[pageId]/(ResourceInfo)/PageResourceInfo";
+import PageResourceInfo from "../@page/(ResourceInfo)/PageResourceInfo";
 
 interface PageHeaderProps {
   tags: Tag[];

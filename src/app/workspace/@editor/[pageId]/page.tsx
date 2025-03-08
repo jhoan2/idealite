@@ -1,8 +1,8 @@
 import { getPageContent, getPageTitle } from "~/server/queries/page";
-import PageEditors from "./PageEditors";
+import PageEditors from "../../[pageId]/PageEditors";
 import { auth } from "~/app/auth";
 import { getUserTagTree } from "~/server/queries/usersTags";
-import CanvasEditor from "./(Canvas)/CanvasEditor";
+import CanvasEditor from "../../[pageId]/(Canvas)/CanvasEditor";
 
 export default async function WorkspacePage({
   params,
