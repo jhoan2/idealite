@@ -49,6 +49,7 @@ export default async function PageContent({
           <CanvasEditor title={title ?? ""} content={content} pageId={pageId} />
         ) : (
           <PageEditors
+            key={pageId}
             title={title ?? ""}
             content={content}
             userTagTree={userTagTree}
