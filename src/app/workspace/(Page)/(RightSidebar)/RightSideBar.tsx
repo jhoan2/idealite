@@ -30,9 +30,11 @@ export function RightSideBar({
   );
 
   useEffect(() => {
-    getPageType(pageId).then((type) => {
-      setPageType(type);
-    });
+    if (pageId) {
+      getPageType(pageId).then((type) => {
+        setPageType(type);
+      });
+    }
   }, [pageId]);
 
   const toggleView = () => {
