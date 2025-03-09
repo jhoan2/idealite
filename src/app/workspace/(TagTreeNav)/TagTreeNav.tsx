@@ -28,7 +28,7 @@ import { createPage, movePage, createRootPage } from "~/server/actions/page";
 import { createRootFolder } from "~/server/actions/usersFolders";
 import { toast } from "sonner";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createTab } from "~/server/actions/tabs";
 import { MoveToDialog } from "./MoveToDialog";
 import {
@@ -95,7 +95,8 @@ const TreeNode: React.FC<{
   const router = useRouter();
 
   const pathname = usePathname();
-  const currentPageId = pathname?.split("/workspace/")?.[1]?.split("?")?.[0];
+  const searchParams = useSearchParams();
+  const currentPageId = searchParams.get("pageId");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set(
       node.folders?.filter((f) => !f.is_collapsed).map((f) => f.id) ?? [],
@@ -140,7 +141,7 @@ const TreeNode: React.FC<{
       }
 
       // Navigate to the content with type parameter
-      router.push(`/workspace?pageId=${pageId}`);
+      router.push(`/workspace?pageId=${pageId}&tabId=${newTab.id}`);
     } catch (error) {
       console.error("Error creating tab:", error);
       toast.error("Failed to open item");
@@ -464,7 +465,7 @@ const TreeNode: React.FC<{
                           content_type: page.content_type || "page",
                         }}
                         level={level}
-                        currentPageId={currentPageId}
+                        currentPageId={currentPageId ?? undefined}
                         onMovePageClick={(pageId, title) => {
                           setSelectedPage({
                             id: pageId,
@@ -489,7 +490,7 @@ const TreeNode: React.FC<{
                         expandedFolders={expandedFolders}
                         handleFolderToggle={handleFolderToggle}
                         handleItemClick={handleItemClick}
-                        currentPageId={currentPageId}
+                        currentPageId={currentPageId ?? undefined}
                         onMovePageClick={(pageId, title) => {
                           setSelectedPage({
                             id: pageId,
