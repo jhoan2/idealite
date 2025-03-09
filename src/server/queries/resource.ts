@@ -20,17 +20,7 @@ export async function getResourcesForPage(pageId: string) {
     },
   });
 
-  // Transform the result into the expected format
-  return result.map(({ resource }) => ({
-    id: resource.id,
-    title: resource.title,
-    url: resource.url,
-    description: resource.description,
-    author: resource.author,
-    date_published: resource.date_published,
-    image: resource.image,
-    type: resource.type,
-  }));
+  return result.map(({ resource }) => resource);
 }
 
 export async function findResourceByUrl(url: string) {
