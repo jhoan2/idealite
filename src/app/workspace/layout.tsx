@@ -1,6 +1,5 @@
 import { auth } from "~/app/auth";
 import { getUserTagTree } from "~/server/queries/usersTags";
-import { getTabs } from "~/server/queries/tabs";
 import { SidebarProvider } from "~/components/ui/sidebar";
 import { RightSideBar } from "./(Page)/(RightSidebar)/RightSideBar";
 import { headers } from "next/headers";
@@ -19,11 +18,9 @@ export default async function WorkspaceLayout({
 }) {
   const session = await auth();
   const userId = session?.user?.id;
-  const [userTagTree, userTabs] = await Promise.all([
+  const [userTagTree] = await Promise.all([
     userId ? getUserTagTree(userId) : [],
-    userId ? getTabs(userId).then((res) => res.data) : [],
   ]);
-  const activeTabId = userTabs?.find((tab) => tab.is_active)?.id ?? null;
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
 
