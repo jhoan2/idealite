@@ -1,4 +1,4 @@
-import { TwitterEmbed } from "~/app/workspace/[pageId]/(ResourceInfo)/TwitterEmbed";
+import { TwitterEmbed } from "~/app/workspace/@page/(ResourceInfo)/TwitterEmbed";
 import { isTwitterUrl, isYouTubeUrl } from "~/lib/url";
 import { Embed } from "~/types/cast";
 import { YouTubeEmbed } from "../../(ChannelFeed)/YoutubeEmbed";

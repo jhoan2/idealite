@@ -1,6 +1,6 @@
 import React from "react";
 import { Embed } from "~/types/cast";
-import { TwitterEmbed } from "~/app/workspace/[pageId]/(ResourceInfo)/TwitterEmbed";
+import { TwitterEmbed } from "~/app/workspace/@page/(ResourceInfo)/TwitterEmbed";
 import { YouTubeEmbed } from "./YoutubeEmbed";
 import { isYouTubeUrl, isTwitterUrl } from "~/lib/url";
 import { ImageEmbed } from "../conversation/(CastConversation)/ImageEmbed";
