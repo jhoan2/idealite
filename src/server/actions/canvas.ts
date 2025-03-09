@@ -1,7 +1,13 @@
 "use server";
 
 import { db } from "~/server/db";
-import { pages, images, cards, users_pages } from "~/server/db/schema";
+import {
+  pages,
+  images,
+  cards,
+  users_pages,
+  cards_tags,
+} from "~/server/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "~/app/auth";
@@ -21,6 +27,7 @@ export async function saveCanvasData(
   snapshot: any,
   assetMetadata: AssetMetadata[],
   canvasImageCid: string | null,
+  tagIds: string[] = [],
 ) {
   try {
     // 1. Auth check
@@ -136,8 +143,34 @@ export async function saveCanvasData(
           })
           .filter(Boolean);
 
-        await tx.insert(cards).values(newCards);
+        // Insert cards and get their IDs
+        const insertedCards = await tx
+          .insert(cards)
+          .values(newCards)
+          .returning({
+            id: cards.id,
+          });
         createdCount = newCards.length;
+
+        // Create card-tag relations for each new card
+        if (tagIds.length > 0 && insertedCards.length > 0) {
+          const cardTagRelations = [];
+
+          // Create card-tag relations for all cards with all tags
+          for (const card of insertedCards) {
+            for (const tagId of tagIds) {
+              cardTagRelations.push({
+                card_id: card.id,
+                tag_id: tagId,
+              });
+            }
+          }
+
+          // Bulk insert all card-tag relations
+          if (cardTagRelations.length > 0) {
+            await tx.insert(cards_tags).values(cardTagRelations);
+          }
+        }
       }
 
       // Delete cards in bulk

@@ -46,7 +46,12 @@ export default async function PageContent({
       </Suspense>
       <Suspense fallback={<EditorSkeleton />}>
         {content.content_type === "canvas" ? (
-          <CanvasEditor title={title ?? ""} content={content} pageId={pageId} />
+          <CanvasEditor
+            title={title ?? ""}
+            content={content}
+            pageId={pageId}
+            tags={tags}
+          />
         ) : (
           <PageEditors
             key={pageId}

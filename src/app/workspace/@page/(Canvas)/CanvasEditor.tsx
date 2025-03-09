@@ -18,10 +18,13 @@ import { ImageResponse } from "~/app/api/image/route";
 import { saveCanvasData } from "~/server/actions/canvas";
 import { debounce } from "lodash";
 import * as Sentry from "@sentry/nextjs";
+import { Tag } from "~/server/db/schema";
+
 interface SaveCanvasButtonProps {
   pageId: string;
   className?: string;
   setAutoSaveStatus: (status: "idle" | "saving" | "saved" | "error") => void;
+  tags: Tag[];
 }
 
 const myAssetStore: TLAssetStore = {
@@ -96,6 +99,7 @@ export function SaveCanvasButton({
   pageId,
   className,
   setAutoSaveStatus,
+  tags,
 }: SaveCanvasButtonProps) {
   const editor = useEditor();
   const [isSaving, setIsSaving] = useState(false);
@@ -199,6 +203,7 @@ export function SaveCanvasButton({
         snapshot,
         assetMetadata,
         canvasImageCid || null,
+        tags.map((tag) => tag.id),
       );
 
       if (!response.success) {
@@ -249,10 +254,12 @@ export default function CanvasEditor({
   title,
   content,
   pageId,
+  tags,
 }: {
   title: string;
   content: any;
   pageId: string;
+  tags: Tag[];
 }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -265,6 +272,7 @@ export default function CanvasEditor({
           <SaveCanvasButton
             pageId={pageId}
             setAutoSaveStatus={setAutoSaveStatus}
+            tags={tags}
           />
           <DefaultToolbarContent />
         </DefaultToolbar>
