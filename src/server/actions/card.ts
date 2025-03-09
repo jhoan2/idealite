@@ -37,14 +37,6 @@ export async function createCardFromPage(
     }
 
     return await db.transaction(async (tx) => {
-      // First get the page's tags
-      const pageTags = await tx
-        .select({
-          tag_id: pages_tags.tag_id,
-        })
-        .from(pages_tags)
-        .where(eq(pages_tags.page_id, validatedInput.pageId));
-
       // Create the card
       const [newCard] = await tx
         .insert(cards)
@@ -66,14 +58,31 @@ export async function createCardFromPage(
         throw new Error("Failed to create card");
       }
 
-      // Create card-tag relationships based on page tags
-      if (pageTags.length > 0) {
+      // Use provided tag IDs instead of querying the database
+      if (validatedInput.tagIds && validatedInput.tagIds.length > 0) {
         await tx.insert(cards_tags).values(
-          pageTags.map((tag) => ({
+          validatedInput.tagIds.map((tagId) => ({
             card_id: newCard.id,
-            tag_id: tag.tag_id,
+            tag_id: tagId,
           })),
         );
+      } else {
+        // Fallback to querying if no tags provided (for backward compatibility)
+        const pageTags = await tx
+          .select({
+            tag_id: pages_tags.tag_id,
+          })
+          .from(pages_tags)
+          .where(eq(pages_tags.page_id, validatedInput.pageId));
+
+        if (pageTags.length > 0) {
+          await tx.insert(cards_tags).values(
+            pageTags.map((tag) => ({
+              card_id: newCard.id,
+              tag_id: tag.tag_id,
+            })),
+          );
+        }
       }
 
       revalidatePath(`/workspace/${validatedInput.pageId}`);

@@ -6,11 +6,12 @@ import HeadingEditor from "./HeadingEditor";
 import BodyEditor from "./(BodyEditor)/BodyEditor";
 import { useParams, useSearchParams } from "next/navigation";
 import { TreeTag } from "~/server/queries/usersTags";
-
+import { Tag } from "~/server/db/schema";
 export default function PageEditors({
   title,
   content,
   userTagTree,
+  tags,
 }: {
   title: string;
   content: {
@@ -18,6 +19,7 @@ export default function PageEditors({
     content_type: "page" | "canvas";
   };
   userTagTree: TreeTag[];
+  tags: Tag[];
 }) {
   const searchParams = useSearchParams();
   const pageId = searchParams.get("pageId") as string;
@@ -38,6 +40,7 @@ export default function PageEditors({
         content={content.content}
         pageId={pageId}
         onSavingStateChange={setIsSavingContent}
+        tags={tags}
       />
 
       {/* Floating Status Indicator */}

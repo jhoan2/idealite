@@ -53,6 +53,7 @@ export default async function PageContent({
             title={title ?? ""}
             content={content}
             userTagTree={userTagTree}
+            tags={tags}
           />
         )}
       </Suspense>
