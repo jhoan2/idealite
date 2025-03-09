@@ -39,7 +39,7 @@ export function TabBar({ tabs, activeTabId, onTabClose }: TabBarProps) {
                 )}
               >
                 <Link
-                  href={`/workspace/${tab.path}?tabId=${tab.id}`}
+                  href={`/workspace?pageId=${tab.path}&tabId=${tab.id}`}
                   prefetch={true}
                   className="flex-1 truncate text-left"
                   title={tab.title}
