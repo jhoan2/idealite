@@ -128,7 +128,6 @@ const TreeNode: React.FC<{
     title: string,
   ) => {
     e.preventDefault();
-
     try {
       // Create new tab
       const newTab = await createTab({
@@ -141,7 +140,7 @@ const TreeNode: React.FC<{
       }
 
       // Navigate to the content with type parameter
-      router.push(`/workspace/${pageId}?tabId=${newTab.id}`);
+      router.push(`/workspace?pageId=${pageId}`);
     } catch (error) {
       console.error("Error creating tab:", error);
       toast.error("Failed to open item");

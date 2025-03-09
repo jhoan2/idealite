@@ -47,7 +47,6 @@ export const PageComponent: React.FC<PageComponentProps> = ({
   const router = useRouter();
   const longPressTimeout = useRef<NodeJS.Timeout>();
   const touchInteraction = useRef(false);
-  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
@@ -61,8 +60,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
     clearTimeout(longPressTimeout.current);
     if (touchInteraction.current) {
       e.preventDefault();
-      // Navigate to mobile-specific route
-      router.push(`/workspace/${page.id}`);
+      router.push(`/workspace?pageId=${page.id}`);
       touchInteraction.current = false;
     }
   };
@@ -72,9 +70,6 @@ export const PageComponent: React.FC<PageComponentProps> = ({
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (currentPageId !== page.id) {
-      setIsNavigating(true);
-    }
     if (touchInteraction.current) {
       e.preventDefault();
       return;
@@ -92,7 +87,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
           onTouchMove={handleTouchMove}
         >
           <Link
-            href={`/workspace/${page.id}`}
+            href={`/workspace?pageId=${page.id}`}
             onClick={handleClick}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -111,7 +106,6 @@ export const PageComponent: React.FC<PageComponentProps> = ({
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {page.title}
             </span>
-            {isNavigating && <Loader2 className="ml-2 h-3 w-3 animate-spin" />}
           </Link>
         </div>
       </ContextMenuTrigger>
