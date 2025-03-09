@@ -140,8 +140,10 @@ const TreeNode: React.FC<{
         throw new Error("Failed to create tab");
       }
 
+      const successResult = newTab as { success: true; id: string };
+
       // Navigate to the content with type parameter
-      router.push(`/workspace?pageId=${pageId}&tabId=${newTab.id}`);
+      router.push(`/workspace?pageId=${pageId}&tabId=${successResult.id}`);
     } catch (error) {
       console.error("Error creating tab:", error);
       toast.error("Failed to open item");
