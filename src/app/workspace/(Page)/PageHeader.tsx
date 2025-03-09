@@ -11,6 +11,7 @@ import { TreeTag } from "~/server/queries/usersTags";
 import AddMetadata from "../@page/(AddResource)/AddMetadata";
 import { Resource } from "~/server/queries/resource";
 import PageResourceInfo from "../@page/(ResourceInfo)/PageResourceInfo";
+import TagCrumbs from "./TagCrumbs";
 
 interface PageHeaderProps {
   tags: Tag[];
@@ -27,7 +28,9 @@ export function PageHeader({ tags, userTagTree, resources }: PageHeaderProps) {
     <div className="p-4">
       <div className="flex items-center justify-between pb-4">
         <div className="flex-1"></div>
-        <div className="flex w-4/5 flex-1 justify-center"></div>
+        <div className="flex w-4/5 flex-1 justify-center">
+          <TagCrumbs tags={tags} />
+        </div>
         <div className="flex flex-1 items-center justify-end">
           {isMetadataOpen && (
             <>
