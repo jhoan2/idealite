@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Loader2, FileCheck } from "lucide-react";
 import HeadingEditor from "./HeadingEditor";
 import BodyEditor from "./(BodyEditor)/BodyEditor";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { TreeTag } from "~/server/queries/usersTags";
 
 export default function PageEditors({
@@ -19,7 +19,8 @@ export default function PageEditors({
   };
   userTagTree: TreeTag[];
 }) {
-  const pageId = useParams().pageId as string;
+  const searchParams = useSearchParams();
+  const pageId = searchParams.get("pageId") as string;
   const [isSavingTitle, setIsSavingTitle] = useState(false);
   const [isSavingContent, setIsSavingContent] = useState(false);
 
