@@ -22,10 +22,7 @@ const TOUR_FEATURE_KEY = "global_tags_tour";
 export function GlobalTagsTour({ children }: { children: React.ReactNode }) {
   const [currentStep, setCurrentStep] = useState<TourStep>(TourStep.SELECT_TAG);
   const [isVisible, setIsVisible] = useState(true);
-  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
-  const [createdPageId, setCreatedPageId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const router = useRouter();
   const { data: session } = useSession();
   const userId = session?.user?.id;
 
@@ -81,7 +78,6 @@ export function GlobalTagsTour({ children }: { children: React.ReactNode }) {
       console.log("Tag added event received:", customEvent.detail);
 
       if (currentStep === TourStep.SELECT_TAG) {
-        setSelectedTagId(customEvent.detail.tagId);
         setCurrentStep(TourStep.CREATE_PAGE);
       }
     };
@@ -99,7 +95,6 @@ export function GlobalTagsTour({ children }: { children: React.ReactNode }) {
       console.log("Page created event received:", customEvent.detail);
 
       if (currentStep === TourStep.CREATE_PAGE) {
-        setCreatedPageId(customEvent.detail.pageId);
         setCurrentStep(TourStep.NAVIGATE_TO_PAGE);
       }
     };
@@ -252,13 +247,6 @@ export function GlobalTagsTour({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
-
-      {/* Fixed controls at bottom of screen */}
-      <div className="fixed bottom-4 right-4 z-[9999] flex gap-2">
-        <Button variant="outline" size="sm" onClick={skipTour}>
-          Skip Tour
-        </Button>
-      </div>
 
       {/* Add custom styles for animation */}
       <style jsx global>{`
