@@ -5,6 +5,9 @@ import { RightSideBar } from "./(Page)/(RightSidebar)/RightSideBar";
 import { headers } from "next/headers";
 import { TagTreeContainer } from "./(TagTreeNav)/TagTreeContainer";
 import { trackEvent } from "~/lib/posthog/server";
+import { getUserDiscoveredFeatures } from "~/server/queries/featureDiscovery";
+import { FeatureDiscoveryProvider } from "./(FeatureDiscover)/FeatureDiscoveryContext";
+
 export default async function WorkspaceLayout({
   children,
   editor,
@@ -18,8 +21,9 @@ export default async function WorkspaceLayout({
 }) {
   const session = await auth();
   const userId = session?.user?.id;
-  const [userTagTree] = await Promise.all([
+  const [userTagTree, initialDiscoveredFeatures] = await Promise.all([
     userId ? getUserTagTree(userId) : [],
+    userId ? getUserDiscoveredFeatures(userId) : [],
   ]);
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
@@ -33,35 +37,40 @@ export default async function WorkspaceLayout({
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "24rem",
-        } as React.CSSProperties
-      }
-      defaultOpen={false}
+    <FeatureDiscoveryProvider
+      userId={userId ?? ""}
+      initialDiscoveredFeatures={initialDiscoveredFeatures}
     >
-      <div className="flex h-screen w-full overflow-hidden">
-        <TagTreeContainer
-          userTagTree={userTagTree}
-          userId={userId ?? ""}
-          isMobile={isMobile ?? false}
-        />
-        <div className="custom-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto">
-          {tabs}
-          <div className="w-full">
-            {page}
-            {children}
-          </div>
-        </div>
-        {editor}
-        <div>
-          <RightSideBar
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "24rem",
+          } as React.CSSProperties
+        }
+        defaultOpen={false}
+      >
+        <div className="flex h-screen w-full overflow-hidden">
+          <TagTreeContainer
             userTagTree={userTagTree}
+            userId={userId ?? ""}
             isMobile={isMobile ?? false}
           />
+          <div className="custom-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto">
+            {tabs}
+            <div className="w-full">
+              {page}
+              {children}
+            </div>
+          </div>
+          {editor}
+          <div>
+            <RightSideBar
+              userTagTree={userTagTree}
+              isMobile={isMobile ?? false}
+            />
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </FeatureDiscoveryProvider>
   );
 }

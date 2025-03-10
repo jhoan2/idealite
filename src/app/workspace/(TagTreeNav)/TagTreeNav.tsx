@@ -53,6 +53,8 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import Link from "next/link";
+import { FeatureTooltip } from "../(FeatureDiscover)/FeatureTooltip";
+import { FeatureKey } from "../(FeatureDiscover)/FeatureDiscoveryContext";
 
 interface DrawerState {
   isOpen: boolean;
@@ -587,11 +589,19 @@ const MinimalistTree: React.FC<
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex justify-center pt-2">
-        <Button variant="ghost" size="icon" title="Global Tags">
-          <Link href="/workspace/global-tags">
-            <Compass className="h-4 w-4" />
-          </Link>
-        </Button>
+        <FeatureTooltip
+          featureKey={FeatureKey.GLOBAL_TAGS}
+          title="Global Tags Management"
+          description="Access and manage all your tags in one centralized place."
+          position="bottom"
+          showPointer={true}
+        >
+          <Button variant="ghost" size="icon" title="Global Tags">
+            <Link href="/workspace/global-tags">
+              <Compass className="h-4 w-4" />
+            </Link>
+          </Button>
+        </FeatureTooltip>
       </div>
       <div
         className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto pl-4`}
