@@ -57,6 +57,7 @@ export default async function PageContent({
             content={content}
             pageId={pageId}
             tags={tags}
+            isMobile={isMobile ?? false}
           />
         ) : (
           <PageEditors

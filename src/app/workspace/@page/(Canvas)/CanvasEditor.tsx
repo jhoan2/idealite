@@ -256,11 +256,13 @@ export default function CanvasEditor({
   content,
   pageId,
   tags,
+  isMobile,
 }: {
   title: string;
   content: any;
   pageId: string;
   tags: Tag[];
+  isMobile: boolean;
 }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -345,7 +347,11 @@ export default function CanvasEditor({
   };
 
   return (
-    <div className="relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden">
+    <div
+      className={`relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden ${
+        isMobile ? "pb-16" : "pb-2"
+      }`}
+    >
       <CanvasTour>
         <div className="absolute bottom-10 right-2 z-50">
           <div className="auto-save-indicator">
