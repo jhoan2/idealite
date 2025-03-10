@@ -2,6 +2,7 @@ import GlobalTagState from "./(GlobalTagTree)/GlobalTagState";
 import { getTagWithChildren } from "~/server/queries/tag";
 import { getUserTags } from "~/server/queries/usersTags";
 import { auth } from "~/app/auth";
+import { GlobalTagsTour } from "./GlobalTagsTour";
 
 export default async function GlobalTagsPage() {
   const session = await auth();
@@ -11,6 +12,8 @@ export default async function GlobalTagsPage() {
   );
   const userTags = await getUserTags(userId ?? "");
   return (
-    <GlobalTagState tag={tag} userTags={userTags} userId={userId ?? null} />
+    <GlobalTagsTour>
+      <GlobalTagState tag={tag} userTags={userTags} userId={userId ?? null} />
+    </GlobalTagsTour>
   );
 }

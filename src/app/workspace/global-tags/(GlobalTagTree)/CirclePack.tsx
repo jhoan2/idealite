@@ -101,8 +101,17 @@ function CirclePack({ width = 600, height = 600, tagTree }: CirclePackProps) {
 
     try {
       const result = await addUserTag(node.data.id);
-      if (!result.success) {
-        throw new Error(result.error);
+
+      if (result.success) {
+        // Dispatch custom event when tag is successfully added
+        window.dispatchEvent(
+          new CustomEvent("tag-added", {
+            detail: {
+              tagId: node.data.id,
+              tagName: node.data.name,
+            },
+          }),
+        );
       }
     } catch (error) {
       console.error("Failed to add tag:", error);

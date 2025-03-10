@@ -158,6 +158,18 @@ const TreeNode: React.FC<{
       const pageInput = createUntitledPage(node, allTags);
       const result = await createPage(pageInput, type);
 
+      if (result.success) {
+        // Dispatch the page-created event
+        window.dispatchEvent(
+          new CustomEvent("page-created", {
+            detail: {
+              pageId: "123",
+              tagId: node.id,
+            },
+          }),
+        );
+      }
+
       if (!result.success) {
         throw new Error("Failed to create page");
       }
