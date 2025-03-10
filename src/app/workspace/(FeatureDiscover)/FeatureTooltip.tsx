@@ -44,13 +44,13 @@ export function FeatureTooltip({
 
   const handleDismiss = async () => {
     setIsVisible(false);
-    // await markDiscovered(featureKey);
+    await markDiscovered(featureKey);
   };
 
   const handleClick = async () => {
     if (dismissOnClick) {
       setIsVisible(false);
-      // await markDiscovered(featureKey);
+      await markDiscovered(featureKey);
     }
   };
 
