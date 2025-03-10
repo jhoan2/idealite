@@ -1,4 +1,3 @@
-// src/components/feature-discovery/FeatureDiscoveryContext.tsx
 "use client";
 
 import {
