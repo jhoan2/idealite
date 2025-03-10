@@ -5,11 +5,13 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import PlayTopNav from "./PlayTopNav";
-
+import FarcasterSignIn from "./FarcasterSignIn";
 export default function Games({
   userPlayStats,
+  isWarpcast,
 }: {
   userPlayStats: { points: number; cash: number };
+  isWarpcast: boolean;
 }) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const items = [
@@ -68,6 +70,10 @@ export default function Games({
       load();
     }
   }, [isSDKLoaded]);
+
+  if (isWarpcast) {
+    return <FarcasterSignIn />;
+  }
 
   return (
     <div className="p-6">
