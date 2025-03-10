@@ -66,6 +66,7 @@ export default async function PageContent({
             content={content}
             userTagTree={userTagTree}
             tags={tags}
+            isMobile={isMobile ?? false}
           />
         )}
       </Suspense>
