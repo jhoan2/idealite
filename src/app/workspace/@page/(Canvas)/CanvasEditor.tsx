@@ -349,7 +349,7 @@ export default function CanvasEditor({
   return (
     <div
       className={`relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden ${
-        isMobile ? "pb-16" : "pb-2"
+        isMobile ? "pb-4" : "pb-2"
       }`}
     >
       <CanvasTour>
