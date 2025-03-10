@@ -8,10 +8,7 @@ import {
   ReactNode,
 } from "react";
 import { markFeatureDiscovered } from "~/server/actions/featureDiscovery";
-import {
-  getUserDiscoveredFeatures,
-  hasDiscoveredFeature,
-} from "~/server/queries/featureDiscovery";
+import { getUserDiscoveredFeatures } from "~/server/queries/featureDiscovery";
 
 // Define feature keys for consistency
 export enum FeatureKey {

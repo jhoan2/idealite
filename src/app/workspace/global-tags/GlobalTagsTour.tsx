@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { X, ArrowRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { useRouter } from "next/navigation";
 import { markFeatureDiscovered } from "~/server/actions/featureDiscovery";
 import { hasDiscoveredFeature } from "~/server/queries/featureDiscovery";
 import { useSession } from "next-auth/react";

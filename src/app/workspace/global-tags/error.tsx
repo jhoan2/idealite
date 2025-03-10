@@ -1,4 +1,4 @@
-"use client"; // Error components must be Client Components
+"use client";
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
