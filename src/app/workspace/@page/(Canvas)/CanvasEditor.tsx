@@ -20,6 +20,7 @@ import { debounce } from "lodash";
 import * as Sentry from "@sentry/nextjs";
 import { Tag } from "~/server/db/schema";
 import { CanvasTour } from "./CanvasTour";
+import { MobileCanvasTour } from "./MobileCanvasTour";
 
 interface SaveCanvasButtonProps {
   pageId: string;
@@ -347,37 +348,62 @@ export default function CanvasEditor({
   };
 
   return (
-    <div
-      className={`relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden ${
-        isMobile ? "pb-4" : "pb-2"
-      }`}
-    >
-      <CanvasTour>
-        <div className="absolute bottom-10 right-2 z-50">
-          <div className="auto-save-indicator">
-            {autoSaveStatus === "idle" && (
-              <span className="text-xs text-gray-400">Auto-save ready</span>
-            )}
-            {autoSaveStatus === "saving" && (
-              <span className="text-xs text-blue-400">Saving...</span>
-            )}
-            {autoSaveStatus === "saved" && (
-              <span className="text-xs text-green-400">Saved</span>
-            )}
-            {autoSaveStatus === "error" && (
-              <span className="text-xs text-red-400">Save failed</span>
-            )}
+    <div className="relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden">
+      {isMobile ? (
+        <MobileCanvasTour>
+          <div className="absolute bottom-10 right-2 z-50">
+            <div className="auto-save-indicator">
+              {autoSaveStatus === "idle" && (
+                <span className="text-xs text-gray-400">Auto-save ready</span>
+              )}
+              {autoSaveStatus === "saving" && (
+                <span className="text-xs text-blue-400">Saving...</span>
+              )}
+              {autoSaveStatus === "saved" && (
+                <span className="text-xs text-green-400">Saved</span>
+              )}
+              {autoSaveStatus === "error" && (
+                <span className="text-xs text-red-400">Save failed</span>
+              )}
+            </div>
           </div>
-        </div>
-        <Tldraw
-          components={components}
-          options={{ maxPages: 1 }}
-          persistenceKey={`${pageId}-canvas`}
-          snapshot={content}
-          assets={myAssetStore}
-          overrides={overrides}
-        />
-      </CanvasTour>
+          <Tldraw
+            components={components}
+            options={{ maxPages: 1 }}
+            persistenceKey={`${pageId}-canvas`}
+            snapshot={content}
+            assets={myAssetStore}
+            overrides={overrides}
+          />
+        </MobileCanvasTour>
+      ) : (
+        <CanvasTour>
+          <div className="absolute bottom-10 right-2 z-50">
+            <div className="auto-save-indicator">
+              {autoSaveStatus === "idle" && (
+                <span className="text-xs text-gray-400">Auto-save ready</span>
+              )}
+              {autoSaveStatus === "saving" && (
+                <span className="text-xs text-blue-400">Saving...</span>
+              )}
+              {autoSaveStatus === "saved" && (
+                <span className="text-xs text-green-400">Saved</span>
+              )}
+              {autoSaveStatus === "error" && (
+                <span className="text-xs text-red-400">Save failed</span>
+              )}
+            </div>
+          </div>
+          <Tldraw
+            components={components}
+            options={{ maxPages: 1 }}
+            persistenceKey={`${pageId}-canvas`}
+            snapshot={content}
+            assets={myAssetStore}
+            overrides={overrides}
+          />
+        </CanvasTour>
+      )}
     </div>
   );
 }
