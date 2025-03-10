@@ -18,6 +18,7 @@ export enum FeatureKey {
   CANVAS_EDITOR = "canvas_editor",
   TAG_MANAGEMENT = "tag_management",
   GLOBAL_TAGS = "global_tags",
+  TAG_TREE_NAVIGATION = "tag_tree_navigation",
 }
 
 type FeatureDiscoveryContextType = {
