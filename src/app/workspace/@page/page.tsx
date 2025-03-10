@@ -12,6 +12,7 @@ import CanvasEditor from "./(Canvas)/CanvasEditor";
 import { getResourcesForPage } from "~/server/queries/resource";
 import HeaderSkeleton from "./HeaderSkeleton";
 import EditorSkeleton from "./EditorSkeleton";
+import { headers } from "next/headers";
 
 export default async function PageContent({
   searchParams,
@@ -22,6 +23,10 @@ export default async function PageContent({
   const userId = session?.user?.id;
   const pageIdParam = searchParams.pageId;
   const pageId = typeof pageIdParam === "string" ? pageIdParam : undefined;
+  const headersList = headers();
+  const userAgent = headersList.get("user-agent");
+
+  const isMobile = userAgent?.toLowerCase().includes("mobile");
 
   if (!pageId) {
     return null;
@@ -42,6 +47,7 @@ export default async function PageContent({
           tags={tags}
           userTagTree={userTagTree}
           resources={resources}
+          isMobile={isMobile ?? false}
         />
       </Suspense>
       <Suspense fallback={<EditorSkeleton />}>
