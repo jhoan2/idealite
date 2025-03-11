@@ -1,4 +1,3 @@
-import { getUserPlayStats } from "~/server/queries/user";
 import { auth } from "../auth";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
@@ -48,15 +47,7 @@ export default async function PlayPage() {
   const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
 
   if (!session?.user?.id) {
-    return (
-      <Games
-        userPlayStats={{ points: 0, cash: 0 }}
-        isWarpcast={isWarpcast ?? false}
-      />
-    );
+    return <Games isWarpcast={isWarpcast ?? false} />;
   }
-  const userPlayStats = await getUserPlayStats(session.user.id);
-  return (
-    <Games userPlayStats={userPlayStats} isWarpcast={isWarpcast ?? false} />
-  );
+  return <Games isWarpcast={isWarpcast ?? false} />;
 }

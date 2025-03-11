@@ -7,13 +7,7 @@ import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { Users, User, WalletCardsIcon as Cards, Info } from "lucide-react";
 import FarcasterSignIn from "./FarcasterSignIn";
 
-export default function Games({
-  userPlayStats,
-  isWarpcast,
-}: {
-  userPlayStats: { points: number; cash: number };
-  isWarpcast: boolean;
-}) {
+export default function Games({ isWarpcast }: { isWarpcast: boolean }) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const items = [
     {
@@ -100,29 +94,6 @@ export default function Games({
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Play</h2>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 font-semibold">
-            <img
-              src="/points/Premium 2nd Outline 64px.png"
-              alt="points"
-              className="h-8 w-8"
-            />
-            <span>{userPlayStats.points} </span>
-          </div>
-
-          <div className="flex items-center gap-2 font-semibold">
-            <img
-              src="/cash/Blue Cash 1st Outline 64px.png"
-              alt="cash"
-              className="h-8 w-8"
-            />
-            <span>{userPlayStats.cash}</span>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => (
           <Link key={item.id} href={item.href} className="group flex flex-col">
