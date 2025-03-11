@@ -43,7 +43,7 @@ export default async function PlayLayout({
           </div>
         </div>
       </div>
-      <div className="flex border-b border-gray-700">
+      {/* <div className="flex border-b border-gray-700">
         <Link
           href="/play"
           className="flex-1 py-3 text-center font-medium text-gray-400"
@@ -56,13 +56,13 @@ export default async function PlayLayout({
         >
           Leaderboard
         </Link>
-        {/* <Link
+        <Link
           href="/play/shop"
           className="flex-1 py-3 text-center font-medium text-gray-400"
         >
           Shop
-        </Link> */}
-      </div>
+        </Link>
+      </div> */}
       {children}
     </div>
   );
