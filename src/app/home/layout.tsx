@@ -1,5 +1,5 @@
+import { headers } from "next/headers";
 export default function HomeLayout({
-  children,
   tagmastery,
   totalcards,
   cardactivity,
@@ -9,8 +9,16 @@ export default function HomeLayout({
   totalcards: React.ReactNode;
   cardactivity: React.ReactNode;
 }) {
+  const headersList = headers();
+  const userAgent = headersList.get("user-agent");
+  const isMobile = userAgent?.toLowerCase().includes("mobile");
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 dark:bg-gray-900 md:p-6">
+    <div
+      className={`min-h-screen bg-gray-50 p-4 dark:bg-gray-900 md:p-6 ${
+        isMobile ? "pb-20" : ""
+      }`}
+    >
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
 
       <div className="grid grid-cols-1 gap-4">
