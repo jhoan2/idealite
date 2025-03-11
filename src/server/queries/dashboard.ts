@@ -1,3 +1,43 @@
+
+export type CardStatusData = {
+  status: string;
+  count: number;
+  color: string;
+};
+
+export async function getCardStatusDistribution(): Promise<CardStatusData[]> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const result = await db
+    .select({
+      status: cards.status,
+      count: count(),
+    })
+    .from(cards)
+    .where(and(eq(cards.user_id, session.user.id), eq(cards.deleted, false)))
+    .groupBy(cards.status);
+
+  // Transform to add colors
+  const statusColors = {
+    active: "hsl(var(--chart-6))",
+    mastered: "hsl(var(--chart-7))",
+    suspended: "hsl(var(--chart-8))",
+  };
+
+  const statusLabels = {
+    active: "Learning",
+    mastered: "Mastered",
+    suspended: "Paused",
+  };
+
+  return result.map((row) => ({
+    status: statusLabels[row.status as keyof typeof statusLabels] || row.status,
+    count: row.count,
+    color: statusColors[row.status as keyof typeof statusColors] || "#888888",
+  }));
+}
+
 export type CardActivityStats = {
   cardsCreatedThisWeek: number;
   cardsReviewedThisWeek: number;
