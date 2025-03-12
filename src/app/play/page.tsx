@@ -1,4 +1,3 @@
-import { auth } from "../auth";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import { headers } from "next/headers";
@@ -41,13 +40,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PlayPage() {
-  const session = await auth();
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
   const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
 
-  if (!session?.user?.id) {
-    return <Games isWarpcast={isWarpcast ?? false} />;
-  }
   return <Games isWarpcast={isWarpcast ?? false} />;
 }
