@@ -79,11 +79,11 @@ export default function Games({ isWarpcast }: { isWarpcast: boolean }) {
   useEffect(() => {
     const load = async () => {
       sdk.actions.ready();
-      sdk.actions.addFrame();
     };
 
     if (sdk && !isSDKLoaded) {
       setIsSDKLoaded(true);
+      sdk.actions.addFrame();
       load();
     }
   }, [isSDKLoaded]);
