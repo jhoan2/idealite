@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { Users, User, WalletCardsIcon as Cards, Info } from "lucide-react";
 import FarcasterSignIn from "./FarcasterSignIn";
-
+import { useSession } from "next-auth/react";
 export default function Games({ isWarpcast }: { isWarpcast: boolean }) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const { data: session } = useSession();
   const items = [
     {
       id: "1",
@@ -88,7 +89,7 @@ export default function Games({ isWarpcast }: { isWarpcast: boolean }) {
     }
   }, [isSDKLoaded]);
 
-  if (isWarpcast) {
+  if (isWarpcast && !session?.user?.id) {
     return <FarcasterSignIn />;
   }
 

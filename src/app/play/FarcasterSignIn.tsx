@@ -64,11 +64,11 @@ export default function FarcasterSignIn() {
   }, [signInSuccess, router]);
 
   return (
-    <div className="text-center">
+    <div className="pb-28 pt-4 text-center">
       {/* Main Content */}
-      <main className="flex flex-col items-center px-6 pt-12">
+      <main className="flex flex-col items-center px-6">
         {/* Hero Image */}
-        <div className="relative mb-8 flex aspect-square w-full max-w-md items-center justify-center">
+        <div className="relative mb-6 flex aspect-square w-full max-w-md items-center justify-center">
           <Image
             src="/icon256.png"
             alt="Mathematical rocket illustration"
@@ -80,7 +80,7 @@ export default function FarcasterSignIn() {
         </div>
 
         {/* Text Content */}
-        <div className="mb-8 space-y-4 text-center">
+        <div className="mb-6 space-y-3 text-center">
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
             An MMO Learning Game
           </h1>
