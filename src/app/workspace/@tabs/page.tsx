@@ -11,9 +11,10 @@ export default async function TabsPage() {
   const userAgent = headersList.get("user-agent");
 
   const isMobile = userAgent?.toLowerCase().includes("mobile");
+  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
   const activeTabId = userTabs?.find((tab) => tab.is_active)?.id ?? null;
 
-  if (isMobile) {
+  if (isMobile || isWarpcast) {
     return null;
   }
 
