@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "~/server/db";
-import { pages, tabs, users_pages } from "~/server/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { tabs } from "~/server/db/schema";
+import { and, eq } from "drizzle-orm";
 import { auth } from "~/app/auth";
 import { revalidatePath } from "next/cache";
 
@@ -14,34 +14,54 @@ export async function createTab(data: { title: string; path: string }) {
     return { success: false, error: "User not authenticated" };
   }
 
-  const newTab = await db
-    .insert(tabs)
-    .values({
-      user_id: user_id,
-      title: data.title,
-      path: data.path,
-      is_active: true,
-      position: 0,
-    })
-    .returning();
-
-  revalidatePath(`/workspace/${data.path}`);
-
-  return { success: true, id: newTab[0]?.id };
-}
-
-export async function setActiveTab(tabId: string) {
-  const tab = await db.transaction(async (tx) => {
-    // Deactivate all tabs
-    await tx.update(tabs).set({ is_active: false });
-
-    // Activate selected tab
-    await tx.update(tabs).set({ is_active: true }).where(eq(tabs.id, tabId));
+  // First check if a tab with this path already exists
+  const existingTab = await db.query.tabs.findFirst({
+    where: and(eq(tabs.user_id, user_id), eq(tabs.path, data.path)),
   });
 
-  revalidatePath("/workspace");
+  if (existingTab) {
+    // If tab exists, just set it as active
+    await db.transaction(async (tx) => {
+      // Deactivate all tabs
+      await tx
+        .update(tabs)
+        .set({ is_active: false })
+        .where(eq(tabs.user_id, user_id));
 
-  return tab;
+      // Activate this tab
+      await tx
+        .update(tabs)
+        .set({ is_active: true })
+        .where(eq(tabs.id, existingTab.id));
+    });
+
+    revalidatePath("/workspace");
+    return { success: true, id: existingTab.id };
+  }
+
+  // If no existing tab, create a new one
+  return await db.transaction(async (tx) => {
+    // Deactivate all current tabs
+    await tx
+      .update(tabs)
+      .set({ is_active: false })
+      .where(eq(tabs.user_id, user_id));
+
+    // Create new active tab
+    const insertedTabs = await tx
+      .insert(tabs)
+      .values({
+        user_id: user_id,
+        title: data.title,
+        path: data.path,
+        is_active: true,
+        position: 0,
+      })
+      .returning();
+
+    revalidatePath("/workspace");
+    return { success: true, id: insertedTabs[0]?.id };
+  });
 }
 
 export async function closeTab(tabId: string) {

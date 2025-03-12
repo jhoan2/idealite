@@ -19,18 +19,20 @@ import { NodeSelection } from "@tiptap/pm/state";
 import { Input } from "~/components/ui/input";
 import StackCardsIcon from "./StackCardsIcon";
 import { Loader2 } from "lucide-react";
+import { Tag } from "~/server/db/schema";
 
 const BodyEditor = ({
   content,
   immediatelyRender = false,
-
   onSavingStateChange,
   pageId,
+  tags,
 }: {
   content: string;
   immediatelyRender?: boolean;
   onSavingStateChange: (isSaving: boolean) => void;
   pageId: string;
+  tags: Tag[];
 }) => {
   const [editorContent, setEditorContent] = useState(content);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -209,6 +211,7 @@ const BodyEditor = ({
       const baseCardData = {
         pageId,
         nextReview: twoWeeksFromNow.toISOString(),
+        tagIds: tags.map((tag) => tag.id),
       };
 
       let cardData;

@@ -772,5 +772,41 @@ export const pointsHistoryRelations = relations(points_history, ({ one }) => ({
 // });
 
 // =====================
+// Feature Discovery Schema
+// =====================
+
+export const feature_discoveries = createTable(
+  "feature_discoveries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    feature_key: text("feature_key").notNull(),
+    discovered_at: timestamp("discovered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => {
+    return {
+      user_feature_idx: index("user_feature_idx").on(
+        table.user_id,
+        table.feature_key,
+      ),
+    };
+  },
+);
+
+export const featureDiscoveriesRelations = relations(
+  feature_discoveries,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [feature_discoveries.user_id],
+      references: [users.id],
+    }),
+  }),
+);
+
+// =====================
 // =====================
 // =====================

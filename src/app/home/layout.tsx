@@ -1,69 +1,41 @@
-import React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { getChannelDetails, getNewMembers } from "~/server/farcaster";
-import PostButton from "./PostButton";
-import Image from "next/image";
-
-export default async function HomeLayout({
-  children,
+import { headers } from "next/headers";
+export default function HomeLayout({
+  tagmastery,
+  totalcards,
+  cardactivity,
 }: {
   children: React.ReactNode;
+  tagmastery: React.ReactNode;
+  totalcards: React.ReactNode;
+  cardactivity: React.ReactNode;
 }) {
-  const channelDetails = await getChannelDetails("idealite");
-  const { users } = await getNewMembers("idealite");
+  const headersList = headers();
+  const userAgent = headersList.get("user-agent");
+  const isMobile = userAgent?.toLowerCase().includes("mobile");
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-lg md:w-2/3">
-        <div className="relative h-64">
-          <Image
-            src={channelDetails.channel.header_image_url}
-            alt="Group banner"
-            fill
-            className="object-cover"
-            priority
-            sizes="(max-width: 768px) 100vw, 66vw"
-          />
-        </div>
-        <div className="p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Image
-                  src={channelDetails.channel.image_url}
-                  alt="Channel logo"
-                  width={48}
-                  height={48}
-                  className="mb-2 rounded-lg"
-                  priority
-                />
-                <h1 className="text-2xl font-bold text-foreground">
-                  {channelDetails.channel.name}
-                </h1>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Farcaster · {channelDetails.channel.follower_count} members
-              </p>
-            </div>
-            <div>
-              <PostButton />
-            </div>
+    <div
+      className={`min-h-screen bg-gray-50 p-4 dark:bg-gray-900 md:p-6 ${
+        isMobile ? "pb-20" : ""
+      }`}
+    >
+      <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
+
+      <div className="grid grid-cols-1 gap-4">
+        {/* Top row - Card Activity Stats (spans full width) */}
+        {cardactivity}
+
+        {/* Bottom row - Graphs */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Bar Graph - Tag Mastery */}
+          <div className="rounded-xl bg-white shadow-sm transition-all hover:shadow-md dark:bg-gray-800">
+            <div className="h-full overflow-auto">{tagmastery}</div>
           </div>
-          <div className="mb-4 flex -space-x-2 overflow-hidden">
-            {users.map((user: any, index: number) => (
-              <Avatar
-                key={index}
-                className="inline-block border-2 border-background"
-              >
-                <AvatarImage src={user.pfp_url} alt={user.username} />
-                <AvatarFallback>{user.username[0]}</AvatarFallback>
-              </Avatar>
-            ))}
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">
-              +{channelDetails.channel.follower_count - users.length}
-            </div>
+
+          {/* Circle Graph - Card Status Distribution */}
+          <div className="rounded-xl bg-white shadow-sm transition-all hover:shadow-md dark:bg-gray-800">
+            <div className="h-full overflow-auto">{totalcards}</div>
           </div>
-          <div>{children}</div>
         </div>
       </div>
     </div>

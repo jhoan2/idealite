@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { closeTab } from "~/server/actions/tabs";
 import { toast } from "sonner";
-import { setActiveTab } from "~/server/actions/tabs";
 import { TabBar } from "./TabBar";
 
 interface Tab {
@@ -19,6 +18,10 @@ interface TabBarWrapperProps {
 
 export function TabBarWrapper({ tabs, activeTabId }: TabBarWrapperProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const urlTabId = searchParams.get("tabId");
+  const currentActiveTabId = urlTabId || activeTabId;
 
   const handleTabClose = async (tabId: string) => {
     try {
@@ -33,7 +36,7 @@ export function TabBarWrapper({ tabs, activeTabId }: TabBarWrapperProps) {
         const remainingTabs = tabs.filter((t) => t.id !== tabId);
         const nextTab = remainingTabs[0];
         if (nextTab) {
-          router.push(`/workspace/${nextTab.path}`);
+          router.push(`/workspace?pageId=${nextTab.path}&tabId=${nextTab.id}`);
         }
       }
 
@@ -47,7 +50,7 @@ export function TabBarWrapper({ tabs, activeTabId }: TabBarWrapperProps) {
   return (
     <TabBar
       tabs={tabs}
-      activeTabId={activeTabId ?? null}
+      activeTabId={currentActiveTabId ?? null}
       onTabClose={handleTabClose}
     />
   );
