@@ -1,3 +1,109 @@
+"use server";
+import { db } from "~/server/db";
+import { cards, cards_tags, tags, users_tags } from "~/server/db/schema";
+import { auth } from "~/app/auth";
+import { sql, and, eq, count, or } from "drizzle-orm";
+
+// Define types for the tag mastery data
+export type TagMasteryRawData = {
+  tagName: string;
+  status: string;
+  count: number;
+};
+
+export type TagMasteryData = {
+  name: string;
+  mastered: number;
+  active: number;
+  suspended: number;
+  total: number;
+};
+
+export async function getTagsMasteryData(): Promise<TagMasteryData[]> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const result = await db
+    .select({
+      tagName: tags.name,
+      status: cards.status,
+      count: count(),
+    })
+    .from(cards)
+    .innerJoin(cards_tags, eq(cards.id, cards_tags.card_id))
+    .innerJoin(tags, eq(cards_tags.tag_id, tags.id))
+    .leftJoin(
+      users_tags,
+      and(
+        eq(tags.id, users_tags.tag_id),
+        eq(users_tags.user_id, session.user.id),
+      ),
+    )
+    .where(
+      and(
+        eq(cards.user_id, session.user.id),
+        eq(cards.deleted, false),
+        eq(tags.deleted, false),
+        // Exclude the "root" tag by ID
+        sql`${tags.id} != 'fbb1f204-6500-4b60-ab64-e1a9b3a5da88'`,
+        // Exclude archived tags (if is_archived is null, it's not in users_tags so include it)
+        or(
+          sql`${users_tags.is_archived} IS NULL`,
+          eq(users_tags.is_archived, false),
+        ),
+      ),
+    )
+    .groupBy(tags.name, cards.status)
+    .orderBy(tags.name);
+
+  // Transform for chart consumption
+  const tagMap = new Map<
+    string,
+    {
+      name: string;
+      active: number;
+      mastered: number;
+      suspended: number;
+      total: number;
+    }
+  >();
+
+  result.forEach((row) => {
+    if (!tagMap.has(row.tagName)) {
+      tagMap.set(row.tagName, {
+        name: row.tagName,
+        active: 0,
+        mastered: 0,
+        suspended: 0,
+        total: 0,
+      });
+    }
+
+    const tag = tagMap.get(row.tagName);
+    if (tag) {
+      tag[row.status] = row.count;
+      tag.total += row.count;
+    }
+  });
+
+  // Calculate percentages and limit to top 7 tags with most cards
+  const chartData = Array.from(tagMap.values())
+    .filter((tag) => tag.total >= 3) // Only include tags with at least 3 cards
+    .sort((a, b) => b.total - a.total) // Sort by total card count (descending)
+    .slice(0, 7) // Take top 7 tags
+    .map((tag) => ({
+      name: tag.name,
+      // Calculate percentages, handling division by zero
+      mastered:
+        tag.total > 0 ? Math.round((tag.mastered / tag.total) * 100) : 0,
+      active: tag.total > 0 ? Math.round((tag.active / tag.total) * 100) : 0,
+      suspended:
+        tag.total > 0 ? Math.round((tag.suspended / tag.total) * 100) : 0,
+      total: tag.total, // Keep total for reference
+    }));
+
+  return chartData;
+}
 
 export type CardStatusData = {
   status: string;
