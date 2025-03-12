@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Gamepad2,
+  MessageSquare,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -37,6 +38,7 @@ export default function SideNav({ session }: { session: Session | null }) {
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Gamepad2, label: "Play", href: "/play" },
     { icon: UserRound, label: "Profile", href: "/profile" },
+    { icon: MessageSquare, label: "Chat", href: "/chat" },
   ];
 
   return (

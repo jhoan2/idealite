@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Folder, UserRound, Gamepad2 } from "lucide-react";
+import { Home, Folder, UserRound, Gamepad2, MessageSquare } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 export default function BottomNav() {
@@ -18,6 +18,7 @@ export default function BottomNav() {
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Gamepad2, label: "Play", href: "/play" },
     { icon: UserRound, label: "Profile", href: "/profile" },
+    { icon: MessageSquare, label: "Chat", href: "/chat" },
   ];
 
   return (
