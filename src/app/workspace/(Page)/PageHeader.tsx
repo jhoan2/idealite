@@ -18,6 +18,7 @@ interface PageHeaderProps {
   userTagTree: TreeTag[];
   resources: Resource[];
   isMobile: boolean;
+  isWarpcast: boolean;
 }
 
 export function PageHeader({
@@ -25,6 +26,7 @@ export function PageHeader({
   userTagTree,
   resources,
   isMobile,
+  isWarpcast,
 }: PageHeaderProps) {
   const [isMetadataOpen, setIsMetadataOpen] = useState(false);
   const [isAddMetadataOpen, setIsAddMetadataOpen] = useState(false);
@@ -36,7 +38,7 @@ export function PageHeader({
       <div className="flex items-center justify-between pb-4">
         <div className="flex-1"></div>
         <div className="flex w-4/5 flex-1 justify-center">
-          {isMobile ? null : <TagCrumbs tags={tags} />}
+          {isMobile || isWarpcast ? null : <TagCrumbs tags={tags} />}
         </div>
         <div className="flex flex-1 items-center justify-end">
           {isMetadataOpen && (

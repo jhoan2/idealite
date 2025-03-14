@@ -27,6 +27,7 @@ export default async function PageContent({
   const userAgent = headersList.get("user-agent");
 
   const isMobile = userAgent?.toLowerCase().includes("mobile");
+  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
 
   if (!pageId) {
     return null;
@@ -48,6 +49,7 @@ export default async function PageContent({
           userTagTree={userTagTree}
           resources={resources}
           isMobile={isMobile ?? false}
+          isWarpcast={isWarpcast ?? false}
         />
       </Suspense>
       <Suspense fallback={<EditorSkeleton />}>
