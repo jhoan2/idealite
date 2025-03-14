@@ -3,5 +3,5 @@ export default function SpinWheelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div>{children}</div>;
+  return <div className="pb-20 md:pb-6">{children}</div>;
 }
