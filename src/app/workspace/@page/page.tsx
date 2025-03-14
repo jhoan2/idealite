@@ -60,6 +60,7 @@ export default async function PageContent({
             pageId={pageId}
             tags={tags}
             isMobile={isMobile ?? false}
+            isWarpcast={isWarpcast ?? false}
           />
         ) : (
           <PageEditors
@@ -69,6 +70,7 @@ export default async function PageContent({
             userTagTree={userTagTree}
             tags={tags}
             isMobile={isMobile ?? false}
+            isWarpcast={isWarpcast ?? false}
           />
         )}
       </Suspense>

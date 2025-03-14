@@ -258,12 +258,14 @@ export default function CanvasEditor({
   pageId,
   tags,
   isMobile,
+  isWarpcast,
 }: {
   title: string;
   content: any;
   pageId: string;
   tags: Tag[];
   isMobile: boolean;
+  isWarpcast: boolean;
 }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
@@ -348,8 +350,10 @@ export default function CanvasEditor({
   };
 
   return (
-    <div className="relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden">
-      {isMobile ? (
+    <div
+      className={`relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden ${isWarpcast || isMobile ? "pb-16" : ""}`}
+    >
+      {isMobile || isWarpcast ? (
         <MobileCanvasTour>
           <div className="absolute bottom-10 right-2 z-50">
             <div className="auto-save-indicator">
