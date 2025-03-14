@@ -212,14 +212,16 @@ export default function ClashGameRound({
 
         <div className="mb-6 flex justify-center">
           {currentQuestion && (
-            <div className="">
-              <h2 className="mb-4 text-xl">{currentQuestion.question}</h2>
+            <div className="w-full max-w-[90vw] sm:max-w-lg">
+              <h2 className="mb-4 break-words text-xl">
+                {currentQuestion.question}
+              </h2>
               <div className="flex flex-col gap-2">
                 {Object.entries(currentQuestion.options).map(([key, value]) => (
                   <Button
                     key={key}
                     onClick={() => handleAnswer(key)}
-                    className="p-4 text-left"
+                    className="break-words p-4 text-left"
                   >
                     {key}: {value}
                   </Button>
