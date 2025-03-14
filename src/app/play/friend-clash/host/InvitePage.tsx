@@ -20,7 +20,13 @@ import { Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { castParentUrl } from "~/app/constants";
 
-export default function InvitePage({ isMobile }: { isMobile: boolean }) {
+export default function InvitePage({
+  isMobile,
+  isWarpcast,
+}: {
+  isMobile: boolean;
+  isWarpcast: boolean;
+}) {
   const { data: session } = useSession();
   const { user } = useNeynarContext();
   const [invitees, setInvitees] = useState<string[]>([]);
@@ -72,7 +78,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
   };
 
   const handleSendCast = async () => {
-    if (!user?.signer_uuid) {
+    if (!session?.user?.id) {
       toast.error("Please sign in to cast");
       return;
     }
@@ -85,7 +91,9 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          signer_uuid: user.signer_uuid,
+          signer_uuid: isWarpcast
+            ? process.env.IDEALITE_SIGNER_UUID
+            : user?.signer_uuid,
           text: castText,
           embeds: [
             {
@@ -93,7 +101,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
             },
           ],
           parent: castParentUrl,
-          parent_author_fid: user.fid,
+          parent_author_fid: user?.fid ?? 0,
           channel_id: "idealite",
           idem: uuidv4(),
         }),
