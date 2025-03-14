@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { auth } from "~/app/auth";
 import { BarChart2 } from "lucide-react";
 
@@ -15,15 +14,9 @@ export default async function HomeLayout({
   const session = await auth();
   const isAuthenticated = !!session?.user?.id;
 
-  const headersList = headers();
-  const userAgent = headersList.get("user-agent");
-  const isMobile = userAgent?.toLowerCase().includes("mobile");
-
   return (
     <div
-      className={`min-h-screen bg-gray-50 p-4 dark:bg-gray-900 md:p-6 ${
-        isMobile ? "pb-20" : ""
-      }`}
+      className={`min-h-screen bg-gray-50 p-4 pb-20 dark:bg-gray-900 md:p-6 md:pb-6`}
     >
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
 
