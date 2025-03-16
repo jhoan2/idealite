@@ -13,8 +13,7 @@ export async function POST(req: Request) {
   const { topicName, topicId } = await req.json();
 
   try {
-    // Set lock with 1 hour TTL
-    await redis.set(`trivia:generating:${topicName}`, "1", { ex: 3600 });
+    await redis.set(`trivia:generating:${topicName}`, "1", { ex: 600 });
 
     await generateAndCacheQuestions(topicName, topicId);
 
@@ -23,7 +22,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    // Lock will expire via TTL if we fail
+    await redis.del(`trivia:generating:${topicName}`);
     Sentry.captureException(error);
     throw error; // Let QStash handle retry
   }
