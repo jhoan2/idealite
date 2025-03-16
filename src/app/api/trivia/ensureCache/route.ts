@@ -21,7 +21,9 @@ export async function POST(req: Request) {
     if (keys.length < 150 && !isGenerating) {
       const BASE_URL =
         //comment NEXT_PUBLIC_DEPLOYMENT_URL out for local testing with ngrok
-        process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+        //if you use NEXT_PUBLIC_DEPLOYMENT_URL, it will use the preview deployment url
+        //and not the production url
+        process.env.WEBHOOK_BASE_URL;
       // ??
       // "06be-2601-646-8900-8b60-106b-2411-90e1-445b.ngrok-free.app";
 
