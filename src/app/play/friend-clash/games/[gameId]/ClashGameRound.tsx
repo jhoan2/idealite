@@ -121,6 +121,8 @@ export default function ClashGameRound({
       Sentry.captureException(error, {
         extra: { info: "Failed to submit Friend Clash move" },
       });
+    } finally {
+      moveSubmittingRef.current = false;
     }
   };
 

@@ -66,7 +66,7 @@ export default function InvitePage({
 
       setCastText(
         `Hey ${formattedInvites}! You're invited to join my Friend Clash game! 🎮\n\n` +
-          `idealite.xyz/play/friend-clash/games/${gameSession?.id}`,
+          `https://idealite.xyz/play/friend-clash/games/${gameSession?.id}`,
       );
       setGameSessionId(gameSession?.id ?? null);
       setIsModalOpen(true);
@@ -97,7 +97,7 @@ export default function InvitePage({
           text: castText,
           embeds: [
             {
-              url: `idealite.xyz/play/friend-clash/games/${gameSessionId}`,
+              url: `https://idealite.xyz/play/friend-clash/games/${gameSessionId}`,
             },
           ],
           parent: castParentUrl,
