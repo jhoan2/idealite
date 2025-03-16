@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         //comment NEXT_PUBLIC_DEPLOYMENT_URL out for local testing with ngrok
         //if you use NEXT_PUBLIC_DEPLOYMENT_URL, it will use the preview deployment url
         //and not the production url
-        process.env.WEBHOOK_BASE_URL;
+        process.env.VERCEL_URL;
       // ??
       // "06be-2601-646-8900-8b60-106b-2411-90e1-445b.ngrok-free.app";
 
