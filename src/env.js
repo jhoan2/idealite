@@ -34,7 +34,6 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     RESEND_REPLY_TO_EMAIL: z.string(),
     RESEND_FROM_EMAIL: z.string(),
-    VERCEL_URL: z.string(),
   },
 
   /**
@@ -91,7 +90,6 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_REPLY_TO_EMAIL: process.env.RESEND_REPLY_TO_EMAIL,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
-    VERCEL_URL: process.env.VERCEL_URL,
   },
   /**
 
