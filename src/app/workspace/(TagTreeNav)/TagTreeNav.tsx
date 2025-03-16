@@ -328,8 +328,6 @@ const TreeNode: React.FC<{
         parentFolderId: parentFolder.id,
       });
 
-      console.log(result);
-
       if (!result.success) {
         toast.error(result.error || "Failed to create folder");
         return;
