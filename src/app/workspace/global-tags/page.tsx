@@ -17,9 +17,10 @@ export default async function GlobalTagsPage() {
   const userAgent = headersList.get("user-agent");
 
   const isMobile = userAgent?.toLowerCase().includes("mobile");
+  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
   return (
     <>
-      {isMobile ? (
+      {isMobile || isWarpcast ? (
         <MobileGlobalTagsTour>
           <GlobalTagState
             tag={tag}

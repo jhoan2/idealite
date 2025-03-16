@@ -1,3 +1,4 @@
+"use server";
 import { eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import { game_move, game_session, GameMove } from "~/server/db/schema";
@@ -42,16 +43,19 @@ export async function completeTurn(gameId: string, points: number) {
         })
         .where(eq(game_session.id, game.id));
       await distributeGamePoints(game.id, tx);
-      await fetch("http://localhost:3000/api/notifications", {
-        method: "POST",
-        body: JSON.stringify({
-          type: "GAME_COMPLETED",
-          gameId,
-          username: game.players.join(","), // Notify all players
-          title: "Friend Clash Game Completed! 🏆",
-          body: "The game has ended! Check out the results.",
-        }),
-      });
+      await fetch(
+        `https://${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/notifications`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            type: "GAME_COMPLETED",
+            gameId,
+            username: game.players.join(","), // Notify all players
+            title: "Friend Clash Game Completed! 🏆",
+            body: "The game has ended! Check out the results.",
+          }),
+        },
+      );
     } else {
       // Schedule next turn's deadline
       const nextDeadline = await scheduleNextTurnDeadline(
@@ -69,7 +73,7 @@ export async function completeTurn(gameId: string, points: number) {
         .where(eq(game_session.id, game.id));
       const nextPlayer = game.player_info[nextPlayerIndex]?.username;
       await fetch(
-        `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/notifications`,
+        `https://${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/notifications`,
         {
           method: "POST",
           body: JSON.stringify({

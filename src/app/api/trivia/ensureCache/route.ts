@@ -14,7 +14,6 @@ export async function POST(req: Request) {
   try {
     const { topicName, topicId } = await req.json();
     const pattern = `trivia:${topicName}:*`;
-
     // Check cache and lock atomically
     const keys = await redis.keys(pattern);
     const isGenerating = await redis.get(`trivia:generating:${topicName}`);
@@ -22,8 +21,9 @@ export async function POST(req: Request) {
     if (keys.length < 150 && !isGenerating) {
       const BASE_URL =
         //comment NEXT_PUBLIC_DEPLOYMENT_URL out for local testing with ngrok
-        process.env.NEXT_PUBLIC_DEPLOYMENT_URL ??
-        "99e4-2601-646-8900-8b60-2864-1002-4368-e3ed.ngrok-free.app";
+        process.env.NEXT_PUBLIC_DEPLOYMENT_URL;
+      // ??
+      // "06be-2601-646-8900-8b60-106b-2411-90e1-445b.ngrok-free.app";
 
       if (!BASE_URL) {
         console.error("Missing BASE_URL environment variable");

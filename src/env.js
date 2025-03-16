@@ -21,6 +21,7 @@ export const env = createEnv({
     BLACK_FOREST_API_KEY: z.string(),
     GOOGLE_GEMINI_API_KEY: z.string(),
     PERSONAL_NEYNAR_SIGNER_UUID: z.string(),
+    IDEALITE_SIGNER_UUID: z.string(),
     NEYNAR_WEBHOOK_SECRET: z.string(),
     ROOT_TAG_ID: z.string(),
     ADMIN_USER_ID: z.string(),
@@ -30,6 +31,9 @@ export const env = createEnv({
     QSTASH_CURRENT_SIGNING_KEY: z.string(),
     QSTASH_NEXT_SIGNING_KEY: z.string(),
     STABLE_DIFFUSION_API_KEY: z.string(),
+    RESEND_API_KEY: z.string(),
+    RESEND_REPLY_TO_EMAIL: z.string(),
+    RESEND_FROM_EMAIL: z.string(),
   },
 
   /**
@@ -69,6 +73,7 @@ export const env = createEnv({
     BLACK_FOREST_API_KEY: process.env.BLACK_FOREST_API_KEY,
     GOOGLE_GEMINI_API_KEY: process.env.GOOGLE_GEMINI_API_KEY,
     PERSONAL_NEYNAR_SIGNER_UUID: process.env.PERSONAL_NEYNAR_SIGNER_UUID,
+    IDEALITE_SIGNER_UUID: process.env.IDEALITE_SIGNER_UUID,
     NEYNAR_WEBHOOK_SECRET: process.env.NEYNAR_WEBHOOK_SECRET,
     ROOT_TAG_ID: process.env.ROOT_TAG_ID,
     NEXT_PUBLIC_DEPLOYMENT_URL: process.env.NEXT_PUBLIC_DEPLOYMENT_URL,
@@ -82,6 +87,9 @@ export const env = createEnv({
     QSTASH_CURRENT_SIGNING_KEY: process.env.QSTASH_CURRENT_SIGNING_KEY,
     QSTASH_NEXT_SIGNING_KEY: process.env.QSTASH_NEXT_SIGNING_KEY,
     STABLE_DIFFUSION_API_KEY: process.env.STABLE_DIFFUSION_API_KEY,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_REPLY_TO_EMAIL: process.env.RESEND_REPLY_TO_EMAIL,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
   },
   /**
 

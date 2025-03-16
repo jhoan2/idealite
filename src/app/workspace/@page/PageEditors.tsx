@@ -16,6 +16,7 @@ export default function PageEditors({
   userTagTree,
   tags,
   isMobile,
+  isWarpcast,
 }: {
   title: string;
   content: {
@@ -25,6 +26,7 @@ export default function PageEditors({
   userTagTree: TreeTag[];
   tags: Tag[];
   isMobile: boolean;
+  isWarpcast: boolean;
 }) {
   const searchParams = useSearchParams();
   const pageId = searchParams.get("pageId") as string;
@@ -35,7 +37,7 @@ export default function PageEditors({
 
   return (
     <>
-      {isMobile ? (
+      {isMobile || isWarpcast ? (
         <MobilePageTour>
           <div className="relative">
             <HeadingEditor

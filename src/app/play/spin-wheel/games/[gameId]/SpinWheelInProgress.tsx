@@ -4,15 +4,15 @@ import { GameSessionWithMoves } from "~/server/queries/gameSession";
 import NotYourTurn from "./NotYourTurn";
 import SpinGameRound from "./SpinGameRound";
 
-interface ClashInProgressProps {
+interface SpinWheelInProgressProps {
   gameSession: GameSessionWithMoves;
   currentUsername: string;
 }
 
-export default function ClashInProgress({
+export default function SpinWheelInProgress({
   gameSession,
   currentUsername,
-}: ClashInProgressProps) {
+}: SpinWheelInProgressProps) {
   const currentTurnIndex = gameSession.current_turn_player_index;
   const players = gameSession.players;
   const round = Math.floor(gameSession.moves.length / players.length);
