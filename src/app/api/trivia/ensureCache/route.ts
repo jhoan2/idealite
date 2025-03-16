@@ -19,26 +19,23 @@ export async function POST(req: Request) {
     const isGenerating = await redis.get(`trivia:generating:${topicName}`);
 
     if (keys.length < 150 && !isGenerating) {
-      const BASE_URL =
-        //comment NEXT_PUBLIC_DEPLOYMENT_URL out for local testing with ngrok
-        //if you use NEXT_PUBLIC_DEPLOYMENT_URL, it will use the preview deployment url
-        //and not the production url
-        process.env.VERCEL_URL;
-      // ??
-      // "06be-2601-646-8900-8b60-106b-2411-90e1-445b.ngrok-free.app";
+      // const BASE_URL =
+      //   //comment NEXT_PUBLIC_DEPLOYMENT_URL out for local testing with ngrok
+      //   process.env.NEXT_PUBLIC_DEPLOYMENT_URL ??
+      //   "1ced-2601-646-8900-8b60-2864-1002-4368-e3ed.ngrok-free.app";
 
-      if (!BASE_URL) {
-        console.error("Missing BASE_URL environment variable");
-        return NextResponse.json(
-          { success: false, error: "Server configuration error" },
-          { status: 500 },
-        );
-      }
+      // if (!BASE_URL) {
+      //   console.error("Missing BASE_URL environment variable");
+      //   return NextResponse.json(
+      //     { success: false, error: "Server configuration error" },
+      //     { status: 500 },
+      //   );
+      // }
 
-      const domain = `https://${BASE_URL}`;
-      const destinationUrl = `${domain}/api/trivia/generate`;
+      // const domain = `https://${BASE_URL}`;
+      // const destinationUrl = `${domain}/api/trivia/generate`;
       await qstash.publish({
-        url: destinationUrl,
+        url: "https://idealite.xyz/api/trivia/generate",
         body: JSON.stringify({ topicName, topicId }),
         retries: 3,
         deadline: "1h",
