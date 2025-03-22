@@ -21,7 +21,7 @@ export async function GET(req: Request) {
       );
     }
 
-    let count = 20; // Default count
+    let count = 10; // Default count
     if (countParam) {
       const parsedCount = parseInt(countParam, 10);
       if (!isNaN(parsedCount) && parsedCount > 0) {
