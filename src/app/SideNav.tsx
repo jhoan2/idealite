@@ -32,7 +32,9 @@ export default function SideNav() {
     return null;
   }
 
-  const [isCollapsed, setIsCollapsed] = useState(userId ? false : true);
+  const [isCollapsed, setIsCollapsed] = useState(
+    userId !== null ? false : true,
+  );
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -101,7 +103,9 @@ export default function SideNav() {
         <SignedIn>
           <UserButton />
         </SignedIn>
-        <SignedOut>{!isCollapsed && <SignInButton />}</SignedOut>
+        <SignedOut>
+          <SignInButton />
+        </SignedOut>
         {!isCollapsed && <ModeToggle />}
       </div>
     </nav>
