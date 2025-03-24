@@ -5,14 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import SignOut from "./SignOut";
 import { headers } from "next/headers";
+import { currentUser } from "@clerk/nextjs/server";
 
 export default async function ProfilePage() {
-  const session = await auth();
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
   const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
+  const user = await currentUser();
 
-  if (!session) {
+  if (!user) {
     return <ProfilePlaceholder />;
   }
 
@@ -39,10 +40,7 @@ export default async function ProfilePage() {
             <div className="flex items-center space-x-4">
               <div className="relative overflow-hidden rounded-full bg-muted">
                 <Image
-                  src={
-                    session?.user?.pfp_url ||
-                    "/placeholder.svg?height=80&width=80"
-                  }
+                  src={user?.imageUrl || "/placeholder.svg?height=80&width=80"}
                   alt="Profile picture"
                   className="aspect-square rounded-full object-cover"
                   width={80}
@@ -52,13 +50,13 @@ export default async function ProfilePage() {
               </div>
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold text-foreground">
-                  {session?.user?.display_name}
+                  {user?.fullName}
                 </h2>
                 <p className="text-foreground/60 text-gray-600">
-                  {session?.user?.username}
+                  {user?.username}
                 </p>
                 <p className="text-foreground/60 text-gray-600">
-                  {session?.user?.bio}
+                  {user?.emailAddresses[0]?.emailAddress}
                 </p>
               </div>
             </div>
