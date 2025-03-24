@@ -813,13 +813,3 @@ export const featureDiscoveriesRelations = relations(
 // =====================
 // =====================
 // =====================
-
-export const waitlist = createTable("waitlist", {
-  id: serial("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  name: text("name"),
-  created_at: timestamp("created_at", { withTimezone: true })
-    .default(sql`CURRENT_TIMESTAMP`)
-    .notNull(),
-  is_subscribed: boolean("is_subscribed").default(true).notNull(),
-});

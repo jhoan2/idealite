@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Book, FileImage, Trophy, Users, Zap } from "lucide-react";
-import WaitlistForm from "./WaitlistForm";
 
 export default function FrontPage() {
   return (
@@ -66,16 +65,6 @@ export default function FrontPage() {
             description="Test your knowledge in exciting PvP quiz battles!"
             comingSoon={true}
           />
-        </div>
-
-        {/* Call to Action */}
-        <div className="space-y-4 text-center">
-          <h2 className="mb-6 text-3xl font-bold md:text-4xl">
-            Ready to Transform Learning into an Epic Adventure?
-          </h2>
-          <div className="mx-auto mb-10 max-w-md">
-            <WaitlistForm />
-          </div>
         </div>
       </main>
 
