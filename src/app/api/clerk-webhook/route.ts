@@ -5,6 +5,7 @@ import { db } from "~/server/db";
 import { users } from "~/server/db/schema";
 import { tryCatch } from "~/lib/tryCatch";
 import { Webhook } from "svix";
+import * as Sentry from "@sentry/nextjs";
 
 export async function POST(req: Request) {
   // Get the headers
@@ -49,23 +50,51 @@ export async function POST(req: Request) {
   const eventType = evt.type;
 
   if (eventType === "user.created") {
-    const { id, username, image_url, first_name, last_name } = evt.data;
+    const { id, username, image_url, first_name, last_name, email_addresses } =
+      evt.data;
 
-    // Insert the new user into the database
-    const { error: dbError } = await tryCatch(
-      db.insert(users).values({
-        display_name:
-          first_name && last_name
-            ? `${first_name} ${last_name}`
-            : first_name || username || id,
-        pfp_url: image_url,
-        role: "user",
-      }),
+    // Insert the new user into the database and get the inserted user's ID
+    const { data: insertResult, error: dbError } = await tryCatch(
+      db
+        .insert(users)
+        .values({
+          display_name:
+            first_name && last_name
+              ? `${first_name} ${last_name}`
+              : first_name || username || id,
+          pfp_url: image_url,
+          role: "user",
+          clerk_id: id,
+          email: email_addresses[0]?.email_address || "",
+        })
+        .returning({ id: users.id }),
     );
 
     if (dbError) {
       console.error("Error inserting user:", dbError);
       return new NextResponse("Error inserting user", { status: 500 });
+    }
+
+    // Get the newly created database user ID
+    const databaseUserId = insertResult[0]?.id;
+
+    // Update Clerk user with your database ID as externalId using Clerk API directly
+    const { error: clerkError } = await tryCatch(
+      fetch(`https://api.clerk.dev/v1/users/${id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          external_id: databaseUserId as string,
+        }),
+      }),
+    );
+
+    if (clerkError) {
+      console.error("Error updating Clerk user:", clerkError);
+      Sentry.captureException(clerkError);
     }
 
     return NextResponse.json({ success: true });

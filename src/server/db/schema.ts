@@ -28,6 +28,8 @@ export const createTable = pgTableCreator((name) => `idealite_${name}`);
 
 export const users = createTable("user", {
   id: uuid("id").primaryKey().defaultRandom(),
+  clerk_id: varchar("clerk_id", { length: 256 }).unique(),
+  email: varchar("email", { length: 256 }),
   fid: integer("fid"),
   custody_address: varchar("custody_address", { length: 256 }),
   username: varchar("username", { length: 256 }),
