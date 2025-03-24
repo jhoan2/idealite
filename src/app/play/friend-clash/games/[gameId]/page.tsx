@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
-import { auth } from "~/app/auth";
 import PleaseLogin from "~/app/PleaseLogin";
+import { currentUser } from "@clerk/nextjs/server";
 import { trackEvent } from "~/lib/posthog/server";
 import {
   GameSessionWithMoves,
@@ -56,8 +56,9 @@ export default async function FriendClashPage({
 }: {
   params: { gameId: string };
 }) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  const userId = user?.externalId;
+  if (!userId) {
     return <PleaseLogin />;
   }
 
@@ -69,14 +70,11 @@ export default async function FriendClashPage({
 
   const gameSession = response.data;
 
-  trackEvent(session.user.fid, "friend_clash_game_viewed", {
-    username: session.user.username,
-  });
-
-  return (
-    <ClashGameFrame
-      gameSession={gameSession as GameSessionWithMoves}
-      currentUsername={session.user.username}
-    />
-  );
+  // return (
+  //   <ClashGameFrame
+  //     gameSession={gameSession as GameSessionWithMoves}
+  //     currentUsername={session.user.username}
+  //   />
+  // );
+  return <div>Friend Clash Game</div>;
 }

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session || !session.user) {
+    const user = await currentUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -1,10 +1,10 @@
 import { createClozeCards } from "~/server/actions/card";
 import { getUserPlayStats } from "~/server/queries/user";
-import { auth } from "~/app/auth";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import { trackEvent } from "~/lib/posthog/server";
 import PleaseLogin from "~/app/PleaseLogin";
+import { currentUser } from "@clerk/nextjs/server";
 
 const ClozeFrame = dynamic(() => import("./ClozeFrame"), {
   ssr: false,
@@ -46,16 +46,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ClozePage() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  const userId = user?.externalId;
+  if (!userId) {
     return <PleaseLogin />;
   }
 
-  trackEvent(session.user.fid, "cloze_page_viewed", {
-    username: session.user.username,
-  });
-
-  const userPlayStats = await getUserPlayStats(session.user.id);
+  const userPlayStats = await getUserPlayStats(userId);
   const flashcards = await createClozeCards();
 
   return (
