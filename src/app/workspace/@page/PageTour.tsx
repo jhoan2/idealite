@@ -5,8 +5,7 @@ import { X, ArrowRight, WalletCards, MousePointerClick } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { markFeatureDiscovered } from "~/server/actions/featureDiscovery";
 import { hasDiscoveredFeature } from "~/server/queries/featureDiscovery";
-import { useSession } from "next-auth/react";
-
+import { useUser } from "@clerk/nextjs";
 // Define tour steps
 enum TourStep {
   HIGHLIGHT_TEXT = 0,
@@ -23,8 +22,8 @@ export function PageTour({ children }: { children: React.ReactNode }) {
   );
   const [isVisible, setIsVisible] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
+  const { user } = useUser();
+  const userId = user?.externalId;
 
   // Check if the tour has been completed before
   useEffect(() => {

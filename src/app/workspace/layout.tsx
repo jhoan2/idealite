@@ -1,4 +1,3 @@
-import { auth } from "~/app/auth";
 import { getUserTagTree } from "~/server/queries/usersTags";
 import { SidebarProvider } from "~/components/ui/sidebar";
 import { RightSideBar } from "./(Page)/(RightSidebar)/RightSideBar";
@@ -7,6 +6,7 @@ import { TagTreeContainer } from "./(TagTreeNav)/TagTreeContainer";
 import { trackEvent } from "~/lib/posthog/server";
 import { getUserDiscoveredFeatures } from "~/server/queries/featureDiscovery";
 import { FeatureDiscoveryProvider } from "./(FeatureDiscover)/FeatureDiscoveryContext";
+import { currentUser } from "@clerk/nextjs/server";
 
 export default async function WorkspaceLayout({
   children,
@@ -19,8 +19,8 @@ export default async function WorkspaceLayout({
   tabs: React.ReactNode;
   page: React.ReactNode;
 }) {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
   const [userTagTree, initialDiscoveredFeatures] = await Promise.all([
     userId ? getUserTagTree(userId) : [],
     userId ? getUserDiscoveredFeatures(userId) : [],
@@ -32,7 +32,7 @@ export default async function WorkspaceLayout({
 
   if (userId) {
     trackEvent(Number(userId), "workspace_viewed", {
-      username: session?.user?.username,
+      username: user?.emailAddresses[0]?.emailAddress,
     });
   }
 
