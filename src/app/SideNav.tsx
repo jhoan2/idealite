@@ -18,16 +18,15 @@ import { ModeToggle } from "./NextThemeButton";
 import { NeynarAuthButton } from "@neynar/react";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Session } from "next-auth";
 
-export default function SideNav({ session }: { session: Session | null }) {
+export default function SideNav() {
   const pathname = usePathname();
 
   if (pathname.includes("/channelFrame") || pathname === "/") {
     return null;
   }
 
-  const [isCollapsed, setIsCollapsed] = useState(!session ? false : true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -38,7 +37,6 @@ export default function SideNav({ session }: { session: Session | null }) {
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Gamepad2, label: "Play", href: "/play" },
     { icon: UserRound, label: "Profile", href: "/profile" },
-    { icon: MessageSquare, label: "Chat", href: "/chat" },
   ];
 
   return (
@@ -93,7 +91,7 @@ export default function SideNav({ session }: { session: Session | null }) {
         </nav>
       </ScrollArea>
       <div className="flex flex-col items-center space-y-4 border-t bg-background p-4 text-foreground">
-        {!isCollapsed && <NeynarAuthButton />}
+        {/* {!isCollapsed && <NeynarAuthButton />} */}
         <ModeToggle />
       </div>
     </nav>
