@@ -10,23 +10,29 @@ import {
   ChevronLeft,
   ChevronRight,
   Gamepad2,
-  MessageSquare,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ModeToggle } from "./NextThemeButton";
-import { NeynarAuthButton } from "@neynar/react";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import {
+  SignInButton,
+  SignedOut,
+  SignedIn,
+  UserButton,
+  useAuth,
+} from "@clerk/nextjs";
 
 export default function SideNav() {
   const pathname = usePathname();
+  const { userId } = useAuth();
 
   if (pathname.includes("/channelFrame") || pathname === "/") {
     return null;
   }
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(userId ? false : true);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -90,9 +96,13 @@ export default function SideNav() {
           ))}
         </nav>
       </ScrollArea>
-      <div className="flex flex-col items-center space-y-4 border-t bg-background p-4 text-foreground">
+      <div className="flex items-center justify-between border-t bg-background p-4 text-foreground">
         {/* {!isCollapsed && <NeynarAuthButton />} */}
-        <ModeToggle />
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
+        <SignedOut>{!isCollapsed && <SignInButton />}</SignedOut>
+        {!isCollapsed && <ModeToggle />}
       </div>
     </nav>
   );
