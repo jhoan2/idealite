@@ -2,7 +2,7 @@
 
 import { db } from "~/server/db";
 import { cards } from "~/server/db/schema";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import { and, eq, lte, isNotNull, not } from "drizzle-orm";
 
 export type Card = typeof cards.$inferSelect & {
@@ -17,15 +17,15 @@ export type Card = typeof cards.$inferSelect & {
   }[];
 };
 export async function getPageCards(pageId: string): Promise<Card[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 
   const pageCards = await db.query.cards.findMany({
     where: and(
       eq(cards.page_id, pageId),
-      eq(cards.user_id, session.user.id),
+      eq(cards.user_id, user.externalId),
       eq(cards.deleted, false),
     ),
     with: {
@@ -55,15 +55,15 @@ export async function getPageCards(pageId: string): Promise<Card[]> {
 
 export async function getDueFlashCards() {
   //Flashcards are cards that have content, which is different from those cards with images.
-  const session = await auth();
+  const user = await currentUser();
 
-  if (!session?.user?.id) {
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 
   return await db.query.cards.findMany({
     where: and(
-      eq(cards.user_id, session.user.id),
+      eq(cards.user_id, user.externalId),
       eq(cards.status, "active"),
       eq(cards.deleted, false),
       lte(cards.next_review, new Date()),

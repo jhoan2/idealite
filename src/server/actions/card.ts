@@ -2,12 +2,13 @@
 
 import { cards, cards_tags, pages_tags, users } from "~/server/db/schema";
 import { z } from "zod";
-import { auth } from "~/app/auth";
 import { db } from "~/server/db";
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import { getDueFlashCards } from "../queries/card";
 import * as Sentry from "@sentry/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
+
 const createCardSchema = z.object({
   pageId: z.string().uuid(),
   content: z.string().min(1).optional(),
@@ -30,9 +31,10 @@ export async function createCardFromPage(
 }> {
   try {
     const validatedInput = createCardSchema.parse(input);
-    const session = await auth();
+    const user = await currentUser();
+    const userId = user?.externalId;
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -41,7 +43,7 @@ export async function createCardFromPage(
       const [newCard] = await tx
         .insert(cards)
         .values({
-          user_id: session?.user?.id || "",
+          user_id: userId,
           page_id: validatedInput.pageId,
           content: validatedInput.content,
           image_cid: validatedInput.imageCid,
@@ -106,8 +108,9 @@ const updateCardSchema = z.object({
 });
 
 export async function updateCard(input: z.infer<typeof updateCardSchema>) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  const userId = user?.externalId;
+  if (!userId) {
     throw new Error("Unauthorized");
   }
 
@@ -119,9 +122,7 @@ export async function updateCard(input: z.infer<typeof updateCardSchema>) {
       ...validatedInput,
       updated_at: new Date(),
     })
-    .where(
-      and(eq(cards.id, validatedInput.id), eq(cards.user_id, session.user.id)),
-    )
+    .where(and(eq(cards.id, validatedInput.id), eq(cards.user_id, userId)))
     .returning();
 
   revalidatePath(`/workspace/${updatedCard?.page_id}`);
@@ -129,8 +130,9 @@ export async function updateCard(input: z.infer<typeof updateCardSchema>) {
 }
 
 export async function deleteCard(cardId: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  const userId = user?.externalId;
+  if (!userId) {
     throw new Error("Unauthorized");
   }
 
@@ -140,7 +142,7 @@ export async function deleteCard(cardId: string) {
       deleted: true,
       updated_at: new Date(),
     })
-    .where(and(eq(cards.id, cardId), eq(cards.user_id, session.user.id)))
+    .where(and(eq(cards.id, cardId), eq(cards.user_id, userId)))
     .returning();
 
   if (!deletedCard) {
@@ -152,8 +154,9 @@ export async function deleteCard(cardId: string) {
 }
 
 export async function createQuestionAndAnswer() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  const userId = user?.externalId;
+  if (!userId) {
     throw new Error("Unauthorized");
   }
 
@@ -186,8 +189,9 @@ export async function createQuestionAndAnswer() {
 }
 
 export async function createClozeCards() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  const userId = user?.externalId;
+  if (!userId) {
     throw new Error("Unauthorized");
   }
 
@@ -233,8 +237,9 @@ export async function processFlashCards(
     | z.infer<typeof processFlashCardsSchema>
     | Array<Pick<z.infer<typeof processFlashCardsSchema>, "id" | "status">>,
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  const userId = user?.externalId;
+  if (!userId) {
     throw new Error("Unauthorized");
   }
 
@@ -249,12 +254,7 @@ export async function processFlashCards(
               status: update.status,
               updated_at: new Date(),
             })
-            .where(
-              and(
-                eq(cards.id, update.id),
-                eq(cards.user_id, session?.user?.id || ""),
-              ),
-            )
+            .where(and(eq(cards.id, update.id), eq(cards.user_id, userId)))
             .returning(),
         ),
       );
@@ -273,12 +273,7 @@ export async function processFlashCards(
       ...validatedInput,
       updated_at: new Date(),
     })
-    .where(
-      and(
-        eq(cards.id, validatedInput.id),
-        eq(cards.user_id, session?.user?.id || ""),
-      ),
-    )
+    .where(and(eq(cards.id, validatedInput.id), eq(cards.user_id, userId)))
     .returning();
 
   revalidatePath(`/play`);
@@ -287,9 +282,10 @@ export async function processFlashCards(
 
 export async function createCardFromGame(content: string, tagId: string) {
   try {
-    const session = await auth();
+    const user = await currentUser();
+    const userId = user?.externalId;
 
-    if (!session?.user?.id) {
+    if (!userId) {
       throw new Error("Unauthorized");
     }
 
@@ -301,7 +297,7 @@ export async function createCardFromGame(content: string, tagId: string) {
         .insert(cards)
         .values({
           content,
-          user_id: session?.user?.id || "",
+          user_id: userId,
           created_at: new Date(),
           updated_at: new Date(),
           next_review: twoWeeksFromNow,
@@ -326,7 +322,7 @@ export async function createCardFromGame(content: string, tagId: string) {
           cash: sql`${users.cash} + 1`,
           updated_at: new Date(),
         })
-        .where(eq(users.id, session?.user?.id || ""));
+        .where(eq(users.id, userId));
 
       return newCard;
     });

@@ -11,10 +11,10 @@ import {
   users_tags,
 } from "~/server/db/schema";
 import { eq, and, exists, or, sql } from "drizzle-orm";
-import { auth } from "~/app/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { movePagesBetweenTags } from "./usersTags";
+import { currentUser } from "@clerk/nextjs/server";
 
 type Page = typeof pages.$inferSelect;
 type PageInsert = typeof pages.$inferInsert;
@@ -36,16 +36,16 @@ export async function updatePage(
     const { pageId: validatedPageId, updateData: validatedUpdateData } =
       updatePageSchema.parse({ pageId, updateData });
 
-    const session = await auth();
+    const user = await currentUser();
 
-    if (!session?.user?.id) {
+    if (!user?.externalId) {
       throw new Error("Unauthorized");
     }
 
     // Check if the user has access to the page
     const userPage = await db.query.users_pages.findFirst({
       where: and(
-        eq(users_pages.user_id, session.user.id),
+        eq(users_pages.user_id, user.externalId),
         eq(users_pages.page_id, validatedPageId),
       ),
     });
@@ -82,9 +82,9 @@ const addTagToPageSchema = z.object({
 });
 
 export async function addTagToPage(pageId: string, tagId: string) {
-  const session = await auth();
+  const user = await currentUser();
 
-  if (!session?.user?.id) {
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
   try {
@@ -110,9 +110,9 @@ const removeTagFromPageSchema = z.object({
 });
 
 export async function removeTagFromPage(pageId: string, tagId: string) {
-  const session = await auth();
+  const user = await currentUser();
 
-  if (!session?.user?.id) {
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 
@@ -139,16 +139,16 @@ export async function removeTagFromPage(pageId: string, tagId: string) {
 
 export async function savePageContent(pageId: string, content: string) {
   try {
-    const session = await auth();
+    const user = await currentUser();
 
-    if (!session?.user?.id) {
+    if (!user?.externalId) {
       throw new Error("Unauthorized");
     }
 
     // Check if the user has access to the page
     const userPage = await db.query.users_pages.findFirst({
       where: and(
-        eq(users_pages.user_id, session.user.id),
+        eq(users_pages.user_id, user.externalId),
         eq(users_pages.page_id, pageId),
       ),
     });
@@ -191,14 +191,16 @@ export async function createPage(
   type: "page" | "canvas",
 ) {
   try {
-    const session = await auth();
+    const user = await currentUser();
 
-    if (!session?.user?.id) {
+    if (!user?.externalId) {
       return {
         success: false,
         error: "Unauthorized",
       };
     }
+
+    const userId = user.externalId;
 
     // Start a transaction since we need to insert into multiple tables
     return await db.transaction(async (tx) => {
@@ -228,7 +230,7 @@ export async function createPage(
 
       // 3. Create the user-page relationship (as owner)
       await tx.insert(users_pages).values({
-        user_id: session.user?.id ?? "",
+        user_id: userId,
         page_id: newPage.id,
         role: "owner",
       });
@@ -378,10 +380,12 @@ const movePageSchema = z.object({
 
 export async function movePage(input: z.infer<typeof movePageSchema>) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await currentUser();
+    if (!user?.externalId) {
       return { success: false, error: "Unauthorized" };
     }
+
+    const userId = user.externalId;
 
     const { pageId, destinationId } = movePageSchema.parse(input);
     const [type = "", ...idParts] = destinationId.split("-");
@@ -404,7 +408,7 @@ export async function movePage(input: z.infer<typeof movePageSchema>) {
               .where(
                 and(
                   eq(users_pages.page_id, pageId),
-                  eq(users_pages.user_id, session.user?.id ?? ""),
+                  eq(users_pages.user_id, userId),
                 ),
               ),
           ),
@@ -421,7 +425,7 @@ export async function movePage(input: z.infer<typeof movePageSchema>) {
           where: and(
             eq(folders.id, id),
             or(
-              eq(folders.user_id, session.user?.id ?? ""),
+              eq(folders.user_id, userId),
               exists(
                 tx
                   .select()
@@ -429,7 +433,7 @@ export async function movePage(input: z.infer<typeof movePageSchema>) {
                   .where(
                     and(
                       eq(users_folders.folder_id, id),
-                      eq(users_folders.user_id, session.user?.id ?? ""),
+                      eq(users_folders.user_id, userId),
                     ),
                   ),
               ),
@@ -500,8 +504,8 @@ const searchPagesSchema = z.object({
 
 export async function searchPages(query: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await currentUser();
+    if (!user?.externalId) {
       throw new Error("Unauthorized");
     }
 
@@ -520,7 +524,7 @@ export async function searchPages(query: string) {
       .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
       .where(
         and(
-          eq(users_pages.user_id, session.user.id),
+          eq(users_pages.user_id, user.externalId),
           eq(pages.deleted, false),
           sql`to_tsvector('english', ${pages.title}) @@ plainto_tsquery('english', ${validatedQuery})`,
         ),
@@ -546,10 +550,12 @@ export async function createRootPage(type: "page" | "canvas"): Promise<{
   error?: string;
 }> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await currentUser();
+    if (!user?.externalId) {
       return { success: false, error: "Unauthorized" };
     }
+
+    const userId = user.externalId;
 
     const rootTagId = process.env.ROOT_TAG_ID;
     if (!rootTagId) {
@@ -562,16 +568,13 @@ export async function createRootPage(type: "page" | "canvas"): Promise<{
         .select()
         .from(users_tags)
         .where(
-          and(
-            eq(users_tags.user_id, session.user?.id ?? ""),
-            eq(users_tags.tag_id, rootTagId),
-          ),
+          and(eq(users_tags.user_id, userId), eq(users_tags.tag_id, rootTagId)),
         )
         .limit(1);
 
       if (!existingRelation.length) {
         await tx.insert(users_tags).values({
-          user_id: session.user?.id ?? "",
+          user_id: userId,
           tag_id: rootTagId,
           is_collapsed: false,
           is_archived: false,
@@ -616,7 +619,7 @@ export async function createRootPage(type: "page" | "canvas"): Promise<{
       });
 
       await tx.insert(users_pages).values({
-        user_id: session.user?.id ?? "",
+        user_id: userId,
         page_id: newPage.id,
         role: "owner",
       });

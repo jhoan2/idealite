@@ -2,7 +2,7 @@
 
 import { db } from "~/server/db";
 import { resourcesPages } from "~/server/db/schema";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -14,9 +14,10 @@ const deleteResourcePageSchema = z.object({
 export async function deleteResourcePage(
   input: z.infer<typeof deleteResourcePageSchema>,
 ) {
-  const session = await auth();
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!session?.user?.id) {
+  if (!userId) {
     throw new Error("Unauthorized");
   }
 

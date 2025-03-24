@@ -10,9 +10,9 @@ import {
 } from "~/server/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { auth } from "~/app/auth";
 import { updateStorageUsed } from "~/server/actions/storage";
 import * as Sentry from "@sentry/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
 
 type AssetMetadata = {
   id: string;
@@ -31,11 +31,12 @@ export async function saveCanvasData(
 ) {
   try {
     // 1. Auth check
-    const session = await auth();
-    if (!session?.user) {
+    const user = await currentUser();
+    const userId = user?.externalId;
+
+    if (!userId) {
       return { success: false, error: "Unauthorized" };
     }
-    const userId = session.user.id;
 
     // 2. Fetch the current page to get existing canvas data
     const page = await db.query.pages.findFirst({
