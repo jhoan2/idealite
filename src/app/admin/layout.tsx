@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const user = await currentUser();
 
-  if (session?.user?.role !== "admin") {
+  if (user?.publicMetadata.role !== "admin") {
     redirect("/home");
   }
 
