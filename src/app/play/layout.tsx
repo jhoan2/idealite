@@ -1,23 +1,19 @@
-import Link from "next/link";
-import { auth } from "../auth";
 import { getUserPlayStats } from "~/server/queries/user";
-import Games from "./Games";
-import { headers } from "next/headers";
+import { currentUser } from "@clerk/nextjs/server";
 
 export default async function PlayLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  const headersList = headers();
-  const userAgent = headersList.get("user-agent");
-  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!session?.user?.id) {
-    return <Games isWarpcast={isWarpcast ?? false} />;
+  if (!userId) {
+    return null;
   }
-  const userPlayStats = await getUserPlayStats(session.user.id);
+
+  const userPlayStats = await getUserPlayStats(userId);
 
   return (
     <div className="flex h-screen flex-col">
