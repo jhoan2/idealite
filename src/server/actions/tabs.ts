@@ -3,20 +3,20 @@
 import { db } from "~/server/db";
 import { tabs } from "~/server/db/schema";
 import { and, eq } from "drizzle-orm";
-import { auth } from "~/app/auth";
 import { revalidatePath } from "next/cache";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function createTab(data: { title: string; path: string }) {
-  const session = await auth();
-  const user_id = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!user_id) {
+  if (!userId) {
     return { success: false, error: "User not authenticated" };
   }
 
   // First check if a tab with this path already exists
   const existingTab = await db.query.tabs.findFirst({
-    where: and(eq(tabs.user_id, user_id), eq(tabs.path, data.path)),
+    where: and(eq(tabs.user_id, userId), eq(tabs.path, data.path)),
   });
 
   if (existingTab) {
@@ -26,7 +26,7 @@ export async function createTab(data: { title: string; path: string }) {
       await tx
         .update(tabs)
         .set({ is_active: false })
-        .where(eq(tabs.user_id, user_id));
+        .where(eq(tabs.user_id, userId));
 
       // Activate this tab
       await tx
@@ -45,13 +45,13 @@ export async function createTab(data: { title: string; path: string }) {
     await tx
       .update(tabs)
       .set({ is_active: false })
-      .where(eq(tabs.user_id, user_id));
+      .where(eq(tabs.user_id, userId));
 
     // Create new active tab
     const insertedTabs = await tx
       .insert(tabs)
       .values({
-        user_id: user_id,
+        user_id: userId,
         title: data.title,
         path: data.path,
         is_active: true,
@@ -65,10 +65,10 @@ export async function createTab(data: { title: string; path: string }) {
 }
 
 export async function closeTab(tabId: string) {
-  const session = await auth();
-  const user_id = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!user_id) {
+  if (!userId) {
     return { success: false, error: "User not authenticated" };
   }
 
@@ -80,7 +80,7 @@ export async function closeTab(tabId: string) {
     const remainingTabs = await tx
       .select()
       .from(tabs)
-      .where(eq(tabs.user_id, user_id))
+      .where(eq(tabs.user_id, userId))
       .limit(1);
 
     if (remainingTabs.length > 0) {
@@ -97,16 +97,16 @@ export async function closeTab(tabId: string) {
 }
 
 export async function updateTabTitle(tabId: string, title: string) {
-  const session = await auth();
-  const user_id = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!user_id) {
+  if (!userId) {
     return { success: false, error: "User not authenticated" };
   }
 
   // Check if the tab belongs to the user
   const userTab = await db.query.tabs.findFirst({
-    where: and(eq(tabs.user_id, user_id), eq(tabs.id, tabId)),
+    where: and(eq(tabs.user_id, userId), eq(tabs.id, tabId)),
   });
 
   if (!userTab) {
@@ -127,17 +127,17 @@ export async function updateTabTitle(tabId: string, title: string) {
 
 export async function deleteTabMatchingPageTitle(title: string) {
   console.log(title, "title");
-  const session = await auth();
-  const user_id = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!user_id) {
+  if (!userId) {
     return { success: false, error: "User not authenticated" };
   }
 
   try {
     // First check if the tab exists
     const existingTab = await db.query.tabs.findFirst({
-      where: and(eq(tabs.title, title), eq(tabs.user_id, user_id)),
+      where: and(eq(tabs.title, title), eq(tabs.user_id, userId)),
     });
 
     // If no tab exists, return success since the desired state is achieved
@@ -151,7 +151,7 @@ export async function deleteTabMatchingPageTitle(title: string) {
     // Delete the tab if it exists
     await db
       .delete(tabs)
-      .where(and(eq(tabs.title, title), eq(tabs.user_id, user_id)));
+      .where(and(eq(tabs.title, title), eq(tabs.user_id, userId)));
 
     revalidatePath("/workspace");
     return {
