@@ -3,8 +3,8 @@
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { useEffect } from "react";
-import { useNeynarContext } from "@neynar/react";
 import dynamic from "next/dynamic";
+import { useUser } from "@clerk/nextjs";
 
 if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
@@ -28,11 +28,11 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
 }
 
 function PostHogAuthWrapper({ children }: { children: React.ReactNode }) {
-  const { user } = useNeynarContext();
+  const { user } = useUser();
   useEffect(() => {
     if (user) {
-      posthog.identify(user.fid.toString(), {
-        name: user.username,
+      posthog.identify(user.id, {
+        email: user.emailAddresses[0]?.emailAddress || "",
       });
     } else if (!user) {
       posthog.reset();
