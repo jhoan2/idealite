@@ -13,7 +13,7 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
 
   if (isProtectedRoute(req) && !userId) {
-    const url = new URL("/home", req.url);
+    const url = new URL("/profile", req.url);
     return NextResponse.redirect(url);
   }
 });
