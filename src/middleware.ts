@@ -1,8 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
-
 const isProtectedRoute = createRouteMatcher([
   "/workspace(.*)",
   "/test(.*),",
@@ -13,14 +11,6 @@ const isProtectedRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   // Protect all routes starting with `/admin`
   const { userId } = await auth();
-
-  if (
-    isAdminRoute(req) &&
-    (await auth()).sessionClaims?.metadata?.role !== "admin"
-  ) {
-    const url = new URL("/home", req.url);
-    return NextResponse.redirect(url);
-  }
 
   if (isProtectedRoute(req) && !userId) {
     const url = new URL("/home", req.url);
