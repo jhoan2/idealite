@@ -34,6 +34,7 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     RESEND_REPLY_TO_EMAIL: z.string(),
     RESEND_FROM_EMAIL: z.string(),
+    CLERK_SECRET_KEY: z.string(),
   },
 
   /**
@@ -50,6 +51,7 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_DISABLED: z.string(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string(),
     NEXT_PUBLIC_POSTHOG_KEY: z.string(),
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
   },
 
   /**
@@ -90,6 +92,9 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_REPLY_TO_EMAIL: process.env.RESEND_REPLY_TO_EMAIL,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   },
   /**
 
