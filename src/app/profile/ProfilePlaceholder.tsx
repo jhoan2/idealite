@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardContent, CardTitle } from "~/components/ui/card";
-import { User } from "lucide-react";
+import { User, LogIn } from "lucide-react";
 import { Separator } from "~/components/ui/separator";
 import { SignInButton, SignedOut } from "@clerk/nextjs";
 
@@ -29,8 +29,9 @@ export default function ProfilePlaceholder() {
                 <p className="text-sm text-muted-foreground">
                   Sign in to view your profile
                 </p>
-                <div className="flex justify-center md:hidden">
+                <div className="flex justify-center space-x-2 md:hidden">
                   <SignedOut>
+                    <LogIn className="h-6 w-6" />
                     <SignInButton />
                   </SignedOut>
                 </div>

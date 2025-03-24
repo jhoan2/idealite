@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Gamepad2,
+  LogIn,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -104,6 +105,7 @@ export default function SideNav() {
           <UserButton />
         </SignedIn>
         <SignedOut>
+          <LogIn className="h-6 w-6" />
           <SignInButton />
         </SignedOut>
         {!isCollapsed && <ModeToggle />}
