@@ -84,6 +84,7 @@
     "resend": "^4.1.2",
     "server-only": "^0.0.1",
     "sonner": "^1.5.0",
+    "svix": "^1.62.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "tldraw": "^3.8.1",
