@@ -26,21 +26,21 @@ function CirclePack({ width = 600, height = 600, tagTree }: CirclePackProps) {
   };
 
   const colors = [
-    "#FFFF00",
-    "#FFD700",
-    "#FFA500",
-    "#FF8C00",
-    "#FF4500",
-    "#FA8072",
-    "#FF1493",
-    "#FF69B4",
-    "#FFB6C1",
-    "#FFC0CB",
-    "#FF00FF",
-    "#EE82EE",
-    "#DA70D6",
-    "#BA55D3",
-    "#9932CC",
+    "#FAAC7D",
+    "#FAC552",
+    "#FAAF53",
+    "#FA7452",
+    "#EBD050",
+    "#EB7450",
+    "#EAAA50",
+    "#EBBD50",
+    "#EB8F50",
+    "#EBCB9E",
+    "#EB6554",
+    "#EB9954",
+    "#EB7F55",
+    "#EBB154",
+    "#EB6A2F",
   ];
 
   const polarToCartesian = (
