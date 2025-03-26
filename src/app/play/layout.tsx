@@ -1,65 +1,7 @@
-import { getUserPlayStats } from "~/server/queries/user";
-import { currentUser } from "@clerk/nextjs/server";
-
-export default async function PlayLayout({
+export default function PlayLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await currentUser();
-  const userId = user?.externalId;
-
-  if (!userId) {
-    return null;
-  }
-
-  const userPlayStats = await getUserPlayStats(userId);
-
-  return (
-    <div className="flex h-screen flex-col">
-      <div className="flex items-center justify-between p-6">
-        <h2 className="text-2xl font-semibold">Play</h2>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 font-semibold">
-            <img
-              src="/points/Premium 2nd Outline 64px.png"
-              alt="points"
-              className="h-8 w-8"
-            />
-            <span>{userPlayStats.points} </span>
-          </div>
-
-          <div className="flex items-center gap-2 font-semibold">
-            <img
-              src="/cash/Blue Cash 1st Outline 64px.png"
-              alt="cash"
-              className="h-8 w-8"
-            />
-            <span>{userPlayStats.cash}</span>
-          </div>
-        </div>
-      </div>
-      {/* <div className="flex border-b border-gray-700">
-        <Link
-          href="/play"
-          className="flex-1 py-3 text-center font-medium text-gray-400"
-        >
-          Games
-        </Link>
-        <Link
-          href="/play/leaderboard"
-          className="flex-1 py-3 text-center font-medium text-gray-400"
-        >
-          Leaderboard
-        </Link>
-        <Link
-          href="/play/shop"
-          className="flex-1 py-3 text-center font-medium text-gray-400"
-        >
-          Shop
-        </Link>
-      </div> */}
-      {children}
-    </div>
-  );
+  return <div className="flex h-screen flex-col">{children}</div>;
 }

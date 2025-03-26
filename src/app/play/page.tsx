@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import { headers } from "next/headers";
+import PlayHeader from "./PlayHeader";
 
 const Games = dynamic(() => import("./Games"), { ssr: false });
 
@@ -43,6 +44,10 @@ export default async function PlayPage() {
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
   const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
-
-  return <Games isWarpcast={isWarpcast ?? false} />;
+  return (
+    <div>
+      <PlayHeader />
+      <Games isWarpcast={isWarpcast ?? false} />
+    </div>
+  );
 }
