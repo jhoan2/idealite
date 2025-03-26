@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -29,17 +29,9 @@ export default function SideNav() {
   const pathname = usePathname();
   const { userId } = useAuth();
 
-  if (pathname.includes("/channelFrame") || pathname === "/") {
-    return null;
-  }
-
-  const [isCollapsed, setIsCollapsed] = useState(true);
-
-  useEffect(() => {
-    if (userId) {
-      setIsCollapsed(false);
-    }
-  }, [userId]);
+  const [isCollapsed, setIsCollapsed] = useState(
+    userId !== null ? false : true,
+  );
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -51,6 +43,10 @@ export default function SideNav() {
     { icon: Gamepad2, label: "Play", href: "/play" },
     { icon: UserRound, label: "Profile", href: "/profile" },
   ];
+
+  if (pathname.includes("/channelFrame") || pathname === "/") {
+    return null;
+  }
 
   return (
     <nav
