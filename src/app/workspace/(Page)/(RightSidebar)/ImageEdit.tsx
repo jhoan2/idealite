@@ -30,8 +30,7 @@ export function ImageEdit({
     image: string;
     message: string;
   } | null>(null);
-  const [searchPrompt, setSearchPrompt] = useState("");
-  const [replacementPrompt, setReplacementPrompt] = useState("");
+  const [editPrompt, setEditPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -141,11 +140,9 @@ export function ImageEdit({
       }
     }
   };
-  const handleSearchAndReplace = async (
-    e: React.FormEvent<HTMLFormElement>,
-  ) => {
+  const handleEditImage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!originalImage || !searchPrompt || !replacementPrompt) {
+    if (!originalImage || !editPrompt) {
       setError("Please fill all required fields");
       return;
     }
@@ -173,17 +170,16 @@ export function ImageEdit({
         }
       }
 
-      formData.append("search_prompt", searchPrompt);
-      formData.append("prompt", replacementPrompt);
+      formData.append("prompt", editPrompt);
 
-      const response = await fetch("/api/memory-palace/edit/replace", {
+      const response = await fetch("/api/memory-palace/edit/gemini", {
         method: "POST",
         body: formData,
       });
-
       const data = await response.json();
 
       if (!response.ok) {
+        console.error("Error editing image:", data);
         throw new Error(data.error || "Failed to edit image");
       }
 
@@ -235,22 +231,16 @@ export function ImageEdit({
           />
         </div>
       )}
-      <form onSubmit={handleSearchAndReplace}>
+      <form onSubmit={handleEditImage}>
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
-            Find and Replace
+            Edit Image
           </label>
-          <Input
-            placeholder="Find object (e.g., dog, car, tree)"
-            className="border-input bg-background placeholder:text-muted-foreground"
-            value={searchPrompt}
-            onChange={(e) => setSearchPrompt(e.target.value)}
-          />
           <Textarea
-            placeholder="Replace with description..."
+            placeholder="Edit instructions..."
             className="border-input bg-background placeholder:text-muted-foreground"
-            value={replacementPrompt}
-            onChange={(e) => setReplacementPrompt(e.target.value)}
+            value={editPrompt}
+            onChange={(e) => setEditPrompt(e.target.value)}
           />
         </div>
         {error && (
@@ -272,7 +262,7 @@ export function ImageEdit({
         <div className="mt-6">
           <div className="flex items-center justify-between">
             <h4 className="mb-2 text-sm font-medium text-foreground">
-              Outpainted Image:
+              Edited Image:
             </h4>
             <Button
               variant="ghost"
@@ -287,7 +277,7 @@ export function ImageEdit({
           <div className="relative">
             <img
               src={editedImage.image}
-              alt="Outpainted image"
+              alt="Edited image"
               className="h-auto max-w-full rounded-md"
             />
           </div>
