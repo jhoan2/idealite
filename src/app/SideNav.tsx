@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -33,9 +33,13 @@ export default function SideNav() {
     return null;
   }
 
-  const [isCollapsed, setIsCollapsed] = useState(
-    userId !== null ? false : true,
-  );
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  useEffect(() => {
+    if (userId) {
+      setIsCollapsed(false);
+    }
+  }, [userId]);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
