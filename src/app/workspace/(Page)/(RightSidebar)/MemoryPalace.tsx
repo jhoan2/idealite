@@ -8,7 +8,6 @@ import { Background } from "./Background";
 import { Outpainting } from "./Outpainting";
 
 import {
-  Replace,
   WandSparkles,
   Edit,
   ScissorsLineDashed,
@@ -42,13 +41,6 @@ export function MemoryPalace() {
               title="Generate"
             >
               <WandSparkles size={16} />
-            </TabsTrigger>
-            <TabsTrigger
-              value="replace"
-              className="flex-1 text-foreground data-[state=active]:bg-accent"
-              title="Replace"
-            >
-              <Replace size={16} />
             </TabsTrigger>
             <TabsTrigger
               value="edit"
