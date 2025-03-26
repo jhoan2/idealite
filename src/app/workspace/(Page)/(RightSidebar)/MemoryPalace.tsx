@@ -6,7 +6,7 @@ import { ImageEdit } from "./ImageEdit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Background } from "./Background";
 import { Outpainting } from "./Outpainting";
-import { ImageReplace } from "./ImageReplace";
+
 import {
   Replace,
   WandSparkles,
