@@ -1,9 +1,7 @@
-import { auth } from "~/app/auth";
-import { getUserPlayStats } from "~/server/queries/user";
-import { trackEvent } from "~/lib/posthog/server";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import PleaseLogin from "~/app/PleaseLogin";
+import { currentUser } from "@clerk/nextjs/server";
 
 const FriendClashFrame = dynamic(() => import("./FriendClashFrame"), {
   ssr: false,
@@ -45,14 +43,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function FriendClashPage() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  const userId = user?.externalId;
+  if (!userId) {
     return <PleaseLogin />;
   }
-
-  trackEvent(session.user.fid, "friend_clash_page_viewed", {
-    username: session.user.username,
-  });
 
   return <FriendClashFrame />;
 }

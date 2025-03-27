@@ -1,16 +1,17 @@
 import { headers } from "next/headers";
-import { auth } from "~/app/auth";
 import WarpcastLogin from "~/app/WarpcastLogin";
 import InvitePage from "./InvitePage";
+import { currentUser } from "@clerk/nextjs/server";
 
 export default async function Host() {
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
   const isMobile = userAgent?.toLowerCase().includes("mobile");
   const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
-  const session = await auth();
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!session?.user?.id && !isMobile) {
+  if (!userId && !isMobile) {
     // Desktop
     return (
       <div className="flex h-screen flex-col items-center justify-center">
@@ -19,7 +20,7 @@ export default async function Host() {
     );
   }
 
-  if (!session?.user?.id && isWarpcast) {
+  if (!userId && isWarpcast) {
     return <WarpcastLogin />;
   }
 

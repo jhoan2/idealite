@@ -10,24 +10,28 @@ import {
   ChevronLeft,
   ChevronRight,
   Gamepad2,
-  MessageSquare,
+  LogIn,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ModeToggle } from "./NextThemeButton";
-import { NeynarAuthButton } from "@neynar/react";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Session } from "next-auth";
+import {
+  SignInButton,
+  SignedOut,
+  SignedIn,
+  UserButton,
+  useAuth,
+} from "@clerk/nextjs";
 
-export default function SideNav({ session }: { session: Session | null }) {
+export default function SideNav() {
   const pathname = usePathname();
+  const { userId } = useAuth();
 
-  if (pathname.includes("/channelFrame") || pathname === "/") {
-    return null;
-  }
-
-  const [isCollapsed, setIsCollapsed] = useState(!session ? false : true);
+  const [isCollapsed, setIsCollapsed] = useState(
+    userId !== null ? false : true,
+  );
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -38,8 +42,11 @@ export default function SideNav({ session }: { session: Session | null }) {
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Gamepad2, label: "Play", href: "/play" },
     { icon: UserRound, label: "Profile", href: "/profile" },
-    { icon: MessageSquare, label: "Chat", href: "/chat" },
   ];
+
+  if (pathname.includes("/channelFrame") || pathname === "/") {
+    return null;
+  }
 
   return (
     <nav
@@ -92,9 +99,16 @@ export default function SideNav({ session }: { session: Session | null }) {
           ))}
         </nav>
       </ScrollArea>
-      <div className="flex flex-col items-center space-y-4 border-t bg-background p-4 text-foreground">
-        {!isCollapsed && <NeynarAuthButton />}
-        <ModeToggle />
+      <div className="flex items-center justify-between border-t bg-background p-4 text-foreground">
+        {/* {!isCollapsed && <NeynarAuthButton />} */}
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
+        <SignedOut>
+          <LogIn className="h-6 w-6" />
+          <SignInButton />
+        </SignedOut>
+        {!isCollapsed && <ModeToggle />}
       </div>
     </nav>
   );

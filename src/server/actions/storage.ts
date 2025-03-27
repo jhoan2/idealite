@@ -3,12 +3,12 @@
 import { db } from "~/server/db";
 import { users } from "~/server/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function updateStorageUsed(userId: string, sizeChange: number) {
-  const session = await auth();
+  const user = await currentUser();
 
-  if (!session?.user?.id) {
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 

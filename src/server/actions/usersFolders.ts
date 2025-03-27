@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "~/app/auth";
 import {
   folders,
   pages,
@@ -16,6 +15,7 @@ import { deleteTabMatchingPageTitle } from "./tabs";
 import { v4 as uuidv4 } from "uuid";
 import { revalidatePath } from "next/cache";
 import { Folder } from "../db/schema";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function updateFolderCollapsed({
   folderId,
@@ -25,15 +25,16 @@ export async function updateFolderCollapsed({
   isCollapsed: boolean;
 }) {
   try {
-    const session = await auth();
-    if (!session) {
+    const user = await currentUser();
+    const userId = user?.externalId;
+    if (!userId) {
       return { success: false, error: "User not authenticated" };
     }
 
     await db
       .insert(users_folders)
       .values({
-        user_id: session.user?.id ?? "",
+        user_id: userId,
         folder_id: folderId,
         is_collapsed: isCollapsed,
       })
@@ -50,8 +51,8 @@ export async function updateFolderCollapsed({
 }
 
 export async function deleteFolder({ id }: { id: string }) {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
   if (!userId) {
     return {
@@ -115,8 +116,8 @@ export async function createFolder({
   tagId: string;
   parentFolderId?: string;
 }) {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
   if (!userId) {
     return {
@@ -184,8 +185,9 @@ export async function createRootFolder(): Promise<{
   error?: string;
 }> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await currentUser();
+    const userId = user?.externalId;
+    if (!userId) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -200,16 +202,13 @@ export async function createRootFolder(): Promise<{
         .select()
         .from(users_tags)
         .where(
-          and(
-            eq(users_tags.user_id, session.user?.id ?? ""),
-            eq(users_tags.tag_id, rootTagId),
-          ),
+          and(eq(users_tags.user_id, userId), eq(users_tags.tag_id, rootTagId)),
         )
         .limit(1);
 
       if (!existingRelation.length) {
         await tx.insert(users_tags).values({
-          user_id: session.user?.id ?? "",
+          user_id: userId,
           tag_id: rootTagId,
           is_collapsed: false,
           is_archived: false,
@@ -223,7 +222,7 @@ export async function createRootFolder(): Promise<{
         .where(
           and(
             eq(folders.tag_id, rootTagId),
-            eq(folders.user_id, session.user?.id ?? ""),
+            eq(folders.user_id, userId),
             isNull(folders.parent_folder_id),
             sql`lower(${folders.name}) LIKE 'new folder%'`,
           ),
@@ -239,13 +238,13 @@ export async function createRootFolder(): Promise<{
         .values({
           name: newName,
           tag_id: rootTagId,
-          user_id: session.user?.id ?? "",
+          user_id: userId,
           parent_folder_id: null,
         })
         .returning();
 
       await tx.insert(users_folders).values({
-        user_id: session.user?.id ?? "",
+        user_id: userId,
         folder_id: newFolder?.id ?? "",
         is_collapsed: false,
       });

@@ -4,7 +4,7 @@ import {
   getPageTitle,
   getPageTags,
 } from "~/server/queries/page";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import { getUserTagTree } from "~/server/queries/usersTags";
 import PageEditors from "./PageEditors";
 import { PageHeader } from "~/app/workspace/(Page)/PageHeader";
@@ -19,8 +19,8 @@ export default async function PageContent({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
   const pageIdParam = searchParams.pageId;
   const pageId = typeof pageIdParam === "string" ? pageIdParam : undefined;
   const headersList = headers();

@@ -1,13 +1,13 @@
 "use server";
 
 import { cards_tags } from "~/server/db/schema";
-import { auth } from "~/app/auth";
 import { db } from "~/server/db";
 import { and, eq } from "drizzle-orm";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function addTagToCard(cardId: string, tagId: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 
@@ -20,8 +20,8 @@ export async function addTagToCard(cardId: string, tagId: string) {
 }
 
 export async function removeTagFromCard(cardId: string, tagId: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 

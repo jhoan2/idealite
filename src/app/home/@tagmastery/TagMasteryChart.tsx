@@ -35,7 +35,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             Learning: {payload[1].value}%
           </div>
           <div className="text-xs text-gray-500">
-            Paused: {payload[2]?.value || 0}%
+            Paused: {payload[2]?.value || 10}%
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
             Total cards: {payload[0].payload.total}

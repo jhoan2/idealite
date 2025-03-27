@@ -1,10 +1,9 @@
 import { createQuestionAndAnswer } from "~/server/actions/card";
-import { auth } from "~/app/auth";
 import { getUserPlayStats } from "~/server/queries/user";
-import { trackEvent } from "~/lib/posthog/server";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
 import PleaseLogin from "~/app/PleaseLogin";
+import { currentUser } from "@clerk/nextjs/server";
 
 const FlashcardFrame = dynamic(() => import("./FlashcardFrame"), {
   ssr: false,
@@ -46,17 +45,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function FlashcardsPage() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  const userId = user?.externalId;
+  if (!userId) {
     return <PleaseLogin />;
   }
 
-  trackEvent(session.user.fid, "questions_and_answers_page_viewed", {
-    username: session.user.username,
-  });
-
   const flashcards = await createQuestionAndAnswer();
-  const userPlayStats = await getUserPlayStats(session.user.id);
+  const userPlayStats = await getUserPlayStats(userId);
 
   return (
     <FlashcardFrame flashcards={flashcards} userPlayStats={userPlayStats} />

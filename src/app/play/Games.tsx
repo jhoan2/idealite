@@ -6,10 +6,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { Users, User, WalletCardsIcon as Cards, Info } from "lucide-react";
 import FarcasterSignIn from "./FarcasterSignIn";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 export default function Games({ isWarpcast }: { isWarpcast: boolean }) {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const { data: session } = useSession();
+  const { user } = useUser();
+  const userId = user?.externalId;
   const items = [
     {
       id: "1",
@@ -29,24 +30,24 @@ export default function Games({ isWarpcast }: { isWarpcast: boolean }) {
       usesCards: true,
       isMultiplayer: false,
     },
-    {
-      id: "3",
-      title: "Friend Clash",
-      description: "Challenge your friends to knowledge battles",
-      icon: "/games/friend-clash.png",
-      href: "/play/friend-clash",
-      usesCards: false,
-      isMultiplayer: true,
-    },
-    {
-      id: "4",
-      title: "Spin the Wheel",
-      description: "Spin to win prizes and points",
-      icon: "/games/spin-the-wheel.png",
-      href: "/play/spin-wheel",
-      usesCards: false,
-      isMultiplayer: true,
-    },
+    // {
+    //   id: "3",
+    //   title: "Friend Clash",
+    //   description: "Challenge your friends to knowledge battles",
+    //   icon: "/games/friend-clash.png",
+    //   href: "/play/friend-clash",
+    //   usesCards: false,
+    //   isMultiplayer: true,
+    // },
+    // {
+    //   id: "4",
+    //   title: "Spin the Wheel",
+    //   description: "Spin to win prizes and points",
+    //   icon: "/games/spin-the-wheel.png",
+    //   href: "/play/spin-wheel",
+    //   usesCards: false,
+    //   isMultiplayer: true,
+    // },
     // Commented games can be uncommented and enhanced with metadata when needed
     // {
     //   id: "5",
@@ -90,7 +91,7 @@ export default function Games({ isWarpcast }: { isWarpcast: boolean }) {
     }
   }, [isSDKLoaded]);
 
-  if (isWarpcast && !session?.user?.id) {
+  if (isWarpcast && !userId) {
     return <FarcasterSignIn />;
   }
 

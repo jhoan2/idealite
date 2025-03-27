@@ -2,9 +2,9 @@
 
 import { db } from "~/server/db";
 import { usersResources } from "~/server/db/schema";
-import { auth } from "~/app/auth";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
+import { currentUser } from "@clerk/nextjs/server";
 
 const deleteUserResourceSchema = z.object({
   resourceId: z.string().uuid(),
@@ -13,9 +13,10 @@ const deleteUserResourceSchema = z.object({
 export async function deleteUserResource(
   input: z.infer<typeof deleteUserResourceSchema>,
 ) {
-  const session = await auth();
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!session?.user?.id) {
+  if (!userId) {
     throw new Error("Unauthorized");
   }
 
@@ -27,7 +28,7 @@ export async function deleteUserResource(
       .where(
         and(
           eq(usersResources.resource_id, resourceId),
-          eq(usersResources.user_id, session.user.id),
+          eq(usersResources.user_id, userId),
         ),
       );
 

@@ -123,7 +123,7 @@ async function generateQuestionsWithLLM(topic: string) {
   });
 
   const prompt = `
-    You are tasked with generating 30 basic multiple-choice questions on a given topic. 
+    You are tasked with generating 10 basic multiple-choice questions on a given topic. 
     Each question should have four options and one correct answer. The output should be formatted
      in a specific JSON structure.
     
@@ -134,7 +134,7 @@ async function generateQuestionsWithLLM(topic: string) {
 
       To complete this task, follow these steps:
 
-      1. Generate 30 unique questions related to the provided topic. Ensure that the questions cover 
+      1. Generate 10 unique questions related to the provided topic. Ensure that the questions cover 
       various aspects of the topic and are suitable for basic knowledge testing.
 
       2. For each question, create four multiple-choice options (A, B, C, and D). Make sure that only
@@ -176,8 +176,8 @@ async function generateQuestionsWithLLM(topic: string) {
       - Make sure the incorrect options are plausible to avoid obvious elimination.
       - Do not repeat questions or use very similar questions.
 
-      Remember to generate exactly 30 questions and format them according to the specified JSON 
-      structure. Begin the task now, and provide the complete JSON output containing all 30 questions
+      Remember to generate exactly 10 questions and format them according to the specified JSON 
+      structure. Begin the task now, and provide the complete JSON output containing all 10 questions
       related to the given topic.
     `;
 

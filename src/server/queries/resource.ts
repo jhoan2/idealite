@@ -2,14 +2,14 @@
 import { eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import { resources, resourcesPages } from "~/server/db/schema";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 
 export type Resource = typeof resources.$inferSelect;
 
 export async function getResourcesForPage(pageId: string) {
-  const session = await auth();
+  const user = await currentUser();
 
-  if (!session?.user?.id) {
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 

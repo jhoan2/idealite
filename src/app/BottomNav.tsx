@@ -18,7 +18,6 @@ export default function BottomNav() {
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Gamepad2, label: "Play", href: "/play" },
     { icon: UserRound, label: "Profile", href: "/profile" },
-    { icon: MessageSquare, label: "Chat", href: "/chat" },
   ];
 
   return (

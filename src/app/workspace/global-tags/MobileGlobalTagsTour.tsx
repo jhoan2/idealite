@@ -5,7 +5,7 @@ import { X, ArrowRight, Info } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { markFeatureDiscovered } from "~/server/actions/featureDiscovery";
 import { hasDiscoveredFeature } from "~/server/queries/featureDiscovery";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 
 // Define tour steps
 enum TourStep {
@@ -27,8 +27,8 @@ export function MobileGlobalTagsTour({
   const [isVisible, setIsVisible] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
+  const { user } = useUser();
+  const userId = user?.externalId;
 
   // Check if the tour has been completed before
   useEffect(() => {

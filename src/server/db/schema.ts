@@ -28,6 +28,8 @@ export const createTable = pgTableCreator((name) => `idealite_${name}`);
 
 export const users = createTable("user", {
   id: uuid("id").primaryKey().defaultRandom(),
+  clerk_id: varchar("clerk_id", { length: 256 }).unique(),
+  email: varchar("email", { length: 256 }),
   fid: integer("fid"),
   custody_address: varchar("custody_address", { length: 256 }),
   username: varchar("username", { length: 256 }),
@@ -811,13 +813,3 @@ export const featureDiscoveriesRelations = relations(
 // =====================
 // =====================
 // =====================
-
-export const waitlist = createTable("waitlist", {
-  id: serial("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  name: text("name"),
-  created_at: timestamp("created_at", { withTimezone: true })
-    .default(sql`CURRENT_TIMESTAMP`)
-    .notNull(),
-  is_subscribed: boolean("is_subscribed").default(true).notNull(),
-});

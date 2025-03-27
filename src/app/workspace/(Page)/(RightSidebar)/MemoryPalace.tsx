@@ -7,6 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Background } from "./Background";
 import { Outpainting } from "./Outpainting";
 
+import {
+  WandSparkles,
+  Edit,
+  ScissorsLineDashed,
+  SquareArrowUp,
+} from "lucide-react";
+
 export interface GeneratedImageResult {
   image: string;
   description?: string;
@@ -31,26 +38,30 @@ export function MemoryPalace() {
             <TabsTrigger
               value="generate"
               className="flex-1 text-foreground data-[state=active]:bg-accent"
+              title="Generate"
             >
-              Generate
+              <WandSparkles size={16} />
             </TabsTrigger>
             <TabsTrigger
               value="edit"
               className="flex-1 text-foreground data-[state=active]:bg-accent"
+              title="Edit"
             >
-              Edit
+              <Edit size={16} />
             </TabsTrigger>
             <TabsTrigger
               value="background"
               className="flex-1 text-foreground data-[state=active]:bg-accent"
+              title="Background"
             >
-              Background
+              <ScissorsLineDashed size={16} />
             </TabsTrigger>
             <TabsTrigger
               value="outpainting"
               className="flex-1 text-foreground data-[state=active]:bg-accent"
+              title="Outpainting"
             >
-              Outpainting
+              <SquareArrowUp size={16} />
             </TabsTrigger>
           </TabsList>
 

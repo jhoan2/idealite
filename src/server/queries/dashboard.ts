@@ -1,8 +1,8 @@
 "use server";
 import { db } from "~/server/db";
 import { cards, cards_tags, tags, users_tags } from "~/server/db/schema";
-import { auth } from "~/app/auth";
 import { sql, and, eq, count, or } from "drizzle-orm";
+import { currentUser } from "@clerk/nextjs/server";
 
 // Define types for the tag mastery data
 export type TagMasteryRawData = {
@@ -20,8 +20,10 @@ export type TagMasteryData = {
 };
 
 export async function getTagsMasteryData(): Promise<TagMasteryData[]> {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+  const { externalId } = user;
+  if (!externalId) throw new Error("Unauthorized");
 
   const result = await db
     .select({
@@ -34,14 +36,11 @@ export async function getTagsMasteryData(): Promise<TagMasteryData[]> {
     .innerJoin(tags, eq(cards_tags.tag_id, tags.id))
     .leftJoin(
       users_tags,
-      and(
-        eq(tags.id, users_tags.tag_id),
-        eq(users_tags.user_id, session.user.id),
-      ),
+      and(eq(tags.id, users_tags.tag_id), eq(users_tags.user_id, externalId)),
     )
     .where(
       and(
-        eq(cards.user_id, session.user.id),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         eq(tags.deleted, false),
         // Exclude the "root" tag by ID
@@ -112,8 +111,10 @@ export type CardStatusData = {
 };
 
 export async function getCardStatusDistribution(): Promise<CardStatusData[]> {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+  const { externalId } = user;
+  if (!externalId) throw new Error("Unauthorized");
 
   const result = await db
     .select({
@@ -121,7 +122,7 @@ export async function getCardStatusDistribution(): Promise<CardStatusData[]> {
       count: count(),
     })
     .from(cards)
-    .where(and(eq(cards.user_id, session.user.id), eq(cards.deleted, false)))
+    .where(and(eq(cards.user_id, externalId), eq(cards.deleted, false)))
     .groupBy(cards.status);
 
   // Transform to add colors
@@ -156,10 +157,10 @@ export type CardActivityStats = {
 };
 
 export async function getCardActivityStats(): Promise<CardActivityStats> {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
-
-  const userId = session.user.id;
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+  const { externalId } = user;
+  if (!externalId) throw new Error("Unauthorized");
 
   // Define time ranges
   const now = new Date();
@@ -179,7 +180,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         sql`${cards.created_at} >= ${oneWeekAgo}`,
       ),
@@ -191,7 +192,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         sql`${cards.last_reviewed} >= ${oneWeekAgo}`,
       ),
@@ -203,7 +204,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         eq(cards.status, "active"),
         sql`${cards.next_review} <= ${oneWeekFromNow}`,
@@ -217,7 +218,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         sql`${cards.next_review} <= ${now}`,
         sql`${cards.last_reviewed} >= ${oneWeekAgo}`,
@@ -229,7 +230,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         sql`${cards.next_review} <= ${now}`,
       ),
@@ -242,7 +243,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         sql`${cards.created_at} >= ${twoWeeksAgo}`,
         sql`${cards.created_at} < ${oneWeekAgo}`,
@@ -255,7 +256,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         sql`${cards.last_reviewed} >= ${twoWeeksAgo}`,
         sql`${cards.last_reviewed} < ${oneWeekAgo}`,
@@ -271,7 +272,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         eq(cards.status, "active"),
         sql`${cards.next_review} <= ${oneWeekAgo}`,
@@ -287,7 +288,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         sql`${cards.next_review} <= ${lastWeekDate}`,
         sql`${cards.last_reviewed} >= ${twoWeeksAgo}`,
@@ -300,7 +301,7 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     .from(cards)
     .where(
       and(
-        eq(cards.user_id, userId),
+        eq(cards.user_id, externalId),
         eq(cards.deleted, false),
         sql`${cards.next_review} <= ${lastWeekDate}`,
       ),

@@ -11,11 +11,11 @@ import {
   Tag,
   users_pages,
 } from "~/server/db/schema";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function getPageForUser(pageId: string) {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
   if (!userId) {
     throw new Error("User not authenticated");
@@ -126,15 +126,15 @@ export async function getPageTagHierarchy(pageId: string) {
 }
 
 export async function getPageContent(pageId: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 
   // Check if the user has access to the page
   const userPage = await db.query.users_pages.findFirst({
     where: and(
-      eq(users_pages.user_id, session.user.id),
+      eq(users_pages.user_id, user.externalId),
       eq(users_pages.page_id, pageId),
     ),
   });
@@ -163,15 +163,15 @@ export async function getPageContent(pageId: string) {
 }
 
 export async function getPageTitle(pageId: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 
   // Check if the user has access to the page
   const userPage = await db.query.users_pages.findFirst({
     where: and(
-      eq(users_pages.user_id, session.user.id),
+      eq(users_pages.user_id, user.externalId),
       eq(users_pages.page_id, pageId),
     ),
   });
@@ -191,15 +191,15 @@ export async function getPageTitle(pageId: string) {
 }
 
 export async function getPageTags(pageId: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 
   // Check if the user has access to the page
   const userPage = await db.query.users_pages.findFirst({
     where: and(
-      eq(users_pages.user_id, session.user.id),
+      eq(users_pages.user_id, user.externalId),
       eq(users_pages.page_id, pageId),
     ),
   });
@@ -219,15 +219,15 @@ export async function getPageTags(pageId: string) {
 }
 
 export async function getPageType(pageId: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 
   // Check if the user has access to the page
   const userPage = await db.query.users_pages.findFirst({
     where: and(
-      eq(users_pages.user_id, session.user.id),
+      eq(users_pages.user_id, user.externalId),
       eq(users_pages.page_id, pageId),
     ),
   });

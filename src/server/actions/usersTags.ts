@@ -12,14 +12,14 @@ import {
   folders,
 } from "../db/schema";
 import { revalidatePath } from "next/cache";
-import { auth } from "~/app/auth";
 import { z } from "zod";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function deleteTag({ id }: { id: string }) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
+    const user = await currentUser();
+    const userId = user?.externalId;
+    if (!userId) {
       return {
         success: false,
         error: "Unauthorized",
@@ -31,12 +31,7 @@ export async function deleteTag({ id }: { id: string }) {
       // Delete only this user's relationship with the tag
       await tx
         .delete(users_tags)
-        .where(
-          and(
-            eq(users_tags.tag_id, id),
-            eq(users_tags.user_id, session.user?.id ?? ""),
-          ),
-        );
+        .where(and(eq(users_tags.tag_id, id), eq(users_tags.user_id, userId)));
 
       // Delete this user's pages' relationships with the tag
       await tx.delete(pages_tags).where(
@@ -50,7 +45,7 @@ export async function deleteTag({ id }: { id: string }) {
               .where(
                 and(
                   eq(users_pages.page_id, pages_tags.page_id),
-                  eq(users_pages.user_id, session.user?.id ?? ""),
+                  eq(users_pages.user_id, userId),
                 ),
               ),
           ),
@@ -75,10 +70,11 @@ type MovePagesInput = z.infer<typeof movePagesSchema>;
 
 export async function movePagesBetweenTags(input: MovePagesInput) {
   try {
-    const session = await auth();
+    const user = await currentUser();
+    const userId = user?.externalId;
 
     // Check authentication
-    if (!session?.user?.id) {
+    if (!userId) {
       return {
         success: false,
         error: "Unauthorized",
@@ -96,7 +92,7 @@ export async function movePagesBetweenTags(input: MovePagesInput) {
       .where(
         and(
           eq(pages.id, pageId),
-          eq(users_pages.user_id, session.user?.id ?? ""),
+          eq(users_pages.user_id, userId),
           eq(pages.deleted, false),
         ),
       )
@@ -114,7 +110,7 @@ export async function movePagesBetweenTags(input: MovePagesInput) {
       .where(
         and(
           eq(tags.id, newTagId),
-          eq(users_tags.user_id, session.user?.id ?? ""),
+          eq(users_tags.user_id, userId),
           eq(tags.deleted, false),
         ),
       )
@@ -164,17 +160,17 @@ export async function updateTagCollapsed({
   tagId: string;
   isCollapsed: boolean;
 }) {
-  const session = await auth();
   try {
+    const user = await currentUser();
+    const userId = user?.externalId;
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     await db
       .update(users_tags)
       .set({ is_collapsed: isCollapsed })
-      .where(
-        and(
-          eq(users_tags.tag_id, tagId),
-          eq(users_tags.user_id, session?.user?.id ?? ""),
-        ),
-      );
+      .where(and(eq(users_tags.tag_id, tagId), eq(users_tags.user_id, userId)));
 
     return { success: true };
   } catch (error) {
@@ -192,9 +188,8 @@ export async function updateUserTags({
   addedTags: { id: string }[];
   removedTags: { id: string }[];
 }) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  if (!user) {
     return { success: false, error: "Unauthorized" };
   }
 
@@ -267,9 +262,10 @@ export async function toggleTagArchived({
   tagId: string;
   isArchived: boolean;
 }) {
-  const session = await auth();
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!session?.user?.id) {
+  if (!userId) {
     return {
       success: false,
       error: "Unauthorized",
@@ -280,12 +276,7 @@ export async function toggleTagArchived({
     await db
       .update(users_tags)
       .set({ is_archived: isArchived })
-      .where(
-        and(
-          eq(users_tags.tag_id, tagId),
-          eq(users_tags.user_id, session.user.id),
-        ),
-      );
+      .where(and(eq(users_tags.tag_id, tagId), eq(users_tags.user_id, userId)));
 
     revalidatePath("/workspace");
     revalidatePath("/explore");
@@ -298,15 +289,17 @@ export async function toggleTagArchived({
 
 export async function addUserTag(tagId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await currentUser();
+    const userId = user?.externalId;
+
+    if (!userId) {
       return { success: false, error: "Unauthorized" };
     }
 
     await db
       .insert(users_tags)
       .values({
-        user_id: session.user.id,
+        user_id: userId,
         tag_id: tagId,
         is_archived: false,
         is_collapsed: false,
@@ -336,8 +329,9 @@ type CreateTagInput = z.infer<typeof createTagForUserSchema>;
 
 export async function createTagForUser(input: CreateTagInput) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await currentUser();
+    const userId = user?.externalId;
+    if (!userId) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -362,7 +356,7 @@ export async function createTagForUser(input: CreateTagInput) {
 
       // Create the user-tag relationship
       await tx.insert(users_tags).values({
-        user_id: session.user?.id ?? "",
+        user_id: userId,
         tag_id: newTag.id,
         is_archived: false,
         is_collapsed: false,
@@ -396,9 +390,10 @@ export async function changeTagRelations({
   sourceTagId: string;
   targetTagId: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (session?.user?.id !== process.env.ADMIN_USER_ID) {
+  if (userId !== process.env.ADMIN_USER_ID) {
     return { success: false, error: "Unauthorized" };
   }
 

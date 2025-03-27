@@ -1,5 +1,5 @@
-import { auth } from "~/app/auth";
 import { BarChart2 } from "lucide-react";
+import { currentUser } from "@clerk/nextjs/server";
 
 export default async function HomeLayout({
   tagmastery,
@@ -11,8 +11,8 @@ export default async function HomeLayout({
   totalcards: React.ReactNode;
   cardactivity: React.ReactNode;
 }) {
-  const session = await auth();
-  const isAuthenticated = !!session?.user?.id;
+  const user = await currentUser();
+  const isAuthenticated = !!user;
 
   return (
     <div

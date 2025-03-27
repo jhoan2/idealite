@@ -1,6 +1,6 @@
 // src/app/api/generate-component/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { trackEvent } from "~/lib/posthog/server";
 import { Anthropic } from "@anthropic-ai/sdk";
@@ -13,8 +13,8 @@ const anthropic = new Anthropic({
 export async function POST(req: NextRequest) {
   try {
     // Authenticate user
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await currentUser();
+    if (!user) {
       return NextResponse.json(
         { success: false, error: "Authentication required" },
         { status: 401 },
