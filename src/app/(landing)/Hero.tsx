@@ -48,6 +48,9 @@ export default function Hero() {
           <span className="mr-2">✨</span>
           Learn & Adventure with
           <span className="pl-2 text-orange-600">Idealite</span>
+          <span className="ml-2 rounded-full bg-orange-500 px-2 py-0.5 text-xs font-medium text-white">
+            BETA
+          </span>
           <span className="ml-2">→</span>
         </div>
 
