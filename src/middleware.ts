@@ -8,15 +8,20 @@ const isProtectedRoute = createRouteMatcher([
   "/chat(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  // Protect all routes starting with `/admin`
-  const { userId } = await auth();
+export default clerkMiddleware(
+  async (auth, req) => {
+    // Protect all routes starting with `/admin`
+    const { userId } = await auth();
 
-  if (isProtectedRoute(req) && !userId) {
-    const url = new URL("/profile", req.url);
-    return NextResponse.redirect(url);
-  }
-});
+    if (isProtectedRoute(req) && !userId) {
+      const url = new URL("/profile", req.url);
+      return NextResponse.redirect(url);
+    }
+  },
+  {
+    authorizedParties: ["https://idealite.xyz", "http://localhost:3000"],
+  },
+);
 
 export const config = {
   matcher: [
