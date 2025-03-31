@@ -17,7 +17,7 @@ export default function Hero() {
           <Link href="/">
             <div className="flex items-center space-x-2">
               <Image
-                src="/icon48.png"
+                src="/icon128.png"
                 alt="idealite logo"
                 width={48}
                 height={48}
