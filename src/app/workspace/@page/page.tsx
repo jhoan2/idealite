@@ -59,6 +59,7 @@ export default async function PageContent({
             content={content}
             pageId={pageId}
             tags={tags}
+            userTagTree={userTagTree}
             isMobile={isMobile ?? false}
             isWarpcast={isWarpcast ?? false}
           />

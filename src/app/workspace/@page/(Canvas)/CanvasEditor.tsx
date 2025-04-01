@@ -21,6 +21,8 @@ import * as Sentry from "@sentry/nextjs";
 import { Tag } from "~/server/db/schema";
 import { CanvasTour } from "./CanvasTour";
 import { MobileCanvasTour } from "./MobileCanvasTour";
+import { TreeTag } from "~/server/queries/usersTags";
+import HeadingEditor from "../HeadingEditor";
 
 interface SaveCanvasButtonProps {
   pageId: string;
@@ -257,6 +259,7 @@ export default function CanvasEditor({
   content,
   pageId,
   tags,
+  userTagTree,
   isMobile,
   isWarpcast,
 }: {
@@ -264,12 +267,14 @@ export default function CanvasEditor({
   content: any;
   pageId: string;
   tags: Tag[];
+  userTagTree: TreeTag[];
   isMobile: boolean;
   isWarpcast: boolean;
 }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
   // Custom toolbar that includes our Lucide icon button
   const components: TLComponents = {
     Toolbar: (props) => {
@@ -351,35 +356,44 @@ export default function CanvasEditor({
 
   return (
     <div
-      className={`relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden ${isWarpcast || isMobile ? "pb-16" : ""}`}
+      className={`relative flex min-h-screen w-full flex-col overflow-y-auto pb-24`}
     >
       {isMobile || isWarpcast ? (
-        <MobileCanvasTour>
-          <div className="absolute bottom-10 right-2 z-50">
-            <div className="auto-save-indicator">
-              {autoSaveStatus === "idle" && (
-                <span className="text-xs text-gray-400">Auto-save ready</span>
-              )}
-              {autoSaveStatus === "saving" && (
-                <span className="text-xs text-blue-400">Saving...</span>
-              )}
-              {autoSaveStatus === "saved" && (
-                <span className="text-xs text-green-400">Saved</span>
-              )}
-              {autoSaveStatus === "error" && (
-                <span className="text-xs text-red-400">Save failed</span>
-              )}
+        <div className="relative flex h-[100dvh] max-h-[85dvh] w-full flex-col overflow-hidden">
+          <MobileCanvasTour>
+            <div className="absolute bottom-10 right-2 z-50">
+              <div className="auto-save-indicator">
+                {autoSaveStatus === "idle" && (
+                  <span className="text-xs text-gray-400">Auto-save ready</span>
+                )}
+                {autoSaveStatus === "saving" && (
+                  <span className="text-xs text-blue-400">Saving...</span>
+                )}
+                {autoSaveStatus === "saved" && (
+                  <span className="text-xs text-green-400">Saved</span>
+                )}
+                {autoSaveStatus === "error" && (
+                  <span className="text-xs text-red-400">Save failed</span>
+                )}
+              </div>
             </div>
-          </div>
-          <Tldraw
-            components={components}
-            options={{ maxPages: 1 }}
-            persistenceKey={`${pageId}-canvas`}
-            snapshot={content}
-            assets={myAssetStore}
-            overrides={overrides}
-          />
-        </MobileCanvasTour>
+            <HeadingEditor
+              initialTitle={title}
+              pageId={pageId}
+              userTagTree={userTagTree}
+              immediatelyRender={true}
+              onSavingStateChange={setIsSavingTitle}
+              isCanvas={true}
+            />
+            <Tldraw
+              components={components}
+              options={{ maxPages: 1 }}
+              persistenceKey={`${pageId}-canvas`}
+              snapshot={content}
+              overrides={overrides}
+            />
+          </MobileCanvasTour>
+        </div>
       ) : (
         <CanvasTour>
           <div className="absolute bottom-10 right-2 z-50">
@@ -398,14 +412,24 @@ export default function CanvasEditor({
               )}
             </div>
           </div>
-          <Tldraw
-            components={components}
-            options={{ maxPages: 1 }}
-            persistenceKey={`${pageId}-canvas`}
-            snapshot={content}
-            assets={myAssetStore}
-            overrides={overrides}
+          <HeadingEditor
+            initialTitle={title}
+            pageId={pageId}
+            userTagTree={userTagTree}
+            immediatelyRender={true}
+            onSavingStateChange={setIsSavingTitle}
+            isCanvas={true}
           />
+          <div className="relative flex h-[100dvh] max-h-[85dvh] w-full flex-col overflow-hidden">
+            <Tldraw
+              components={components}
+              options={{ maxPages: 1 }}
+              persistenceKey={`${pageId}-canvas`}
+              snapshot={content}
+              assets={myAssetStore}
+              overrides={overrides}
+            />
+          </div>
         </CanvasTour>
       )}
     </div>
