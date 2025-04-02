@@ -72,26 +72,31 @@ const myAssetStore: TLAssetStore = {
     const formData = new FormData();
     formData.append("file", file);
     toast.loading("Uploading image...");
-    const response = await fetch("/api/image", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("/api/image", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to upload image");
+      if (!response.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const { pinataData } = (await response.json()) as ImageResponse;
+      toast.dismiss();
+      return {
+        src: `https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/${pinataData.IpfsHash}`,
+        meta: {
+          prompt: metadata.prompt,
+          description: metadata.description,
+        },
+      };
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Image upload failed. Please try again.");
+      Sentry.captureException(error);
+      throw error;
     }
-
-    const { pinataData } = (await response.json()) as ImageResponse;
-    toast.dismiss();
-
-    // Return gateway URL to the uploaded image
-    return {
-      src: `https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/${pinataData.IpfsHash}`,
-      meta: {
-        prompt: metadata.prompt,
-        description: metadata.description,
-      },
-    };
   },
 
   resolve(asset) {
