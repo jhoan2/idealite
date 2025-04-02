@@ -346,18 +346,19 @@ export function Outpainting({
 
       {editedImage && (
         <div className="mt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-2">
             <h4 className="mb-2 text-sm font-medium text-foreground">
               Outpainted Image:
             </h4>
             <Button
               variant="ghost"
               size="sm"
-              className="z-10 h-6 w-6 rounded-full bg-white bg-opacity-50 p-0"
+              className="flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-gray-800 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white hover:text-gray-900 hover:shadow-md active:scale-95 active:shadow-sm dark:bg-gray-800/90 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white"
               onClick={handleCopyToClipboard}
               title="Copy to clipboard"
             >
               <Copy className="h-4 w-4" />
+              <span>Copy</span>
             </Button>
           </div>
           <div className="relative">
