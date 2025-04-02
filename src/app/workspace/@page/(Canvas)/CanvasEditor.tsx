@@ -383,6 +383,7 @@ export default function CanvasEditor({
               </div>
             </div>
             <HeadingEditor
+              key={pageId}
               initialTitle={title}
               pageId={pageId}
               userTagTree={userTagTree}
@@ -418,6 +419,7 @@ export default function CanvasEditor({
             </div>
           </div>
           <HeadingEditor
+            key={pageId}
             initialTitle={title}
             pageId={pageId}
             userTagTree={userTagTree}
