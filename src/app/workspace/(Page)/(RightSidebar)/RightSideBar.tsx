@@ -13,7 +13,7 @@ import { ImageIcon, WalletCards } from "lucide-react";
 import { CardList } from "./CardList";
 import { TreeTag } from "~/server/queries/usersTags";
 import { getPageType } from "~/server/queries/page";
-import { MemoryPalace } from "./MemoryPalace";
+import { ImageGenerator } from "./ImageGenerator";
 
 export function RightSideBar({
   userTagTree,
@@ -40,6 +40,7 @@ export function RightSideBar({
   const toggleView = () => {
     setActiveView(activeView === "cards" ? "image-generator" : "cards");
   };
+
   return (
     <Sidebar side="right" variant="sidebar" collapsible="offcanvas">
       <SidebarHeader>
@@ -79,17 +80,23 @@ export function RightSideBar({
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        {activeView === "cards" ? (
+
+      {activeView === "cards" ? (
+        <SidebarContent>
           <CardList
             pageId={pageId}
             userTagTree={userTagTree}
             isMobile={isMobile}
           />
-        ) : (
-          <MemoryPalace />
-        )}
-      </SidebarContent>
+        </SidebarContent>
+      ) : (
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full px-4 py-2">
+            <ImageGenerator />
+          </div>
+        </div>
+      )}
+
       <SidebarFooter />
     </Sidebar>
   );
