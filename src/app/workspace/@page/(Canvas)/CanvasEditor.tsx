@@ -34,7 +34,6 @@ interface SaveCanvasButtonProps {
 const myAssetStore: TLAssetStore = {
   async upload(asset, file) {
     let metadata = {
-      prompt: "",
       description: "",
     };
 
@@ -49,13 +48,8 @@ const myAssetStore: TLAssetStore = {
 
           try {
             const parsedData = JSON.parse(text);
-            if (
-              parsedData &&
-              (parsedData.prompt !== undefined ||
-                parsedData.description !== undefined)
-            ) {
+            if (parsedData && parsedData.description !== undefined) {
               metadata = {
-                prompt: parsedData.prompt || "",
                 description: parsedData.description || "",
               };
             }
@@ -87,7 +81,6 @@ const myAssetStore: TLAssetStore = {
       return {
         src: `https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/${pinataData.IpfsHash}`,
         meta: {
-          prompt: metadata.prompt,
           description: metadata.description,
         },
       };
@@ -325,7 +318,6 @@ export default function CanvasEditor({
               const asset = editor.getAsset((shapes[0] as any).props.assetId);
               if (asset?.meta) {
                 metadata = {
-                  prompt: asset.meta.prompt || "",
                   description: asset.meta.description || "",
                   // Add any other metadata fields you want to preserve
                 };

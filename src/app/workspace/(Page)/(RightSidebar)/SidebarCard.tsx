@@ -26,7 +26,6 @@ import { TagDrawer } from "../../@page/TagDrawer";
 interface SidebarCardProps {
   id: string;
   content: string | null;
-  prompt: string | null;
   description: string | null;
   status: "active" | "mastered" | "suspended";
   image_cid: string | null;
@@ -39,7 +38,6 @@ interface SidebarCardProps {
 export function SidebarCard({
   id,
   content,
-  prompt,
   description,
   status,
   image_cid,
@@ -151,12 +149,6 @@ export function SidebarCard({
                   <p className="text-sm">{content}</p>
                 </div>
               )
-            )}
-            {prompt && (
-              <div>
-                <label className="text-sm font-medium">Prompt</label>
-                <p className="mt-1 text-sm">{prompt}</p>
-              </div>
             )}
             <div>
               {!isMobile && showTags && (

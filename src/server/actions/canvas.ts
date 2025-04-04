@@ -138,7 +138,6 @@ export async function saveCanvasData(
               user_id: userId,
               page_id: pageId,
               image_cid: ipfsHash,
-              prompt: asset?.meta?.prompt || "",
               description: asset?.meta?.description || "",
             };
           })

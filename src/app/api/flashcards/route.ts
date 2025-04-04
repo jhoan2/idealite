@@ -14,7 +14,6 @@ const cardSchema = z.object({
   resource_id: z.string().nullable(),
   content: z.string(),
   image_cid: z.string().nullable(),
-  prompt: z.string().nullable(),
   description: z.string().nullable(),
   last_reviewed: z.string().nullable(),
   next_review: z.string().nullable(),

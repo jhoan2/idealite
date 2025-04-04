@@ -404,7 +404,6 @@ export const cards = createTable(
     resource_id: uuid("resource_id").references(() => resources.id),
     content: text("content"),
     image_cid: text("image_cid"),
-    prompt: text("prompt"),
     description: text("description"),
     last_reviewed: timestamp("last_reviewed", { withTimezone: true }),
     next_review: timestamp("next_review", { withTimezone: true }),
