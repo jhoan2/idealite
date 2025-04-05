@@ -263,8 +263,17 @@ export function ImageGenerator() {
       const response = await fetch(result.image);
       const blob = await response.blob();
 
+      const metadata = {
+        description: description || "",
+      };
       // Create a ClipboardItem
-      const item = new ClipboardItem({ [blob.type]: blob });
+      const item = new ClipboardItem({
+        [blob.type]: blob,
+        "text/plain": new Blob([JSON.stringify(metadata)], {
+          type: "text/plain",
+        }),
+      });
+
       await navigator.clipboard.write([item]);
     } catch (error) {
       try {

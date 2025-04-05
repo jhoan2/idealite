@@ -12,7 +12,7 @@ import {
 } from "tldraw";
 import "tldraw/tldraw.css";
 import { toast } from "sonner";
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { SaveIcon } from "lucide-react";
 import { ImageResponse } from "~/app/api/image/route";
 import { saveCanvasData } from "~/server/actions/canvas";
@@ -33,12 +33,21 @@ interface SaveCanvasButtonProps {
 
 const myAssetStore: TLAssetStore = {
   async upload(asset, file) {
+    // Create a data URI instead of a blob URL
+    const tempSrc = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+
+    // Extract metadata from clipboard if possible
     let metadata = {
       description: "",
+      status: "uploading", // Add status to track upload state
     };
 
     try {
-      // Read clipboard items
+      // Read clipboard items for any metadata
       const clipboardItems = await navigator.clipboard.read();
 
       for (const item of clipboardItems) {
@@ -49,47 +58,68 @@ const myAssetStore: TLAssetStore = {
           try {
             const parsedData = JSON.parse(text);
             if (parsedData && parsedData.description !== undefined) {
-              metadata = {
-                description: parsedData.description || "",
-              };
+              metadata.description = parsedData.description || "";
             }
           } catch (err) {
-            toast.error("Could not access clipboard");
-            Sentry.captureException(err);
+            console.warn("Failed to access clipboard:", err);
           }
         }
       }
     } catch (err) {
-      toast.error("Could not access clipboard");
-      Sentry.captureException(err);
+      console.warn("Failed to access clipboard:", err);
     }
-    const formData = new FormData();
-    formData.append("file", file);
-    toast.loading("Uploading image...");
-    try {
-      const response = await fetch("/api/image", {
-        method: "POST",
-        body: formData,
-      });
 
-      if (!response.ok) {
-        throw new Error("Failed to upload image");
+    // Return data URI immediately to show the image right away
+    const tempAsset = {
+      src: tempSrc,
+      meta: {
+        ...metadata,
+        tempId: asset.id,
+        description: metadata.description,
+      },
+    };
+
+    // 3. Start background upload process
+    window.setTimeout(async () => {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        toast.loading("Uploading image...");
+
+        const response = await fetch("/api/image", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to upload image");
+        }
+
+        const { pinataData } = (await response.json()) as ImageResponse;
+        toast.dismiss();
+
+        // 4. Dispatch event with the final URL to update the asset
+        window.dispatchEvent(
+          new CustomEvent("tldraw:asset:uploaded", {
+            detail: {
+              assetId: asset.id,
+              src: `https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/${pinataData.IpfsHash}`,
+              meta: {
+                description: metadata.description,
+                status: "uploaded",
+                ipfsHash: pinataData.IpfsHash,
+              },
+            },
+          }),
+        );
+      } catch (error) {
+        toast.dismiss();
+        toast.error("Image upload failed. Please try again.");
+        Sentry.captureException(error);
       }
+    }, 0);
 
-      const { pinataData } = (await response.json()) as ImageResponse;
-      toast.dismiss();
-      return {
-        src: `https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/${pinataData.IpfsHash}`,
-        meta: {
-          description: metadata.description,
-        },
-      };
-    } catch (error) {
-      toast.dismiss();
-      toast.error("Image upload failed. Please try again.");
-      Sentry.captureException(error);
-      throw error;
-    }
+    return tempAsset;
   },
 
   resolve(asset) {
@@ -273,6 +303,60 @@ export default function CanvasEditor({
     "idle" | "saving" | "saved" | "error"
   >("idle");
   const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
+
+  // Set up event listener to update assets when uploads complete
+  useEffect(() => {
+    const handleAssetUploaded = (event: CustomEvent) => {
+      const { assetId, src, w, h, meta } = event.detail;
+
+      if (editorRef.current) {
+        // Get the current state of the asset
+        const asset = editorRef.current.getAsset(assetId);
+        if (asset) {
+          // Update the asset with the new URL but preserve other properties
+          editorRef.current.updateAssets([
+            {
+              id: assetId,
+              type: asset.type,
+              props: {
+                ...asset.props,
+                src: src,
+                // Ensure width and height are set
+                w: w || asset.props.w,
+                h: h || asset.props.h,
+              },
+              meta: {
+                ...asset.meta,
+                ...meta,
+                description: meta.description || asset.meta.description || "",
+              },
+            },
+          ]);
+        }
+      }
+    };
+
+    // Add event listener for completed uploads
+    window.addEventListener(
+      "tldraw:asset:uploaded",
+      handleAssetUploaded as EventListener,
+    );
+
+    // Clean up function
+    return () => {
+      window.removeEventListener(
+        "tldraw:asset:uploaded",
+        handleAssetUploaded as EventListener,
+      );
+    };
+  }, []);
+
+  // Store editor reference when it's available
+  const handleMount = useCallback((editor: ReturnType<typeof useEditor>) => {
+    editorRef.current = editor;
+  }, []);
+
   // Custom toolbar that includes our Lucide icon button
   const components: TLComponents = {
     Toolbar: (props) => {
@@ -389,6 +473,7 @@ export default function CanvasEditor({
               persistenceKey={`${pageId}-canvas`}
               snapshot={content}
               overrides={overrides}
+              onMount={handleMount}
             />
           </MobileCanvasTour>
         </div>
@@ -427,6 +512,7 @@ export default function CanvasEditor({
               snapshot={content}
               assets={myAssetStore}
               overrides={overrides}
+              onMount={handleMount}
             />
           </div>
         </CanvasTour>
