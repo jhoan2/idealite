@@ -14,7 +14,6 @@ const createCardSchema = z.object({
   content: z.string().min(1).optional(),
   imageCid: z.string().optional(),
   canvasImageCid: z.string().optional(),
-  prompt: z.string().min(1).optional(),
   description: z.string().min(1).optional(),
   tagIds: z.array(z.string().uuid()).optional(),
   resourceId: z.string().uuid().optional(),
@@ -47,7 +46,6 @@ export async function createCardFromPage(
           page_id: validatedInput.pageId,
           content: validatedInput.content,
           image_cid: validatedInput.imageCid,
-          prompt: validatedInput.prompt,
           description: validatedInput.description,
           resource_id: validatedInput.resourceId,
           next_review: validatedInput.nextReview
@@ -102,7 +100,6 @@ export async function createCardFromPage(
 const updateCardSchema = z.object({
   id: z.string().uuid(),
   content: z.string().optional(),
-  prompt: z.string().optional(),
   description: z.string().optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
 });
@@ -226,7 +223,6 @@ export async function createClozeCards() {
 const processFlashCardsSchema = z.object({
   id: z.string().uuid(),
   content: z.string().optional(),
-  prompt: z.string().optional(),
   description: z.string().optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
 });

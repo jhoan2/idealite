@@ -27,11 +27,8 @@ import {
 
 export default function SideNav() {
   const pathname = usePathname();
-  const { userId } = useAuth();
-
-  const [isCollapsed, setIsCollapsed] = useState(
-    userId !== null ? false : true,
-  );
+  const { isSignedIn } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(isSignedIn ? true : false);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);

@@ -3,10 +3,9 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { type Card } from "~/server/queries/card";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! });
 
 const cardSchema = z.object({
   id: z.string(),
@@ -15,7 +14,6 @@ const cardSchema = z.object({
   resource_id: z.string().nullable(),
   content: z.string(),
   image_cid: z.string().nullable(),
-  prompt: z.string().nullable(),
   description: z.string().nullable(),
   last_reviewed: z.string().nullable(),
   next_review: z.string().nullable(),
@@ -166,8 +164,12 @@ export async function POST(req: Request) {
         ? constructQAPrompt(cards)
         : constructClozePrompt(cards);
 
-    const response = await model.generateContent(prompt);
-    const textContent = response.response.text();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+    });
+
+    const textContent = response.text ?? "";
 
     // Parse response based on type
     const flashcards =

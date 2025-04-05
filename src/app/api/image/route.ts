@@ -26,7 +26,7 @@ export interface ImageResponse {
 
 export async function POST(request: NextRequest) {
   const user = await currentUser();
-  const userId = user?.id;
+  const userId = user?.externalId;
 
   if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
