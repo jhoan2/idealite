@@ -23,6 +23,7 @@ import { CanvasTour } from "./CanvasTour";
 import { MobileCanvasTour } from "./MobileCanvasTour";
 import { TreeTag } from "~/server/queries/usersTags";
 import HeadingEditor from "../HeadingEditor";
+import { ScreenshotTool } from "./SnippetTool/Screenshot";
 
 interface SaveCanvasButtonProps {
   pageId: string;
@@ -92,7 +93,10 @@ const myAssetStore: TLAssetStore = {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to upload image");
+          const errorResponse = await response
+            .text()
+            .catch(() => "No response data");
+          throw new Error(`Failed to upload image: ${errorResponse}`);
         }
 
         const { pinataData } = (await response.json()) as ImageResponse;
@@ -167,12 +171,16 @@ export function SaveCanvasButton({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to upload canvas image");
+        const errorResponse = await response
+          .text()
+          .catch(() => "No response data");
+        throw new Error(`Failed to upload canvas image: ${errorResponse}`);
       }
 
       const { pinataData } = (await response.json()) as ImageResponse;
       return pinataData.IpfsHash;
     } catch (error) {
+      Sentry.captureException(error);
       console.error("Error exporting canvas:", error);
       return null;
     }
