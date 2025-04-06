@@ -4,7 +4,7 @@ import {
   getPageTitle,
   getPageTags,
 } from "~/server/queries/page";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import { getUserTagTree } from "~/server/queries/usersTags";
 import PageEditors from "./PageEditors";
 import { PageHeader } from "~/app/workspace/(Page)/PageHeader";
@@ -12,16 +12,22 @@ import CanvasEditor from "./(Canvas)/CanvasEditor";
 import { getResourcesForPage } from "~/server/queries/resource";
 import HeaderSkeleton from "./HeaderSkeleton";
 import EditorSkeleton from "./EditorSkeleton";
+import { headers } from "next/headers";
 
 export default async function PageContent({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
   const pageIdParam = searchParams.pageId;
   const pageId = typeof pageIdParam === "string" ? pageIdParam : undefined;
+  const headersList = headers();
+  const userAgent = headersList.get("user-agent");
+
+  const isMobile = userAgent?.toLowerCase().includes("mobile");
+  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
 
   if (!pageId) {
     return null;
@@ -42,16 +48,30 @@ export default async function PageContent({
           tags={tags}
           userTagTree={userTagTree}
           resources={resources}
+          isMobile={isMobile ?? false}
+          isWarpcast={isWarpcast ?? false}
         />
       </Suspense>
       <Suspense fallback={<EditorSkeleton />}>
         {content.content_type === "canvas" ? (
-          <CanvasEditor title={title ?? ""} content={content} pageId={pageId} />
+          <CanvasEditor
+            title={title ?? ""}
+            content={content}
+            pageId={pageId}
+            tags={tags}
+            userTagTree={userTagTree}
+            isMobile={isMobile ?? false}
+            isWarpcast={isWarpcast ?? false}
+          />
         ) : (
           <PageEditors
+            key={pageId}
             title={title ?? ""}
             content={content}
             userTagTree={userTagTree}
+            tags={tags}
+            isMobile={isMobile ?? false}
+            isWarpcast={isWarpcast ?? false}
           />
         )}
       </Suspense>

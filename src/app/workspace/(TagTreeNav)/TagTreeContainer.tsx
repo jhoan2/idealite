@@ -4,6 +4,9 @@
 import React, { memo, useState } from "react";
 import type { TreeTag } from "~/server/queries/usersTags";
 import TagTreeNav from "./TagTreeNav";
+import { FeatureTooltip } from "../(FeatureDiscover)/FeatureTooltip";
+import { FeatureKey } from "../(FeatureDiscover)/FeatureDiscoveryContext";
+import { Menu } from "lucide-react";
 
 interface TagTreeContainerProps {
   userTagTree: TreeTag[];
@@ -17,27 +20,24 @@ export const TagTreeContainer = memo(
 
     return (
       <>
-        {/* Mobile Toggle Button */}
-        <button
-          className="fixed left-4 top-[30px] z-50 mr-2 md:hidden"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="gray"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/* Mobile Toggle Button with Feature Tooltip */}
+        <div className="fixed left-4 top-[30px] z-50 mr-2 md:hidden">
+          <FeatureTooltip
+            featureKey={FeatureKey.TAG_TREE_NAVIGATION}
+            title="Navigate Your Tags"
+            description="Access your tag structure and pages by opening the sidebar."
+            position="right"
+            showPointer={true}
           >
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+            <button
+              className="flex h-8 w-8 items-center justify-center rounded-md bg-background/50 backdrop-blur-md"
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label="Open navigation"
+            >
+              <Menu className="h-5 w-5 text-foreground" />
+            </button>
+          </FeatureTooltip>
+        </div>
 
         {/* Desktop View */}
         <div className="hidden md:block">
@@ -72,3 +72,5 @@ export const TagTreeContainer = memo(
     );
   },
 );
+
+TagTreeContainer.displayName = "TagTreeContainer";

@@ -25,7 +25,10 @@ export default async function Host() {
 
   return (
     <div className="h-[100dvh] w-full bg-[#CC412F]">
-      <InvitePage isMobile={isMobile ?? false} />
+      <InvitePage
+        isMobile={isMobile ?? false}
+        isWarpcast={isWarpcast ?? false}
+      />
     </div>
   );
 }

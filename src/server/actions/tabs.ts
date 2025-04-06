@@ -1,54 +1,74 @@
 "use server";
 
 import { db } from "~/server/db";
-import { pages, tabs, users_pages } from "~/server/db/schema";
-import { and, eq, sql } from "drizzle-orm";
-import { auth } from "~/app/auth";
+import { tabs } from "~/server/db/schema";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function createTab(data: { title: string; path: string }) {
-  const session = await auth();
-  const user_id = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!user_id) {
+  if (!userId) {
     return { success: false, error: "User not authenticated" };
   }
 
-  const newTab = await db
-    .insert(tabs)
-    .values({
-      user_id: user_id,
-      title: data.title,
-      path: data.path,
-      is_active: true,
-      position: 0,
-    })
-    .returning();
-
-  revalidatePath(`/workspace/${data.path}`);
-
-  return { success: true, id: newTab[0]?.id };
-}
-
-export async function setActiveTab(tabId: string) {
-  const tab = await db.transaction(async (tx) => {
-    // Deactivate all tabs
-    await tx.update(tabs).set({ is_active: false });
-
-    // Activate selected tab
-    await tx.update(tabs).set({ is_active: true }).where(eq(tabs.id, tabId));
+  // First check if a tab with this path already exists
+  const existingTab = await db.query.tabs.findFirst({
+    where: and(eq(tabs.user_id, userId), eq(tabs.path, data.path)),
   });
 
-  revalidatePath("/workspace");
+  if (existingTab) {
+    // If tab exists, just set it as active
+    await db.transaction(async (tx) => {
+      // Deactivate all tabs
+      await tx
+        .update(tabs)
+        .set({ is_active: false })
+        .where(eq(tabs.user_id, userId));
 
-  return tab;
+      // Activate this tab
+      await tx
+        .update(tabs)
+        .set({ is_active: true })
+        .where(eq(tabs.id, existingTab.id));
+    });
+
+    revalidatePath("/workspace");
+    return { success: true, id: existingTab.id };
+  }
+
+  // If no existing tab, create a new one
+  return await db.transaction(async (tx) => {
+    // Deactivate all current tabs
+    await tx
+      .update(tabs)
+      .set({ is_active: false })
+      .where(eq(tabs.user_id, userId));
+
+    // Create new active tab
+    const insertedTabs = await tx
+      .insert(tabs)
+      .values({
+        user_id: userId,
+        title: data.title,
+        path: data.path,
+        is_active: true,
+        position: 0,
+      })
+      .returning();
+
+    revalidatePath("/workspace");
+    return { success: true, id: insertedTabs[0]?.id };
+  });
 }
 
 export async function closeTab(tabId: string) {
-  const session = await auth();
-  const user_id = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!user_id) {
+  if (!userId) {
     return { success: false, error: "User not authenticated" };
   }
 
@@ -60,7 +80,7 @@ export async function closeTab(tabId: string) {
     const remainingTabs = await tx
       .select()
       .from(tabs)
-      .where(eq(tabs.user_id, user_id))
+      .where(eq(tabs.user_id, userId))
       .limit(1);
 
     if (remainingTabs.length > 0) {
@@ -77,16 +97,16 @@ export async function closeTab(tabId: string) {
 }
 
 export async function updateTabTitle(tabId: string, title: string) {
-  const session = await auth();
-  const user_id = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!user_id) {
+  if (!userId) {
     return { success: false, error: "User not authenticated" };
   }
 
   // Check if the tab belongs to the user
   const userTab = await db.query.tabs.findFirst({
-    where: and(eq(tabs.user_id, user_id), eq(tabs.id, tabId)),
+    where: and(eq(tabs.user_id, userId), eq(tabs.id, tabId)),
   });
 
   if (!userTab) {
@@ -107,17 +127,17 @@ export async function updateTabTitle(tabId: string, title: string) {
 
 export async function deleteTabMatchingPageTitle(title: string) {
   console.log(title, "title");
-  const session = await auth();
-  const user_id = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!user_id) {
+  if (!userId) {
     return { success: false, error: "User not authenticated" };
   }
 
   try {
     // First check if the tab exists
     const existingTab = await db.query.tabs.findFirst({
-      where: and(eq(tabs.title, title), eq(tabs.user_id, user_id)),
+      where: and(eq(tabs.title, title), eq(tabs.user_id, userId)),
     });
 
     // If no tab exists, return success since the desired state is achieved
@@ -131,7 +151,7 @@ export async function deleteTabMatchingPageTitle(title: string) {
     // Delete the tab if it exists
     await db
       .delete(tabs)
-      .where(and(eq(tabs.title, title), eq(tabs.user_id, user_id)));
+      .where(and(eq(tabs.title, title), eq(tabs.user_id, userId)));
 
     revalidatePath("/workspace");
     return {

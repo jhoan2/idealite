@@ -15,6 +15,7 @@ import {
   primaryKey,
   pgEnum,
   jsonb,
+  serial,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -27,6 +28,8 @@ export const createTable = pgTableCreator((name) => `idealite_${name}`);
 
 export const users = createTable("user", {
   id: uuid("id").primaryKey().defaultRandom(),
+  clerk_id: varchar("clerk_id", { length: 256 }).unique(),
+  email: varchar("email", { length: 256 }),
   fid: integer("fid"),
   custody_address: varchar("custody_address", { length: 256 }),
   username: varchar("username", { length: 256 }),
@@ -401,7 +404,6 @@ export const cards = createTable(
     resource_id: uuid("resource_id").references(() => resources.id),
     content: text("content"),
     image_cid: text("image_cid"),
-    prompt: text("prompt"),
     description: text("description"),
     last_reviewed: timestamp("last_reviewed", { withTimezone: true }),
     next_review: timestamp("next_review", { withTimezone: true }),
@@ -770,6 +772,42 @@ export const pointsHistoryRelations = relations(points_history, ({ one }) => ({
 //   views: integer("views").default(0).notNull(),
 //   likes: integer("likes").default(0).notNull(),
 // });
+
+// =====================
+// Feature Discovery Schema
+// =====================
+
+export const feature_discoveries = createTable(
+  "feature_discoveries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    feature_key: text("feature_key").notNull(),
+    discovered_at: timestamp("discovered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => {
+    return {
+      user_feature_idx: index("user_feature_idx").on(
+        table.user_id,
+        table.feature_key,
+      ),
+    };
+  },
+);
+
+export const featureDiscoveriesRelations = relations(
+  feature_discoveries,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [feature_discoveries.user_id],
+      references: [users.id],
+    }),
+  }),
+);
 
 // =====================
 // =====================

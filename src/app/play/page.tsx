@@ -1,7 +1,7 @@
-import { getUserPlayStats } from "~/server/queries/user";
-import { auth } from "../auth";
 import dynamic from "next/dynamic";
 import { Metadata } from "next";
+import { headers } from "next/headers";
+import PlayHeader from "./PlayHeader";
 
 const Games = dynamic(() => import("./Games"), { ssr: false });
 
@@ -41,10 +41,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PlayPage() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return <Games userPlayStats={{ points: 0, cash: 0 }} />;
-  }
-  const userPlayStats = await getUserPlayStats(session.user.id);
-  return <Games userPlayStats={userPlayStats} />;
+  const headersList = headers();
+  const userAgent = headersList.get("user-agent");
+  const isWarpcast = userAgent?.toLowerCase().includes("warpcast");
+  return (
+    <div>
+      <PlayHeader />
+      <Games isWarpcast={isWarpcast ?? false} />
+    </div>
+  );
 }

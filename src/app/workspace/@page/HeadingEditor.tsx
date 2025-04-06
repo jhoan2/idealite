@@ -17,6 +17,7 @@ interface HeadingEditorProps {
   userTagTree: TreeTag[];
   immediatelyRender?: boolean;
   onSavingStateChange: (isSaving: boolean) => void;
+  isCanvas?: boolean;
 }
 
 // Helper function to search through folder
@@ -136,6 +137,7 @@ const HeadingEditor = ({
   userTagTree,
   immediatelyRender = false,
   onSavingStateChange,
+  isCanvas = false,
 }: HeadingEditorProps) => {
   const [title, setTitle] = useState(initialTitle);
   const searchParams = useSearchParams();
@@ -229,7 +231,9 @@ const HeadingEditor = ({
   });
 
   return (
-    <div className="mb-10 flex h-full w-full justify-center overflow-hidden">
+    <div
+      className={`mb-10 flex ${isCanvas ? "" : "h-full"} w-full justify-center overflow-hidden`}
+    >
       <div className={`w-full max-w-4xl px-4`}>
         <EditorContent editor={editor} />
       </div>

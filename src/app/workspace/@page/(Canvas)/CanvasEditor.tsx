@@ -12,27 +12,42 @@ import {
 } from "tldraw";
 import "tldraw/tldraw.css";
 import { toast } from "sonner";
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { SaveIcon } from "lucide-react";
 import { ImageResponse } from "~/app/api/image/route";
 import { saveCanvasData } from "~/server/actions/canvas";
 import { debounce } from "lodash";
 import * as Sentry from "@sentry/nextjs";
+import { Tag } from "~/server/db/schema";
+import { CanvasTour } from "./CanvasTour";
+import { MobileCanvasTour } from "./MobileCanvasTour";
+import { TreeTag } from "~/server/queries/usersTags";
+import HeadingEditor from "../HeadingEditor";
+
 interface SaveCanvasButtonProps {
   pageId: string;
   className?: string;
   setAutoSaveStatus: (status: "idle" | "saving" | "saved" | "error") => void;
+  tags: Tag[];
 }
 
 const myAssetStore: TLAssetStore = {
   async upload(asset, file) {
+    // Create a data URI instead of a blob URL
+    const tempSrc = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+
+    // Extract metadata from clipboard if possible
     let metadata = {
-      prompt: "",
       description: "",
+      status: "uploading", // Add status to track upload state
     };
 
     try {
-      // Read clipboard items
+      // Read clipboard items for any metadata
       const clipboardItems = await navigator.clipboard.read();
 
       for (const item of clipboardItems) {
@@ -42,49 +57,69 @@ const myAssetStore: TLAssetStore = {
 
           try {
             const parsedData = JSON.parse(text);
-            if (
-              parsedData &&
-              (parsedData.prompt !== undefined ||
-                parsedData.description !== undefined)
-            ) {
-              metadata = {
-                prompt: parsedData.prompt || "",
-                description: parsedData.description || "",
-              };
+            if (parsedData && parsedData.description !== undefined) {
+              metadata.description = parsedData.description || "";
             }
           } catch (err) {
-            toast.error("Could not access clipboard");
-            Sentry.captureException(err);
+            console.warn("Failed to access clipboard:", err);
           }
         }
       }
     } catch (err) {
-      toast.error("Could not access clipboard");
-      Sentry.captureException(err);
-    }
-    const formData = new FormData();
-    formData.append("file", file);
-    toast.loading("Uploading image...");
-    const response = await fetch("/api/image", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to upload image");
+      console.warn("Failed to access clipboard:", err);
     }
 
-    const { pinataData } = (await response.json()) as ImageResponse;
-    toast.dismiss();
-
-    // Return gateway URL to the uploaded image
-    return {
-      src: `https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/${pinataData.IpfsHash}`,
+    // Return data URI immediately to show the image right away
+    const tempAsset = {
+      src: tempSrc,
       meta: {
-        prompt: metadata.prompt,
+        ...metadata,
+        tempId: asset.id,
         description: metadata.description,
       },
     };
+
+    // 3. Start background upload process
+    window.setTimeout(async () => {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        toast.loading("Uploading image...");
+
+        const response = await fetch("/api/image", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to upload image");
+        }
+
+        const { pinataData } = (await response.json()) as ImageResponse;
+        toast.dismiss();
+
+        // 4. Dispatch event with the final URL to update the asset
+        window.dispatchEvent(
+          new CustomEvent("tldraw:asset:uploaded", {
+            detail: {
+              assetId: asset.id,
+              src: `https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/${pinataData.IpfsHash}`,
+              meta: {
+                description: metadata.description,
+                status: "uploaded",
+                ipfsHash: pinataData.IpfsHash,
+              },
+            },
+          }),
+        );
+      } catch (error) {
+        toast.dismiss();
+        toast.error("Image upload failed. Please try again.");
+        Sentry.captureException(error);
+      }
+    }, 0);
+
+    return tempAsset;
   },
 
   resolve(asset) {
@@ -96,6 +131,7 @@ export function SaveCanvasButton({
   pageId,
   className,
   setAutoSaveStatus,
+  tags,
 }: SaveCanvasButtonProps) {
   const editor = useEditor();
   const [isSaving, setIsSaving] = useState(false);
@@ -199,6 +235,7 @@ export function SaveCanvasButton({
         snapshot,
         assetMetadata,
         canvasImageCid || null,
+        tags.map((tag) => tag.id),
       );
 
       if (!response.success) {
@@ -249,14 +286,77 @@ export default function CanvasEditor({
   title,
   content,
   pageId,
+  tags,
+  userTagTree,
+  isMobile,
+  isWarpcast,
 }: {
   title: string;
   content: any;
   pageId: string;
+  tags: Tag[];
+  userTagTree: TreeTag[];
+  isMobile: boolean;
+  isWarpcast: boolean;
 }) {
   const [autoSaveStatus, setAutoSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
+
+  // Set up event listener to update assets when uploads complete
+  useEffect(() => {
+    const handleAssetUploaded = (event: CustomEvent) => {
+      const { assetId, src, w, h, meta } = event.detail;
+
+      if (editorRef.current) {
+        // Get the current state of the asset
+        const asset = editorRef.current.getAsset(assetId);
+        if (asset) {
+          // Update the asset with the new URL but preserve other properties
+          editorRef.current.updateAssets([
+            {
+              id: assetId,
+              type: asset.type,
+              props: {
+                ...asset.props,
+                src: src,
+                // Ensure width and height are set
+                w: w || asset.props.w,
+                h: h || asset.props.h,
+              },
+              meta: {
+                ...asset.meta,
+                ...meta,
+                description: meta.description || asset.meta.description || "",
+              },
+            },
+          ]);
+        }
+      }
+    };
+
+    // Add event listener for completed uploads
+    window.addEventListener(
+      "tldraw:asset:uploaded",
+      handleAssetUploaded as EventListener,
+    );
+
+    // Clean up function
+    return () => {
+      window.removeEventListener(
+        "tldraw:asset:uploaded",
+        handleAssetUploaded as EventListener,
+      );
+    };
+  }, []);
+
+  // Store editor reference when it's available
+  const handleMount = useCallback((editor: ReturnType<typeof useEditor>) => {
+    editorRef.current = editor;
+  }, []);
+
   // Custom toolbar that includes our Lucide icon button
   const components: TLComponents = {
     Toolbar: (props) => {
@@ -265,6 +365,7 @@ export default function CanvasEditor({
           <SaveCanvasButton
             pageId={pageId}
             setAutoSaveStatus={setAutoSaveStatus}
+            tags={tags}
           />
           <DefaultToolbarContent />
         </DefaultToolbar>
@@ -301,7 +402,6 @@ export default function CanvasEditor({
               const asset = editor.getAsset((shapes[0] as any).props.assetId);
               if (asset?.meta) {
                 metadata = {
-                  prompt: asset.meta.prompt || "",
                   description: asset.meta.description || "",
                   // Add any other metadata fields you want to preserve
                 };
@@ -336,31 +436,87 @@ export default function CanvasEditor({
   };
 
   return (
-    <div className="relative flex h-[100dvh] max-h-[85dvh] w-full overflow-hidden">
-      <div className="absolute bottom-10 right-2 z-50">
-        <div className="auto-save-indicator">
-          {autoSaveStatus === "idle" && (
-            <span className="text-xs text-gray-400">Auto-save ready</span>
-          )}
-          {autoSaveStatus === "saving" && (
-            <span className="text-xs text-blue-400">Saving...</span>
-          )}
-          {autoSaveStatus === "saved" && (
-            <span className="text-xs text-green-400">Saved</span>
-          )}
-          {autoSaveStatus === "error" && (
-            <span className="text-xs text-red-400">Save failed</span>
-          )}
+    <div
+      className={`relative flex min-h-screen w-full flex-col overflow-y-auto pb-24`}
+    >
+      {isMobile || isWarpcast ? (
+        <div className="relative flex h-[100dvh] max-h-[85dvh] w-full flex-col overflow-hidden">
+          <MobileCanvasTour>
+            <div className="absolute bottom-10 right-2 z-50">
+              <div className="auto-save-indicator">
+                {autoSaveStatus === "idle" && (
+                  <span className="text-xs text-gray-400">Auto-save ready</span>
+                )}
+                {autoSaveStatus === "saving" && (
+                  <span className="text-xs text-blue-400">Saving...</span>
+                )}
+                {autoSaveStatus === "saved" && (
+                  <span className="text-xs text-green-400">Saved</span>
+                )}
+                {autoSaveStatus === "error" && (
+                  <span className="text-xs text-red-400">Save failed</span>
+                )}
+              </div>
+            </div>
+            <HeadingEditor
+              key={pageId}
+              initialTitle={title}
+              pageId={pageId}
+              userTagTree={userTagTree}
+              immediatelyRender={true}
+              onSavingStateChange={setIsSavingTitle}
+              isCanvas={true}
+            />
+            <Tldraw
+              components={components}
+              options={{ maxPages: 1 }}
+              persistenceKey={`${pageId}-canvas`}
+              snapshot={content}
+              overrides={overrides}
+              onMount={handleMount}
+            />
+          </MobileCanvasTour>
         </div>
-      </div>
-      <Tldraw
-        components={components}
-        options={{ maxPages: 1 }}
-        persistenceKey={`${pageId}-canvas`}
-        snapshot={content}
-        assets={myAssetStore}
-        overrides={overrides}
-      />
+      ) : (
+        <CanvasTour>
+          <div className="absolute bottom-10 right-2 z-50">
+            <div className="auto-save-indicator">
+              {autoSaveStatus === "idle" && (
+                <span className="text-xs text-gray-400">Auto-save ready</span>
+              )}
+              {autoSaveStatus === "saving" && (
+                <span className="text-xs text-blue-400">Saving...</span>
+              )}
+              {autoSaveStatus === "saved" && (
+                <span className="text-xs text-green-400">Saved</span>
+              )}
+              {autoSaveStatus === "error" && (
+                <span className="text-xs text-red-400">Save failed</span>
+              )}
+            </div>
+          </div>
+          <HeadingEditor
+            key={pageId}
+            initialTitle={title}
+            pageId={pageId}
+            userTagTree={userTagTree}
+            immediatelyRender={true}
+            onSavingStateChange={setIsSavingTitle}
+            isCanvas={true}
+          />
+          <div className="relative flex h-[100dvh] max-h-[85dvh] w-full flex-col overflow-hidden">
+            <Tldraw
+              components={components}
+              options={{ maxPages: 1 }}
+              persistenceKey={`${pageId}-canvas`}
+              snapshot={content}
+              assets={myAssetStore}
+              overrides={overrides}
+              onMount={handleMount}
+            />
+          </div>
+        </CanvasTour>
+      )}
     </div>
   );
 }

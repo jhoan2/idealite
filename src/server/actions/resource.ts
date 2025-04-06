@@ -2,9 +2,9 @@
 
 import { db } from "~/server/db";
 import { resources, resourcesPages, usersResources } from "~/server/db/schema";
-import { auth } from "~/app/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { currentUser } from "@clerk/nextjs/server";
 
 const createResourceSchema = z.object({
   author: z.string().optional(),
@@ -24,9 +24,10 @@ const createResourceSchema = z.object({
 export type CreateResourceInput = z.infer<typeof createResourceSchema>;
 
 export async function createResource(input: CreateResourceInput) {
-  const session = await auth();
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!session?.user?.id) {
+  if (!userId) {
     throw new Error("Unauthorized");
   }
 
@@ -47,7 +48,7 @@ export async function createResource(input: CreateResourceInput) {
       await db
         .insert(usersResources)
         .values({
-          user_id: session.user.id,
+          user_id: userId,
           resource_id: existingResource.id,
         })
         .onConflictDoNothing();
@@ -72,7 +73,7 @@ export async function createResource(input: CreateResourceInput) {
       .returning();
 
     await db.insert(usersResources).values({
-      user_id: session.user.id,
+      user_id: userId,
       resource_id: resource?.id || "",
     });
 
@@ -102,9 +103,10 @@ const bookResourceSchema = z.object({
 });
 
 export async function createBookResource(input: CreateResourceInput) {
-  const session = await auth();
+  const user = await currentUser();
+  const userId = user?.externalId;
 
-  if (!session?.user?.id) {
+  if (!userId) {
     throw new Error("Unauthorized");
   }
   try {
@@ -137,7 +139,7 @@ export async function createBookResource(input: CreateResourceInput) {
 
     // Create relations using the resource ID
     await db.insert(usersResources).values({
-      user_id: session.user.id,
+      user_id: userId,
       resource_id: resourceId,
     });
 

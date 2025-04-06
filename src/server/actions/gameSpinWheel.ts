@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { completeTurn } from "~/server/services/spinwheel/turn";
 
 /**
@@ -11,9 +10,6 @@ import { completeTurn } from "~/server/services/spinwheel/turn";
 export async function completeSpinWheelTurn(gameId: string, points: number) {
   try {
     const result = await completeTurn(gameId, points);
-
-    // Revalidate the game page to reflect the updated state
-    revalidatePath(`/play/spin-wheel/games/${gameId}`);
 
     return { ...result };
   } catch (error) {

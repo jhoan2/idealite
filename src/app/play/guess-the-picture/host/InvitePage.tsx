@@ -59,7 +59,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
 
       setCastText(
         `Hey ${formattedInvites}! You're invited to join my Guess the Picture game! 🎮\n\n` +
-          `idealite.xyz/play/guess-the-picture/games/${gameSession?.id}`,
+          `https://idealite.xyz/play/guess-the-picture/games/${gameSession?.id}`,
       );
       setIsModalOpen(true);
     } catch (error) {

@@ -2,7 +2,7 @@ import "server-only";
 
 import { v4 as uuidv4 } from "uuid";
 import { NextRequest } from "next/server";
-import { auth } from "~/app/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { images, users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
@@ -25,8 +25,8 @@ export interface ImageResponse {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.externalId;
 
   if (!userId) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const user = await currentUser();
+  const userId = user?.id;
 
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });

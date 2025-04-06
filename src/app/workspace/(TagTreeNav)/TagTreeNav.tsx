@@ -28,7 +28,7 @@ import { createPage, movePage, createRootPage } from "~/server/actions/page";
 import { createRootFolder } from "~/server/actions/usersFolders";
 import { toast } from "sonner";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createTab } from "~/server/actions/tabs";
 import { MoveToDialog } from "./MoveToDialog";
 import {
@@ -53,6 +53,8 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import Link from "next/link";
+import { FeatureTooltip } from "../(FeatureDiscover)/FeatureTooltip";
+import { FeatureKey } from "../(FeatureDiscover)/FeatureDiscoveryContext";
 
 interface DrawerState {
   isOpen: boolean;
@@ -95,7 +97,8 @@ const TreeNode: React.FC<{
   const router = useRouter();
 
   const pathname = usePathname();
-  const currentPageId = pathname?.split("/workspace/")?.[1]?.split("?")?.[0];
+  const searchParams = useSearchParams();
+  const currentPageId = searchParams.get("pageId");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set(
       node.folders?.filter((f) => !f.is_collapsed).map((f) => f.id) ?? [],
@@ -139,8 +142,10 @@ const TreeNode: React.FC<{
         throw new Error("Failed to create tab");
       }
 
+      const successResult = newTab as { success: true; id: string };
+
       // Navigate to the content with type parameter
-      router.push(`/workspace?pageId=${pageId}`);
+      router.push(`/workspace?pageId=${pageId}&tabId=${successResult.id}`);
     } catch (error) {
       console.error("Error creating tab:", error);
       toast.error("Failed to open item");
@@ -152,6 +157,18 @@ const TreeNode: React.FC<{
       setIsLoading(true);
       const pageInput = createUntitledPage(node, allTags);
       const result = await createPage(pageInput, type);
+
+      if (result.success) {
+        // Dispatch the page-created event
+        window.dispatchEvent(
+          new CustomEvent("page-created", {
+            detail: {
+              pageId: "123",
+              tagId: node.id,
+            },
+          }),
+        );
+      }
 
       if (!result.success) {
         throw new Error("Failed to create page");
@@ -311,8 +328,6 @@ const TreeNode: React.FC<{
         parentFolderId: parentFolder.id,
       });
 
-      console.log(result);
-
       if (!result.success) {
         toast.error(result.error || "Failed to create folder");
         return;
@@ -464,7 +479,7 @@ const TreeNode: React.FC<{
                           content_type: page.content_type || "page",
                         }}
                         level={level}
-                        currentPageId={currentPageId}
+                        currentPageId={currentPageId ?? undefined}
                         onMovePageClick={(pageId, title) => {
                           setSelectedPage({
                             id: pageId,
@@ -489,7 +504,7 @@ const TreeNode: React.FC<{
                         expandedFolders={expandedFolders}
                         handleFolderToggle={handleFolderToggle}
                         handleItemClick={handleItemClick}
-                        currentPageId={currentPageId}
+                        currentPageId={currentPageId ?? undefined}
                         onMovePageClick={(pageId, title) => {
                           setSelectedPage({
                             id: pageId,
@@ -584,11 +599,19 @@ const MinimalistTree: React.FC<
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex justify-center pt-2">
-        <Button variant="ghost" size="icon" title="Global Tags">
-          <Link href="/workspace/global-tags">
-            <Compass className="h-4 w-4" />
-          </Link>
-        </Button>
+        <FeatureTooltip
+          featureKey={FeatureKey.GLOBAL_TAGS}
+          title="Global Tags Management"
+          description="Access and manage all your tags in one centralized place."
+          position="bottom"
+          showPointer={true}
+        >
+          <Button variant="ghost" size="icon" title="Global Tags">
+            <Link href="/workspace/global-tags">
+              <Compass className="h-4 w-4" />
+            </Link>
+          </Button>
+        </FeatureTooltip>
       </div>
       <div
         className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto pl-4`}

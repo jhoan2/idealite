@@ -59,7 +59,7 @@ export default function InvitePage({ isMobile }: { isMobile: boolean }) {
 
       setCastText(
         `Hey ${formattedInvites}! You're invited to join my Spin the Wheel game! 🎮\n\n` +
-          `idealite.xyz/play/spin-wheel/games/${gameSession?.id}`,
+          `https://idealite.xyz/play/spin-wheel/games/${gameSession?.id}`,
       );
       setIsModalOpen(true);
     } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +13,7 @@ import { ImageIcon, WalletCards } from "lucide-react";
 import { CardList } from "./CardList";
 import { TreeTag } from "~/server/queries/usersTags";
 import { getPageType } from "~/server/queries/page";
-import { MemoryPalace } from "./MemoryPalace";
+import { ImageGenerator } from "./ImageGenerator";
 
 export function RightSideBar({
   userTagTree,
@@ -22,8 +22,8 @@ export function RightSideBar({
   userTagTree: TreeTag[];
   isMobile: boolean;
 }) {
-  const params = useParams();
-  const pageId = params.pageId as string;
+  const searchParams = useSearchParams();
+  const pageId = searchParams.get("pageId") as string;
   const [pageType, setPageType] = useState<"page" | "canvas" | null>(null);
   const [activeView, setActiveView] = useState<"cards" | "image-generator">(
     "cards",
@@ -80,17 +80,23 @@ export function RightSideBar({
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        {activeView === "cards" ? (
+
+      {activeView === "cards" ? (
+        <SidebarContent>
           <CardList
             pageId={pageId}
             userTagTree={userTagTree}
             isMobile={isMobile}
           />
-        ) : (
-          <MemoryPalace />
-        )}
-      </SidebarContent>
+        </SidebarContent>
+      ) : (
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full px-4 py-2">
+            <ImageGenerator />
+          </div>
+        </div>
+      )}
+
       <SidebarFooter />
     </Sidebar>
   );

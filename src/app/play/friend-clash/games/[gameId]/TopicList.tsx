@@ -35,7 +35,8 @@ export default function TopicList({
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {player.tags.map((tag) => {
-                const isSelected = selectedTopic.name === tag.name;
+                const isSelected =
+                  selectedTopic.name === tag.name.toLocaleLowerCase();
                 return (
                   <Button
                     key={tag.id}
