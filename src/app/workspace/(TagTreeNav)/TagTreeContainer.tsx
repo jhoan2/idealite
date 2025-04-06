@@ -1,4 +1,3 @@
-// components/TagTreeContainer.tsx
 "use client";
 
 import React, { memo, useState } from "react";
@@ -6,7 +5,7 @@ import type { TreeTag } from "~/server/queries/usersTags";
 import TagTreeNav from "./TagTreeNav";
 import { FeatureTooltip } from "../(FeatureDiscover)/FeatureTooltip";
 import { FeatureKey } from "../(FeatureDiscover)/FeatureDiscoveryContext";
-import { Menu } from "lucide-react";
+import { Menu, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TagTreeContainerProps {
   userTagTree: TreeTag[];
@@ -17,6 +16,11 @@ interface TagTreeContainerProps {
 export const TagTreeContainer = memo(
   ({ userTagTree, userId, isMobile }: TagTreeContainerProps) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(false);
+
+    const toggleMinimized = () => {
+      setIsMinimized(!isMinimized);
+    };
 
     return (
       <>
@@ -39,13 +43,38 @@ export const TagTreeContainer = memo(
           </FeatureTooltip>
         </div>
 
-        {/* Desktop View */}
-        <div className="hidden md:block">
-          <TagTreeNav
-            userTagTree={userTagTree}
-            userId={userId}
-            isMobile={isMobile}
-          />
+        <div
+          className={`hidden flex-col md:flex ${isMinimized ? "w-12" : "w-64"} relative transition-all duration-300 ease-in-out`}
+        >
+          <div
+            className={`${isMinimized ? "w-12" : "w-64"} transition-all duration-300 ease-in-out`}
+          >
+            {!isMinimized && (
+              <TagTreeNav
+                userTagTree={userTagTree}
+                userId={userId}
+                isMobile={isMobile}
+              />
+            )}
+            {isMinimized && (
+              <div className="flex h-screen w-12 flex-col items-center border-r border-border bg-background py-4">
+                {/* Minimized view content can go here if needed */}
+              </div>
+            )}
+          </div>
+
+          {/* Minimize/Expand Button */}
+          <button
+            className="absolute -right-3 top-[50%] z-50 flex h-8 w-6 -translate-y-1/2 transform items-center justify-center rounded-r-md border border-l-0 border-border bg-background text-foreground focus:outline-none"
+            onClick={toggleMinimized}
+            aria-label={isMinimized ? "Expand sidebar" : "Minimize sidebar"}
+          >
+            {isMinimized ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </button>
         </div>
 
         {/* Mobile View */}
