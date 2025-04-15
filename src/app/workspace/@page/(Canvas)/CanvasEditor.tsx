@@ -9,6 +9,13 @@ import {
   useEditor,
   TLAssetStore,
   TLUiOverrides,
+  useValue,
+  TLUiAssetUrlOverrides,
+  Box,
+  TldrawUiMenuItem,
+  useTools,
+  useIsToolSelected,
+  TLUiToolItem,
 } from "tldraw";
 import "tldraw/tldraw.css";
 import { toast } from "sonner";
@@ -23,6 +30,7 @@ import { MobileCanvasTour } from "./MobileCanvasTour";
 import { TreeTag } from "~/server/queries/usersTags";
 import HeadingEditor from "../HeadingEditor";
 import { ScreenshotTool } from "./SnippetTool/Screenshot";
+import { ScreenshotDragging } from "./SnippetTool/ChildStates/Dragging";
 
 const myAssetStore: TLAssetStore = {
   async upload(asset, file) {
@@ -393,17 +401,80 @@ export default function CanvasEditor({
     editorRef.current = editor;
   }, []);
 
-  // Custom toolbar - removed the save button component since we're using auto-save
+  const customTools = [ScreenshotTool];
+
+  function CustomToolbar() {
+    const tools = useTools();
+    const isScreenshotSelected = useIsToolSelected(
+      tools["screenshot"] as TLUiToolItem<string, string>,
+    );
+    return (
+      <DefaultToolbar>
+        <TldrawUiMenuItem
+          {...(tools["screenshot"] as TLUiToolItem<string, string>)}
+          isSelected={isScreenshotSelected}
+        />
+        <DefaultToolbarContent />
+      </DefaultToolbar>
+    );
+  }
+
   const components: TLComponents = {
-    Toolbar: (props) => {
-      return (
-        <DefaultToolbar {...props}>
-          {/* Save button removed - auto-save is active instead */}
-          <DefaultToolbarContent />
-        </DefaultToolbar>
-      );
+    InFrontOfTheCanvas: ScreenshotBox,
+    Toolbar: CustomToolbar,
+  };
+
+  const customAssetUrls: TLUiAssetUrlOverrides = {
+    icons: {
+      "tool-screenshot": "/tool-screenshot.svg",
     },
   };
+
+  function ScreenshotBox() {
+    const editor = useEditor();
+
+    const screenshotBrush = useValue(
+      "screenshot brush",
+      () => {
+        // Check whether the screenshot tool (and its dragging state) is active
+        if (editor.getPath() !== "screenshot.dragging") return null;
+
+        // Get screenshot.dragging state node
+        const draggingState = editor.getStateDescendant<ScreenshotDragging>(
+          "screenshot.dragging",
+        )!;
+
+        // Get the box from the screenshot.dragging state node
+        const box = draggingState.screenshotBox.get();
+
+        // The box is in "page space", i.e. panned and zoomed with the canvas, but we
+        // want to show it in front of the canvas, so we'll need to convert it to
+        // "page space", i.e. uneffected by scale, and relative to the tldraw
+        // page's top left corner.
+        const zoomLevel = editor.getZoomLevel();
+        const { x, y } = editor.pageToViewport({ x: box.x, y: box.y });
+        return new Box(x, y, box.w * zoomLevel, box.h * zoomLevel);
+      },
+      [editor],
+    );
+
+    if (!screenshotBrush) return null;
+
+    return (
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          transform: `translate(${screenshotBrush.x}px, ${screenshotBrush.y}px)`,
+          width: screenshotBrush.w,
+          height: screenshotBrush.h,
+          border: "1px solid var(--color-text-0)",
+          zIndex: 999,
+        }}
+      />
+    );
+  }
 
   const overrides: TLUiOverrides = {
     actions: (editor, actions) => {
@@ -463,6 +534,20 @@ export default function CanvasEditor({
         },
       };
     },
+    tools: (editor, tools) => {
+      return {
+        ...tools,
+        screenshot: {
+          id: "screenshot",
+          label: "Screenshot",
+          icon: "tool-screenshot",
+          kbd: "j",
+          onSelect() {
+            editor.setCurrentTool("screenshot");
+          },
+        },
+      };
+    },
   };
 
   useEffect(() => {
@@ -518,6 +603,8 @@ export default function CanvasEditor({
               persistenceKey={`${pageId}-canvas`}
               snapshot={content}
               overrides={overrides}
+              tools={customTools}
+              assets={myAssetStore}
               onMount={handleMount}
             />
           </MobileCanvasTour>
@@ -558,6 +645,7 @@ export default function CanvasEditor({
               options={{ maxPages: 1 }}
               persistenceKey={`${pageId}-canvas`}
               snapshot={content}
+              tools={customTools}
               assets={myAssetStore}
               overrides={overrides}
               onMount={handleMount}
