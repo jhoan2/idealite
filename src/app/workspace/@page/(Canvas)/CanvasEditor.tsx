@@ -13,7 +13,6 @@ import {
 import "tldraw/tldraw.css";
 import { toast } from "sonner";
 import { useCallback, useState, useRef, useEffect } from "react";
-import { SaveIcon } from "lucide-react";
 import { ImageResponse } from "~/app/api/image/route";
 import { saveCanvasData } from "~/server/actions/canvas";
 import { debounce } from "lodash";
@@ -25,30 +24,20 @@ import { TreeTag } from "~/server/queries/usersTags";
 import HeadingEditor from "../HeadingEditor";
 import { ScreenshotTool } from "./SnippetTool/Screenshot";
 
-interface SaveCanvasButtonProps {
-  pageId: string;
-  className?: string;
-  setAutoSaveStatus: (status: "idle" | "saving" | "saved" | "error") => void;
-  tags: Tag[];
-}
-
 const myAssetStore: TLAssetStore = {
   async upload(asset, file) {
-    // Create a data URI instead of a blob URL
     const tempSrc = await new Promise<string>((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result as string);
       reader.readAsDataURL(file);
     });
 
-    // Extract metadata from clipboard if possible
     let metadata = {
       description: "",
-      status: "uploading", // Add status to track upload state
+      status: "uploading",
     };
 
     try {
-      // Read clipboard items for any metadata
       const clipboardItems = await navigator.clipboard.read();
 
       for (const item of clipboardItems) {
@@ -70,7 +59,6 @@ const myAssetStore: TLAssetStore = {
       console.warn("Failed to access clipboard:", err);
     }
 
-    // Return data URI immediately to show the image right away
     const tempAsset = {
       src: tempSrc,
       meta: {
@@ -80,7 +68,6 @@ const myAssetStore: TLAssetStore = {
       },
     };
 
-    // 3. Start background upload process
     window.setTimeout(async () => {
       try {
         const formData = new FormData();
@@ -102,7 +89,6 @@ const myAssetStore: TLAssetStore = {
         const { pinataData } = (await response.json()) as ImageResponse;
         toast.dismiss();
 
-        // 4. Dispatch event with the final URL to update the asset
         window.dispatchEvent(
           new CustomEvent("tldraw:asset:uploaded", {
             detail: {
@@ -131,37 +117,75 @@ const myAssetStore: TLAssetStore = {
   },
 };
 
-export function SaveCanvasButton({
+export default function CanvasEditor({
+  title,
+  content,
   pageId,
-  className,
-  setAutoSaveStatus,
   tags,
-}: SaveCanvasButtonProps) {
-  const editor = useEditor();
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSavedSnapshot, setLastSavedSnapshot] = useState("");
+  userTagTree,
+  isMobile,
+  isWarpcast,
+}: {
+  title: string;
+  content: any;
+  pageId: string;
+  tags: Tag[];
+  userTagTree: TreeTag[];
+  isMobile: boolean;
+  isWarpcast: boolean;
+}) {
+  const [autoSaveStatus, setAutoSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const lastSavedSnapshotRef = useRef<string>("");
   const lastSaveTimeRef = useRef<number>(Date.now());
-  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Export canvas image function
   const exportCanvasImage = async () => {
-    if (!editor) return null;
+    if (!editorRef.current) return null;
 
     try {
-      // Export the canvas as a PNG image
-      const shapeIds = editor.getCurrentPageShapeIds();
-      if (shapeIds.size === 0) return;
-      const { blob } = await editor.toImage([...shapeIds], {
-        format: "png",
+      const shapeIds = editorRef.current.getCurrentPageShapeIds();
+      if (shapeIds.size === 0) return null;
+
+      const { blob } = await editorRef.current.toImage([...shapeIds], {
+        format: "jpeg",
         background: false,
+        quality: 1,
+        scale: 0.5,
+        padding: 0,
       });
 
-      // Create a File from the blob
-      const file = new File([blob], `canvas-${pageId}.png`, {
-        type: "image/png",
+      let newBlob = blob;
+
+      if (newBlob.size > 900000) {
+        const { blob: smallerBlob } = await editorRef.current.toImage(
+          [...shapeIds],
+          {
+            format: "jpeg",
+            background: false,
+            quality: 1,
+            scale: 0.25,
+            padding: 0,
+          },
+        );
+
+        if (smallerBlob.size > 1000000) {
+          toast.warning("Canvas is too large for preview generation");
+          return null;
+        }
+
+        newBlob = smallerBlob;
+      }
+
+      const file = new File([newBlob], `canvas-${pageId}.jpeg`, {
+        type: "image/jpeg",
       });
 
-      // Upload to Pinata using the existing image route
       const formData = new FormData();
       formData.append("file", file);
 
@@ -187,30 +211,30 @@ export function SaveCanvasButton({
   };
 
   const handleSave = async () => {
-    if (!editor || isSaving) return;
-    setIsSaving(true);
+    if (!editorRef.current) return false;
+
+    if (autoSaveStatus === "saving") return false;
+
     setAutoSaveStatus("saving");
 
     try {
-      // 1. Get all shapes on the canvas and find which assets are actually in use
+      const editor = editorRef.current;
+
       const shapes = Array.from(editor.getCurrentPageShapes());
       const usedAssetIds = new Set(
         shapes
           .filter((shape) => shape.type === "image")
           .map((shape) => {
-            // Access assetId safely with type assertion and optional chaining
             return (shape as any).props?.assetId;
           })
           .filter(Boolean),
       );
 
-      // 2. Get only the assets that are currently used in shapes
       const allAssets = Array.from(editor.getAssets());
       const activeAssets = allAssets.filter((asset) =>
         usedAssetIds.has(asset.id),
       );
 
-      // 3. Process the active assets to extract Pinata metadata
       const assetMetadata = activeAssets.map((asset) => {
         const src = asset.props.src || "";
         let ipfsHash = null;
@@ -229,20 +253,24 @@ export function SaveCanvasButton({
         };
       });
 
-      // Export and upload the canvas image
-      toast.loading("Generating canvas preview...");
-      const canvasImageCid = await exportCanvasImage();
-      toast.dismiss();
-
-      // Get the snapshot
       const snapshot = getSnapshot(editor.store);
+      const snapshotStr = JSON.stringify(snapshot);
 
-      // Send snapshot, asset metadata, and canvas image CID to server
+      let canvasImageCid = null;
+      const timeSinceLastSave = Date.now() - lastSaveTimeRef.current;
+      const needsNewPreview = timeSinceLastSave > 1 * 60 * 1000;
+
+      if (needsNewPreview) {
+        toast.loading("Generating canvas preview...");
+        canvasImageCid = await exportCanvasImage();
+        toast.dismiss();
+      }
+
       const response = await saveCanvasData(
         pageId,
         snapshot,
         assetMetadata,
-        canvasImageCid || null,
+        canvasImageCid,
         tags.map((tag) => tag.id),
       );
 
@@ -250,70 +278,67 @@ export function SaveCanvasButton({
         throw new Error(response.error || "Failed to save canvas");
       }
 
-      // After successful save, update tracking variables
-      setLastSavedSnapshot(JSON.stringify(snapshot));
+      lastSavedSnapshotRef.current = snapshotStr;
       lastSaveTimeRef.current = Date.now();
+      setHasUnsavedChanges(false);
 
-      toast.success("Canvas saved successfully!");
+      if (needsNewPreview) {
+        toast.success("Canvas saved successfully!");
+      }
+
       setAutoSaveStatus("saved");
 
-      // 5. Show additional info about sync results
       if (response.created && response.created > 0) {
         toast.info(`Created ${response.created} new cards`);
       }
       if (response.deleted && response.deleted > 0) {
         toast.info(`Removed ${response.deleted} outdated cards`);
       }
+
+      return true;
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to save canvas",
       );
       console.error("Error saving canvas:", error);
       setAutoSaveStatus("error");
+      return false;
     } finally {
-      setIsSaving(false);
+      setTimeout(() => {
+        if (autoSaveStatus === "saved") {
+          setAutoSaveStatus("idle");
+        }
+      }, 2000);
     }
   };
 
-  // Manual save with debounce for button click
   const debouncedSave = useCallback(
-    debounce(async () => {
-      await handleSave();
-    }, 1000), // 1 second delay
-    [handleSave],
+    debounce(() => {
+      if (hasUnsavedChanges) {
+        handleSave();
+      }
+    }, 3000),
+    [hasUnsavedChanges],
   );
 
-  return (
-    <button onClick={debouncedSave} className={className}>
-      <SaveIcon className="tlui-button tlui-button-icon" />
-    </button>
-  );
-}
+  useEffect(() => {
+    if (!editorRef.current) return;
 
-export default function CanvasEditor({
-  title,
-  content,
-  pageId,
-  tags,
-  userTagTree,
-  isMobile,
-  isWarpcast,
-}: {
-  title: string;
-  content: any;
-  pageId: string;
-  tags: Tag[];
-  userTagTree: TreeTag[];
-  isMobile: boolean;
-  isWarpcast: boolean;
-}) {
-  const [autoSaveStatus, setAutoSaveStatus] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
-  const [isSavingTitle, setIsSavingTitle] = useState(false);
-  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
+    const editor = editorRef.current;
 
-  // Set up event listener to update assets when uploads complete
+    const handleEditorChange = () => {
+      setHasUnsavedChanges(true);
+      debouncedSave();
+    };
+
+    const unsubscribe = editor.store.listen(handleEditorChange);
+
+    return () => {
+      unsubscribe();
+      debouncedSave.cancel();
+    };
+  }, [debouncedSave]);
+
   useEffect(() => {
     const handleAssetUploaded = (event: CustomEvent) => {
       const { assetId, src, w, h, meta } = event.detail;
@@ -341,6 +366,9 @@ export default function CanvasEditor({
               },
             },
           ]);
+
+          // Mark as having unsaved changes when an asset is updated
+          setHasUnsavedChanges(true);
         }
       }
     };
@@ -365,16 +393,12 @@ export default function CanvasEditor({
     editorRef.current = editor;
   }, []);
 
-  // Custom toolbar that includes our Lucide icon button
+  // Custom toolbar - removed the save button component since we're using auto-save
   const components: TLComponents = {
     Toolbar: (props) => {
       return (
         <DefaultToolbar {...props}>
-          <SaveCanvasButton
-            pageId={pageId}
-            setAutoSaveStatus={setAutoSaveStatus}
-            tags={tags}
-          />
+          {/* Save button removed - auto-save is active instead */}
           <DefaultToolbarContent />
         </DefaultToolbar>
       );
@@ -395,7 +419,7 @@ export default function CanvasEditor({
             const { blob } = await editor.toImage(
               shapes.map((shape) => shape.id),
               {
-                format: "png",
+                format: "jpeg",
                 background: false,
                 padding: 0,
               },
@@ -411,7 +435,6 @@ export default function CanvasEditor({
               if (asset?.meta) {
                 metadata = {
                   description: asset.meta.description || "",
-                  // Add any other metadata fields you want to preserve
                 };
               }
             }
@@ -419,18 +442,17 @@ export default function CanvasEditor({
             if (blob) {
               try {
                 const item = new ClipboardItem({
-                  "image/png": blob,
+                  "image/jpeg": blob,
                   "text/plain": new Blob([JSON.stringify(metadata)], {
                     type: "text/plain",
                   }),
                 });
                 await navigator.clipboard.write([item]);
               } catch (err) {
-                // Fallback: Create a temporary link to download the image
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                link.download = "canvas.png";
+                link.download = "canvas.jpeg";
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -442,6 +464,21 @@ export default function CanvasEditor({
       };
     },
   };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        handleSave();
+        e.preventDefault();
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
 
   return (
     <div
@@ -489,7 +526,10 @@ export default function CanvasEditor({
         <CanvasTour>
           <div className="absolute bottom-10 right-2 z-50">
             <div className="auto-save-indicator">
-              {autoSaveStatus === "idle" && (
+              {autoSaveStatus === "idle" && hasUnsavedChanges && (
+                <span className="text-xs text-yellow-400">Unsaved changes</span>
+              )}
+              {autoSaveStatus === "idle" && !hasUnsavedChanges && (
                 <span className="text-xs text-gray-400">Auto-save ready</span>
               )}
               {autoSaveStatus === "saving" && (
