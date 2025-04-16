@@ -170,7 +170,7 @@ export default function CanvasEditor({
 
       let newBlob = blob;
 
-      if (newBlob.size > 900000) {
+      if (newBlob.size > 4900000) {
         const { blob: smallerBlob } = await editorRef.current.toImage(
           [...shapeIds],
           {
@@ -182,7 +182,7 @@ export default function CanvasEditor({
           },
         );
 
-        if (smallerBlob.size > 1000000) {
+        if (smallerBlob.size > 5000000) {
           toast.warning("Canvas is too large for preview generation");
           return null;
         }
