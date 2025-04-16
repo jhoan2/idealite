@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import {
@@ -53,6 +53,67 @@ export function SidebarCard({
   const availableTags = flattenTagTree(userTagTree, tags);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+  const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
+    if (!textarea) return;
+
+    // Save the current scroll position
+    const scrollTop = textarea.scrollTop;
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = "auto";
+
+    // Calculate the new height, but cap it at max-h-[200px] (200px)
+    const newHeight = Math.min(textarea.scrollHeight, 200);
+    textarea.style.height = `${newHeight}px`;
+
+    // If the content is larger than the max height, enable scrolling
+    if (textarea.scrollHeight > 200) {
+      textarea.style.overflowY = "auto";
+    } else {
+      textarea.style.overflowY = "hidden";
+    }
+
+    // Restore the scroll position
+    textarea.scrollTop = scrollTop;
+  };
+
+  // Auto-adjust height when content changes
+  useEffect(() => {
+    if (isEditing) {
+      adjustTextareaHeight(contentTextareaRef.current);
+    }
+  }, [editedContent, isEditing]);
+
+  // Auto-adjust height when description changes
+  useEffect(() => {
+    if (isEditing) {
+      adjustTextareaHeight(descriptionTextareaRef.current);
+    }
+  }, [editedDescription, isEditing]);
+
+  // Auto-adjust when editing mode is enabled
+  useEffect(() => {
+    if (isEditing) {
+      setTimeout(() => {
+        adjustTextareaHeight(contentTextareaRef.current);
+        adjustTextareaHeight(descriptionTextareaRef.current);
+      }, 0);
+    }
+  }, [isEditing]);
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedContent(e.target.value);
+  };
+
+  const handleDescriptionChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    setEditedDescription(e.target.value);
+  };
+
   const handleSave = async () => {
     try {
       await updateCard({
@@ -95,17 +156,20 @@ export function SidebarCard({
               <div>
                 <label className="text-sm font-medium">Description</label>
                 <Textarea
+                  ref={descriptionTextareaRef}
                   value={editedDescription}
-                  onChange={(e) => setEditedDescription(e.target.value)}
-                  className="mt-1"
+                  onChange={handleDescriptionChange}
+                  className="mt-1 min-h-[100px] resize-none overflow-hidden"
                 />
               </div>
             ) : (
               <div>
                 <Textarea
+                  ref={contentTextareaRef}
                   value={editedContent}
-                  onChange={(e) => setEditedContent(e.target.value)}
-                  className="mt-1 h-auto max-h-[200px] min-h-[100px] overflow-y-auto"
+                  onChange={handleContentChange}
+                  className="mt-1 min-h-[100px] resize-none overflow-hidden"
+                  placeholder="Card content..."
                 />
               </div>
             )}
