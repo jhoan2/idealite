@@ -74,7 +74,7 @@ export class ScreenshotDragging extends StateNode {
       copyAs(
         editor,
         shapes.map((s) => s.id),
-        { format: "png", bounds: box },
+        { format: "png", bounds: box, padding: 0 },
       );
       toast.success("Copied to clipboard");
     }
