@@ -41,6 +41,17 @@ export default async function PageContent({
     userId ? getUserTagTree(userId) : [],
   ]);
 
+  let canvasSnapshot: any = null;
+  if (content.content_type === "canvas") {
+    try {
+      canvasSnapshot = JSON.parse(content.content);
+    } catch (err) {
+      console.error("Failed to parse canvas JSON on server:", err);
+      // fallback to an empty snapshot or handle error
+      canvasSnapshot = { document: "" };
+    }
+  }
+
   return (
     <div className="h-full w-full">
       <Suspense fallback={<HeaderSkeleton />}>
@@ -56,7 +67,7 @@ export default async function PageContent({
         {content.content_type === "canvas" ? (
           <CanvasEditor
             title={title ?? ""}
-            content={content}
+            content={canvasSnapshot}
             pageId={pageId}
             tags={tags}
             userTagTree={userTagTree}
