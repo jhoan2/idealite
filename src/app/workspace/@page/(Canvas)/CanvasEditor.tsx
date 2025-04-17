@@ -600,8 +600,7 @@ export default function CanvasEditor({
             <Tldraw
               components={components}
               options={{ maxPages: 1 }}
-              persistenceKey={`${pageId}-canvas`}
-              snapshot={content}
+              snapshot={JSON.parse(content.content)}
               overrides={overrides}
               tools={customTools}
               assets={myAssetStore}
@@ -643,8 +642,7 @@ export default function CanvasEditor({
             <Tldraw
               components={components}
               options={{ maxPages: 1 }}
-              persistenceKey={`${pageId}-canvas`}
-              snapshot={content}
+              snapshot={JSON.parse(content.content)}
               tools={customTools}
               assets={myAssetStore}
               overrides={overrides}
