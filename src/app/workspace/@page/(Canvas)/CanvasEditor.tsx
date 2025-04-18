@@ -84,6 +84,7 @@ const myAssetStore: TLAssetStore = {
 
         const response = await fetch("/api/image", {
           method: "POST",
+          credentials: "include",
           body: formData,
         });
 
