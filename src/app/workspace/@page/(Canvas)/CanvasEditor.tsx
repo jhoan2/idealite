@@ -218,7 +218,7 @@ export default function CanvasEditor({
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!editorRef.current) return false;
 
     if (autoSaveStatus === "saving") return false;
@@ -318,8 +318,9 @@ export default function CanvasEditor({
         }
       }, 2000);
     }
-  };
+  }, [autoSaveStatus, editorRef.current]);
 
+  // 2. Debounce saving
   const debouncedSave = useCallback(
     debounce(() => {
       if (hasUnsavedChanges) {
@@ -329,6 +330,7 @@ export default function CanvasEditor({
     [hasUnsavedChanges],
   );
 
+  // 3. Listen for changes to the editor
   useEffect(() => {
     if (!editorRef.current) return;
 
@@ -422,12 +424,6 @@ export default function CanvasEditor({
   const components: TLComponents = {
     InFrontOfTheCanvas: ScreenshotBox,
     Toolbar: CustomToolbar,
-  };
-
-  const customAssetUrls: TLUiAssetUrlOverrides = {
-    icons: {
-      "tool-screenshot": "/tool-screenshot.svg",
-    },
   };
 
   function ScreenshotBox() {
@@ -598,9 +594,10 @@ export default function CanvasEditor({
               isCanvas={true}
             />
             <Tldraw
+              key={pageId}
               components={components}
               options={{ maxPages: 1 }}
-              snapshot={JSON.parse(content.content)}
+              snapshot={content}
               overrides={overrides}
               tools={customTools}
               assets={myAssetStore}
@@ -640,9 +637,10 @@ export default function CanvasEditor({
           />
           <div className="relative flex h-[100dvh] max-h-[85dvh] w-full flex-col overflow-hidden">
             <Tldraw
+              key={pageId}
               components={components}
               options={{ maxPages: 1 }}
-              snapshot={JSON.parse(content.content)}
+              snapshot={content}
               tools={customTools}
               assets={myAssetStore}
               overrides={overrides}
