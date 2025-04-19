@@ -19,7 +19,12 @@ export default clerkMiddleware(
     }
   },
   {
-    authorizedParties: ["https://www.idealite.xyz", "http://localhost:3000"],
+    authorizedParties: [
+      "https://www.idealite.xyz",
+      "http://localhost:3000",
+      "www.idealight.xyz",
+      "https://www.idealight.xyz",
+    ],
   },
 );
 
