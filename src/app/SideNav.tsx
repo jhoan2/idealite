@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Folder, UserRound, Gamepad2 } from "lucide-react";
+import { Home, Folder, UserRound, Gamepad2, Inbox } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ModeToggle } from "./NextThemeButton";
@@ -19,6 +19,7 @@ export default function SideNav() {
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Gamepad2, label: "Play", href: "/play" },
     { icon: UserRound, label: "Profile", href: "/profile" },
+    { icon: Inbox, label: "Review", href: "/review" },
   ];
 
   return (
@@ -41,7 +42,7 @@ export default function SideNav() {
           {menuItems.map((item) => {
             const isActive = pathname.includes(item.href);
             return (
-              <Link href={item.href}>
+              <Link href={item.href} key={item.href}>
                 <Button
                   variant="ghost"
                   title={item.label}
