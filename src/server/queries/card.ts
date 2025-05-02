@@ -1,9 +1,9 @@
 "use server";
 
 import { db } from "~/server/db";
-import { cards } from "~/server/db/schema";
+import { cards, cards_tags } from "~/server/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
-import { and, eq, lte, isNotNull, not } from "drizzle-orm";
+import { and, eq, lte, isNotNull, not, inArray, sql } from "drizzle-orm";
 
 export type Card = typeof cards.$inferSelect & {
   tags: {
@@ -53,24 +53,84 @@ export async function getPageCards(pageId: string): Promise<Card[]> {
   }));
 }
 
-export async function getDueFlashCards() {
-  //Flashcards are cards that have content, which is different from those cards with images.
+export async function getDueFlashCards({
+  status = "active",
+  tags = [],
+  limit = 20,
+  getCards = false,
+}: {
+  status?: "active" | "mastered" | "suspended" | "all";
+  tags?: string[];
+  limit?: number;
+  getCards?: boolean;
+} = {}) {
   const user = await currentUser();
 
   if (!user?.externalId) {
     throw new Error("Unauthorized");
   }
 
-  return await db.query.cards.findMany({
-    where: and(
-      eq(cards.user_id, user.externalId),
-      eq(cards.status, "active"),
-      eq(cards.deleted, false),
-      lte(cards.next_review, new Date()),
-      // Ignore cards with empty content
-      not(eq(cards.content, "")),
-      isNotNull(cards.content),
-    ),
-    limit: 20,
-  });
+  let whereConditions = [
+    eq(cards.user_id, user.externalId),
+    eq(cards.deleted, false),
+  ];
+
+  if (status === "active") {
+    whereConditions.push(eq(cards.status, "active"));
+    whereConditions.push(lte(cards.next_review, new Date()));
+  } else if (status === "mastered") {
+    whereConditions.push(eq(cards.status, "mastered"));
+  } else if (status === "suspended") {
+    whereConditions.push(eq(cards.status, "suspended"));
+  }
+
+  if (tags.length > 0) {
+    const taggedCards = db
+      .select({ cardId: cards_tags.card_id })
+      .from(cards_tags)
+      .where(inArray(cards_tags.tag_id, tags));
+
+    whereConditions.push(inArray(cards.id, taggedCards));
+  }
+
+  const result = await db
+    .select({ count: sql<number>`count(${cards.id})` })
+    .from(cards)
+    .where(and(...whereConditions));
+
+  const count = result[0]?.count || 0;
+
+  if (getCards) {
+    const dueCards = await db.query.cards.findMany({
+      where: and(...whereConditions),
+      limit: limit,
+      with: {
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
+      },
+    });
+
+    const formattedCards = dueCards.map((card) => ({
+      ...card,
+      tags: card.tags.map(({ tag }) => ({
+        id: tag.id,
+        name: tag.name,
+        parent_id: tag.parent_id,
+        created_at: tag.created_at,
+        updated_at: tag.updated_at,
+        deleted: tag.deleted,
+        is_template: tag.is_template,
+      })),
+    }));
+
+    return {
+      count: count,
+      cards: formattedCards,
+    };
+  }
+
+  return { count: count };
 }
