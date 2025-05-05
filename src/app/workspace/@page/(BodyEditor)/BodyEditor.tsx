@@ -18,8 +18,20 @@ import { createCardFromPage } from "~/server/actions/card";
 import { NodeSelection } from "@tiptap/pm/state";
 import { Input } from "~/components/ui/input";
 import StackCardsIcon from "./StackCardsIcon";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wrench } from "lucide-react";
 import { Tag } from "~/server/db/schema";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
+import { Label } from "~/components/ui/label";
 
 const BodyEditor = ({
   content,
@@ -39,6 +51,13 @@ const BodyEditor = ({
   const [description, setDescription] = useState("");
   const [isImageSelected, setIsImageSelected] = useState(false);
   const [isCreatingCard, setIsCreatingCard] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedText, setSelectedText] = useState("");
+  const [cardType, setCardType] = useState<"qa" | "cloze">("qa");
+  const [questionText, setQuestionText] = useState("");
+  const [answerText, setAnswerText] = useState("");
+  const [clozeText, setClozeText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const debouncedSave = useDebouncedCallback(async (content: string) => {
     try {
@@ -121,6 +140,160 @@ const BodyEditor = ({
           toast.error("Failed to copy text");
         });
     }
+  };
+
+  const handleOpenFlashcardModal = (editor: Editor) => {
+    if (!editor) return;
+
+    const selection = editor.state.selection;
+
+    // Get the content before clearing selection
+    const content = editor.state.doc.textBetween(selection.from, selection.to);
+
+    if (!content.trim()) {
+      toast.error("Please select some text to create a card");
+      return;
+    }
+
+    // Store the selected text
+    setSelectedText(content.trim());
+
+    // Initialize form fields
+    setQuestionText("");
+    setAnswerText(content.trim());
+    setClozeText(content.trim());
+
+    // Clear selection - this should hide the bubble menu
+    editor.commands.setTextSelection({
+      from: selection.from,
+      to: selection.from, // Set to same position to clear selection
+    });
+
+    // Open the modal
+    setIsModalOpen(true);
+  };
+
+  const handleCreateCustomCard = async () => {
+    if (cardType === "qa" && (!questionText.trim() || !answerText.trim())) {
+      toast.error("Both question and answer are required");
+      return;
+    }
+
+    if (cardType === "cloze" && !clozeText.trim()) {
+      toast.error("Cloze text is required");
+      return;
+    }
+
+    // Extract cloze answers from the format with {{...}}
+    const clozeMatches = clozeText.match(/{{([^{}]+)}}/g);
+    if (cardType === "cloze" && !clozeMatches) {
+      toast.error(
+        "Please mark at least one word with {{...}} in your cloze text",
+      );
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const twoWeeksFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+      const baseCardData = {
+        pageId,
+        content: selectedText,
+        nextReview: twoWeeksFromNow.toISOString(),
+        tagIds: tags.map((tag) => tag.id),
+      };
+
+      let cardData;
+
+      if (cardType === "qa") {
+        cardData = {
+          ...baseCardData,
+          question: questionText.trim(),
+          answer: answerText.trim(),
+        };
+      } else {
+        // For cloze deletion cards
+        const clozeAnswers = clozeMatches
+          ? clozeMatches.map((match) => match.slice(2, -2))
+          : [];
+
+        const clozeTemplate = clozeText.replace(/{{([^{}]+)}}/g, "_____");
+
+        cardData = {
+          ...baseCardData,
+          content: clozeText,
+          clozeTemplate: clozeTemplate,
+          clozeAnswers: clozeAnswers.join(", "),
+        };
+      }
+
+      const result = await createCardFromPage(cardData);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create card");
+      }
+
+      toast.success(
+        `Custom ${cardType === "qa" ? "question-answer" : "cloze"} card created successfully`,
+      );
+
+      // Close the modal
+      setIsModalOpen(false);
+
+      // Clear form fields
+      setQuestionText("");
+      setAnswerText("");
+      setClozeText("");
+    } catch (error) {
+      console.error("Card creation failed:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create card",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAddClozeFormatting = () => {
+    // Get the textarea element with the correct type
+    const textarea = document.getElementById(
+      "cloze-text",
+    ) as HTMLTextAreaElement;
+
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    // Check if there's a selection
+    if (start === end) {
+      toast.error("Please select some text first");
+      return;
+    }
+
+    // Get the selected text
+    const selectedText = clozeText.substring(start, end);
+
+    // Create the new text with the selection wrapped in curly brackets
+    const newText =
+      clozeText.substring(0, start) +
+      "{{" +
+      selectedText +
+      "}}" +
+      clozeText.substring(end);
+
+    // Update the state
+    setClozeText(newText);
+
+    // Focus back on the textarea
+    setTimeout(() => {
+      textarea.focus();
+      // Set cursor position after the newly formatted text
+      const newPosition = end + 4; // 4 is the length of the added brackets
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
   };
 
   const editor = useEditor({
@@ -313,6 +486,14 @@ const BodyEditor = ({
                   <StackCardsIcon />
                 )}
               </button>
+              <button
+                onClick={() => handleOpenFlashcardModal(editor)}
+                className="rounded bg-background px-2 py-1 text-secondary-foreground transition-colors hover:bg-secondary/90"
+                disabled={isCreatingCard}
+                title="Create Custom Flashcard"
+              >
+                <Wrench className="h-4 w-4" />
+              </button>
               {isImageSelected && (
                 <div className="absolute -top-10 left-0 right-0 flex gap-2 bg-background">
                   <Input
@@ -361,6 +542,104 @@ const BodyEditor = ({
             </div>
           </BubbleMenu>
         )}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Create Custom Flashcard</DialogTitle>
+              <DialogDescription>
+                Create a custom flashcard from the selected text
+              </DialogDescription>
+            </DialogHeader>
+
+            <Tabs
+              defaultValue="qa"
+              onValueChange={(value) => setCardType(value as "qa" | "cloze")}
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="qa">Question & Answer</TabsTrigger>
+                <TabsTrigger value="cloze">Cloze Deletion</TabsTrigger>
+              </TabsList>
+
+              {/* Question & Answer Tab */}
+              <TabsContent value="qa" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="question">Question</Label>
+                  <Textarea
+                    id="question"
+                    placeholder="Enter the question"
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="answer">Answer</Label>
+                  <Textarea
+                    id="answer"
+                    placeholder="Enter the answer"
+                    value={answerText}
+                    onChange={(e) => setAnswerText(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </TabsContent>
+
+              {/* Cloze Deletion Tab */}
+              <TabsContent value="cloze" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cloze-text">
+                    Text with Cloze Deletions{" "}
+                    <span className="text-sm text-muted-foreground">
+                      (Surround words to hide with double braces)
+                    </span>
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddClozeFormatting}
+                    className="text-xs"
+                  >
+                    Add Cloze Brackets
+                  </Button>
+                  <Textarea
+                    id="cloze-text"
+                    placeholder="Example: The capital of France is {{Paris}}."
+                    value={clozeText}
+                    onChange={(e) => setClozeText(e.target.value)}
+                    rows={5}
+                  />
+                </div>
+                <div className="rounded-md bg-muted p-3">
+                  <p className="text-sm">
+                    <strong>Preview:</strong>{" "}
+                    {clozeText.replace(/{{([^{}]+)}}/g, "_____")}
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateCustomCard} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Flashcard"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
