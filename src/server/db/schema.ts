@@ -402,6 +402,13 @@ export const cards = createTable(
       .references(() => users.id),
     page_id: uuid("page_id").references(() => pages.id),
     resource_id: uuid("resource_id").references(() => resources.id),
+    card_type: varchar("card_type", {
+      enum: ["qa", "image", "cloze"],
+    }),
+    question: text("question"),
+    answer: text("answer"),
+    cloze_template: text("cloze_template"),
+    cloze_answers: text("cloze_answers"),
     content: text("content"),
     image_cid: text("image_cid"),
     description: text("description"),
@@ -611,107 +618,6 @@ export const cardsTagsRelations = relations(cards_tags, ({ one }) => ({
 // =====================
 // Games Related Schema
 // =====================
-
-export const game_status_enum = pgEnum("game_status", [
-  "created",
-  "in_progress",
-  "completed",
-  "abandoned",
-]);
-
-export const game_type_enum = pgEnum("game_type", [
-  "friend-clash",
-  "spin-wheel",
-  "two-truths",
-  "guess-picture",
-]);
-
-export type GameType = (typeof game_type_enum.enumValues)[number];
-export type GameSession = typeof game_session.$inferSelect;
-export const game_session = createTable(
-  "game_session",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    player_count: integer("player_count").notNull(),
-    players: text("players").array().notNull(),
-    player_info: jsonb("player_info").array().notNull().$type<
-      {
-        username: string;
-        display_name: string | null;
-        fid: number;
-        pfp_url: string | null;
-        avatar_url: string | null;
-        user_id: string;
-      }[]
-    >(),
-    eliminated_players: uuid("eliminated_players")
-      .array()
-      .notNull()
-      .default(sql`ARRAY[]::uuid[]`),
-    current_turn_player_index: integer("current_turn_player_index")
-      .notNull()
-      .default(0),
-    game_type: game_type_enum("game_type").notNull(),
-    notification_ids: text("notification_ids").array(),
-    status: game_status_enum("status").notNull().default("created"),
-    turn_deadline: timestamp("turn_deadline", { withTimezone: true }).notNull(),
-    topics: text("topics").array(),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (table) => ({
-    playersIdx: index("game_session_players_idx").on(table.players),
-    statusIdx: index("game_session_status_idx").on(table.status),
-    turn_deadline_idx: index("game_session_turn_deadline_idx").on(
-      table.turn_deadline,
-    ),
-    player_count_idx: index("game_session_player_count_idx").on(
-      table.player_count,
-    ),
-  }),
-);
-
-export type GameMove = typeof game_move.$inferSelect;
-export const game_move = createTable(
-  "game_move",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    session_id: uuid("session_id")
-      .notNull()
-      .references(() => game_session.id, { onDelete: "cascade" }),
-    player_id: uuid("player_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    player_username: text("player_username").notNull(),
-    points: integer("points").notNull().default(0),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => ({
-    session_id_idx: index("game_move_session_idx").on(table.session_id),
-    player_id_idx: index("game_move_player_idx").on(table.player_id),
-  }),
-);
-
-export const game_sessions_relations = relations(game_session, ({ many }) => ({
-  moves: many(game_move),
-}));
-
-export const game_moves_relations = relations(game_move, ({ one }) => ({
-  session: one(game_session, {
-    fields: [game_move.session_id],
-    references: [game_session.id],
-  }),
-  player: one(users, {
-    fields: [game_move.player_id],
-    references: [users.id],
-  }),
-}));
 
 export const points_history = createTable(
   "points_history",
