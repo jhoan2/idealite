@@ -4,6 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import {
   getFlashcardRedisClient,
   QueuedFlashcardJob,
+  JOB_RESULT_TTL,
 } from "~/lib/flashcards/flashcard-queue";
 import { createCardFromPage } from "~/server/actions/card";
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
@@ -176,11 +177,17 @@ async function handler(req: Request) {
 
     // Update job status
     const redis = getFlashcardRedisClient();
-    await redis.hset(`flashcard-job:${job.id}`, {
-      status: "completed",
-      processedAt: new Date().toISOString(),
-      result: JSON.stringify(result),
-    });
+    const jobKey = `flashcard-job:${job.id}`;
+
+    await redis
+      .pipeline()
+      .hset(jobKey, {
+        status: "completed",
+        processedAt: new Date().toISOString(),
+        result: JSON.stringify(result),
+      })
+      .expire(jobKey, JOB_RESULT_TTL)
+      .exec();
 
     return NextResponse.json({
       success: true,
@@ -195,16 +202,21 @@ async function handler(req: Request) {
       const body = await req.json();
       if (body?.id) {
         const redis = getFlashcardRedisClient();
-        await redis.hset(`flashcard-job:${body.id}`, {
-          status: "failed",
-          error: error instanceof Error ? error.message : String(error),
-          processedAt: new Date().toISOString(),
-        });
+        const jobKey = `flashcard-job:${body.id}`;
+
+        await redis
+          .pipeline()
+          .hset(jobKey, {
+            status: "failed",
+            error: error instanceof Error ? error.message : String(error),
+            processedAt: new Date().toISOString(),
+          })
+          .expire(jobKey, JOB_RESULT_TTL) // Add TTL to the hash (7 days)
+          .exec();
       }
     } catch (e) {
       // Ignore
     }
-
     return NextResponse.json(
       {
         error: "Failed to process flashcard job",

@@ -25,15 +25,19 @@ export async function queueFlashcardGeneration(jobData: FlashcardJobData) {
   const redis = getFlashcardRedisClient();
   const jobId = `flashcard-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-  await redis.lpush(
-    FLASHCARD_QUEUE,
-    JSON.stringify({
-      id: jobId,
-      data: jobData,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    }),
-  );
+  const jobPayload = JSON.stringify({
+    id: jobId,
+    data: jobData,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  });
+
+  // Use a transaction to add to queue and set expiration
+  await redis
+    .pipeline()
+    .lpush(FLASHCARD_QUEUE, jobPayload)
+    .expire(FLASHCARD_QUEUE, JOB_QUEUE_TTL)
+    .exec();
 
   return jobId;
 }
