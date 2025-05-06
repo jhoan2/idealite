@@ -48,7 +48,7 @@ export async function processNextFlashcardJob() {
     // Send to QStash with retry configuration
     const client = getFlashcardQStashClient();
     await client.publishJSON({
-      url: `https://bff9-146-74-94-117.ngrok-free.app/api/process-flashcard-job`,
+      url: `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/process-flashcard-job`,
       body: job,
       retries: 3, // Retry up to 3 times
       delay: 15, // 15 second delay between retries
