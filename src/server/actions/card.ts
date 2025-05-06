@@ -5,7 +5,6 @@ import { z } from "zod";
 import { db } from "~/server/db";
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
-import { getDueFlashCards } from "../queries/card";
 import * as Sentry from "@sentry/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -17,12 +16,17 @@ const createCardSchema = z.object({
   description: z.string().min(1).optional(),
   tagIds: z.array(z.string().uuid()).optional(),
   resourceId: z.string().uuid().optional(),
-
   nextReview: z.string().datetime().optional(),
+  cardType: z.enum(["qa", "image", "cloze"]).optional(),
+  question: z.string().optional(),
+  answer: z.string().optional(),
+  clozeTemplate: z.string().optional(),
+  clozeAnswers: z.string().optional(),
 });
 
 export async function createCardFromPage(
   input: z.infer<typeof createCardSchema>,
+  overrideUserId?: string,
 ): Promise<{
   success: boolean;
   data?: typeof cards.$inferSelect;
@@ -30,8 +34,16 @@ export async function createCardFromPage(
 }> {
   try {
     const validatedInput = createCardSchema.parse(input);
-    const user = await currentUser();
-    const userId = user?.externalId;
+    let userId: string | undefined;
+
+    if (overrideUserId) {
+      // Use the provided userId (from QStash job)
+      userId = overrideUserId;
+    } else {
+      // Get it from the authenticated user (normal browser request)
+      const user = await currentUser();
+      userId = user?.externalId || undefined;
+    }
 
     if (!userId) {
       return { success: false, error: "Unauthorized" };
@@ -51,6 +63,17 @@ export async function createCardFromPage(
           next_review: validatedInput.nextReview
             ? new Date(validatedInput.nextReview)
             : null,
+          card_type:
+            validatedInput.cardType ||
+            (validatedInput.question && validatedInput.answer
+              ? "qa"
+              : validatedInput.clozeTemplate && validatedInput.clozeAnswers
+                ? "cloze"
+                : "image"),
+          question: validatedInput.question,
+          answer: validatedInput.answer,
+          cloze_template: validatedInput.clozeTemplate,
+          cloze_answers: validatedInput.clozeAnswers,
         })
         .returning();
 
@@ -148,76 +171,6 @@ export async function deleteCard(cardId: string) {
 
   revalidatePath(`/workspace/${deletedCard.page_id}`);
   return deletedCard;
-}
-
-export async function createQuestionAndAnswer() {
-  const user = await currentUser();
-  const userId = user?.externalId;
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
-  const dueCards = await getDueFlashCards();
-
-  if (!dueCards.length) {
-    return [];
-  }
-
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/flashcards`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        cards: dueCards,
-        type: "question-answer",
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to generate flashcards");
-  }
-
-  const data = await response.json();
-  return data.flashcards;
-}
-
-export async function createClozeCards() {
-  const user = await currentUser();
-  const userId = user?.externalId;
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
-  const dueCards = await getDueFlashCards();
-
-  if (!dueCards.length) {
-    return [];
-  }
-
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/flashcards`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        cards: dueCards,
-        type: "cloze",
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to generate flashcards");
-  }
-
-  const data = await response.json();
-  return data.flashcards;
 }
 
 const processFlashCardsSchema = z.object({

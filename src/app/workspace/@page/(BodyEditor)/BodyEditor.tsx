@@ -32,7 +32,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
-
+import QuestionSparklesIcon from "./QuestionSparklesIcon";
+import ClozeSparklesIcon from "./ClozeSparklesIcon";
 const BodyEditor = ({
   content,
   immediatelyRender = false,
@@ -58,6 +59,8 @@ const BodyEditor = ({
   const [answerText, setAnswerText] = useState("");
   const [clozeText, setClozeText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingQA, setIsGeneratingQA] = useState(false);
+  const [isGeneratingCloze, setIsGeneratingCloze] = useState(false);
 
   const debouncedSave = useDebouncedCallback(async (content: string) => {
     try {
@@ -253,6 +256,121 @@ const BodyEditor = ({
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGenerateQA = async (editor: Editor) => {
+    if (!editor) return;
+
+    const selection = editor.state.selection;
+    const content = editor.state.doc.textBetween(selection.from, selection.to);
+
+    if (!content.trim()) {
+      toast.error("Please select some text to create a Q&A card");
+      return;
+    }
+
+    try {
+      setIsGeneratingQA(true);
+
+      const response = await fetch("/api/queue-flashcard", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: content.trim(),
+          pageId,
+          type: "question-answer",
+          tagIds: tags.map((tag) => tag.id),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to queue Q&A flashcard generation",
+        );
+      }
+
+      const data = await response.json();
+
+      toast.success("Q&A flashcard creation queued", {
+        description: "Your flashcard will be created shortly",
+      });
+
+      // Clear the selection to hide the bubble menu
+      editor.commands.setTextSelection({
+        from: selection.from,
+        to: selection.from,
+      });
+    } catch (error) {
+      console.error("Error generating Q&A flashcard:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create Q&A flashcard",
+      );
+    } finally {
+      setIsGeneratingQA(false);
+    }
+  };
+
+  // Handler for generating Cloze flashcards
+  const handleGenerateCloze = async (editor: Editor) => {
+    if (!editor) return;
+
+    const selection = editor.state.selection;
+    const content = editor.state.doc.textBetween(selection.from, selection.to);
+
+    if (!content.trim()) {
+      toast.error("Please select some text to create a Cloze card");
+      return;
+    }
+
+    try {
+      setIsGeneratingCloze(true);
+
+      const response = await fetch("/api/queue-flashcard", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: content.trim(),
+          pageId,
+          type: "cloze",
+          tagIds: tags.map((tag) => tag.id),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to queue Cloze flashcard generation",
+        );
+      }
+
+      const data = await response.json();
+
+      toast.success("Cloze flashcard creation queued", {
+        description: "Your flashcard will be created shortly",
+      });
+
+      // Clear the selection to hide the bubble menu
+      editor.commands.setTextSelection({
+        from: selection.from,
+        to: selection.from,
+      });
+    } catch (error) {
+      console.error("Error generating Cloze flashcard:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create Cloze flashcard",
+      );
+    } finally {
+      setIsGeneratingCloze(false);
     }
   };
 
@@ -485,6 +603,22 @@ const BodyEditor = ({
                 ) : (
                   <StackCardsIcon />
                 )}
+              </button>
+              <button
+                onClick={() => handleGenerateQA(editor)}
+                className="rounded bg-background px-2 py-1 text-secondary-foreground transition-colors hover:bg-secondary/90"
+                disabled={isGeneratingQA}
+                title="Generate Q&A Cards"
+              >
+                <QuestionSparklesIcon className="h-6 w-6" />
+              </button>
+              <button
+                onClick={() => handleGenerateCloze(editor)}
+                className="rounded bg-background px-2 py-1 text-secondary-foreground transition-colors hover:bg-secondary/90"
+                disabled={isGeneratingCloze}
+                title="Generate Cloze Cards"
+              >
+                <ClozeSparklesIcon className="h-6 w-6" />
               </button>
               <button
                 onClick={() => handleOpenFlashcardModal(editor)}
