@@ -178,13 +178,19 @@ const processFlashCardsSchema = z.object({
   content: z.string().optional(),
   description: z.string().optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
+  next_review: z.string().datetime().optional(),
+  last_reviewed: z.string().datetime().optional(),
 });
 
-// Accept either a single update or an array of updates
 export async function processFlashCards(
   input:
     | z.infer<typeof processFlashCardsSchema>
-    | Array<Pick<z.infer<typeof processFlashCardsSchema>, "id" | "status">>,
+    | Array<{
+        id: string;
+        status: "active" | "mastered" | "suspended";
+        next_review: string | null;
+        last_reviewed: string;
+      }>,
 ) {
   const user = await currentUser();
   const userId = user?.externalId;
@@ -192,7 +198,6 @@ export async function processFlashCards(
     throw new Error("Unauthorized");
   }
 
-  // Handle batch updates
   if (Array.isArray(input)) {
     return await db.transaction(async (tx) => {
       const results = await Promise.all(
@@ -201,6 +206,10 @@ export async function processFlashCards(
             .update(cards)
             .set({
               status: update.status,
+              next_review: update.next_review
+                ? new Date(update.next_review)
+                : null,
+              last_reviewed: new Date(update.last_reviewed),
               updated_at: new Date(),
             })
             .where(and(eq(cards.id, update.id), eq(cards.user_id, userId)))
@@ -209,7 +218,7 @@ export async function processFlashCards(
       );
 
       // Revalidate paths if needed
-      revalidatePath(`/play`);
+      revalidatePath(`/review`);
       return results.map(([card]) => card);
     });
   }
@@ -220,12 +229,18 @@ export async function processFlashCards(
     .update(cards)
     .set({
       ...validatedInput,
+      next_review: validatedInput.next_review
+        ? new Date(validatedInput.next_review)
+        : undefined,
+      last_reviewed: validatedInput.last_reviewed
+        ? new Date(validatedInput.last_reviewed)
+        : undefined,
       updated_at: new Date(),
     })
     .where(and(eq(cards.id, validatedInput.id), eq(cards.user_id, userId)))
     .returning();
 
-  revalidatePath(`/play`);
+  revalidatePath(`/review`);
   return updatedCard;
 }
 
