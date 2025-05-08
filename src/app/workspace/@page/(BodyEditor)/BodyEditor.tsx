@@ -593,18 +593,6 @@ const BodyEditor = ({
               </button>
               <div className="w-[1px] bg-slate-200" />
               <button
-                onClick={() => handleCreateCard(editor)}
-                className="rounded bg-background px-2 py-1 text-secondary-foreground transition-colors hover:bg-secondary/90"
-                disabled={isCreatingCard}
-                title="Create Card"
-              >
-                {isCreatingCard ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <StackCardsIcon />
-                )}
-              </button>
-              <button
                 onClick={() => handleGenerateQA(editor)}
                 className="rounded bg-background px-2 py-1 text-secondary-foreground transition-colors hover:bg-secondary/90"
                 disabled={isGeneratingQA}
