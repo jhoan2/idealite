@@ -17,9 +17,8 @@ export default function SideNav() {
   const menuItems = [
     { icon: Home, label: "Home", href: "/home" },
     { icon: Folder, label: "Workspace", href: "/workspace" },
-    { icon: Gamepad2, label: "Play", href: "/play" },
-    { icon: UserRound, label: "Profile", href: "/profile" },
     { icon: Inbox, label: "Review", href: "/review" },
+    { icon: UserRound, label: "Profile", href: "/profile" },
   ];
 
   return (
