@@ -28,7 +28,6 @@ import { Badge } from "~/components/ui/badge";
 import { Card, getDueFlashCards } from "~/server/queries/card";
 import { toast } from "sonner";
 import FlashcardReview from "./FlashcardReview";
-// Import Drawer components from shadcn/ui
 import {
   Drawer,
   DrawerContent,
@@ -44,11 +43,12 @@ export default function CardsDue({ tags }: { tags: Tag[] }) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [dueCardCount, setDueCardCount] = useState<number>(0);
   const [dueCards, setDueCards] = useState<Card[]>([]);
-  const [selectedCount, setSelectedCount] = useState<number>(20);
+  const [selectedCount, setSelectedCount] = useState<number>(0);
   const [reviewing, setReviewing] = useState<boolean>(false);
   const [open, setOpen] = useState(false);
   const [drawerTagsOpen, setDrawerTagsOpen] = useState(false);
   const [drawerCountOpen, setDrawerCountOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const handleTagToggle = (tagId: string) => {
     setSelectedTags((prev) => {
@@ -103,6 +103,13 @@ export default function CardsDue({ tags }: { tags: Tag[] }) {
     setReviewing(false);
     fetchDueCardCount();
   };
+
+  useEffect(() => {
+    if (!isInitialized && dueCardCount > 0) {
+      setSelectedCount(Math.min(dueCardCount, 20));
+      setIsInitialized(true);
+    }
+  }, [dueCardCount, isInitialized]);
 
   if (reviewing && dueCards.length > 0) {
     return (
