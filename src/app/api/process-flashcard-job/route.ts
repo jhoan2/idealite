@@ -1,3 +1,5 @@
+import "server-only";
+
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { GoogleGenAI } from "@google/genai";
@@ -227,12 +229,4 @@ async function handler(req: Request) {
   }
 }
 
-// Verify the signature from QStash before processing
 export const POST = verifySignatureAppRouter(handler);
-
-// Configuration for QStash signature verification
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
