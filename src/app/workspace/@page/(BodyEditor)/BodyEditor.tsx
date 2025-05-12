@@ -12,7 +12,6 @@ import { CustomTypography } from "./CustomTypograph";
 import { CustomKeymap } from "./CustomKeymap";
 import { TaskList } from "@tiptap/extension-task-list";
 import { TaskItem } from "@tiptap/extension-task-item";
-import Image from "@tiptap/extension-image";
 import LoadingOverlay from "./LoadingOverlay";
 import { createCardFromPage } from "~/server/actions/card";
 import { NodeSelection } from "@tiptap/pm/state";
@@ -51,9 +50,7 @@ const BodyEditor = ({
 }) => {
   const [editorContent, setEditorContent] = useState(content);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [description, setDescription] = useState("");
   const [isImageSelected, setIsImageSelected] = useState(false);
-  const [isCreatingCard, setIsCreatingCard] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
   const [cardType, setCardType] = useState<"qa" | "cloze">("qa");
@@ -517,80 +514,6 @@ const BodyEditor = ({
       };
     }
   }, [editor]);
-
-  const handleCreateCard = async (editor: Editor) => {
-    if (!editor) return;
-
-    try {
-      setIsCreatingCard(true);
-      const selection = editor.state.selection;
-      const isImageSelection =
-        selection instanceof NodeSelection &&
-        selection.node?.type.name === "image";
-
-      const twoWeeksFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-      const baseCardData = {
-        pageId,
-        nextReview: twoWeeksFromNow.toISOString(),
-        tagIds: tags.map((tag) => tag.id),
-      };
-
-      let cardData;
-
-      if (isImageSelection) {
-        if (!description.trim()) {
-          toast.error("Description is required for image cards");
-          return;
-        }
-
-        const src = selection.node.attrs.src;
-        const imageId = src.split("/").pop();
-
-        if (!imageId) {
-          toast.error("Invalid image source");
-          return;
-        }
-
-        cardData = {
-          ...baseCardData,
-          imageCid: imageId,
-          description: description.trim(),
-        };
-      } else {
-        // Handle text cards
-        const content = editor.state.doc.textBetween(
-          selection.from,
-          selection.to,
-        );
-
-        if (!content.trim()) {
-          toast.error("Please select some text to create a card");
-          return;
-        }
-
-        cardData = {
-          ...baseCardData,
-          content: content.trim(),
-        };
-      }
-
-      const result = await createCardFromPage(cardData);
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to create card");
-      }
-      toast.success("Card created successfully");
-      setDescription("");
-      editor.commands.focus();
-    } catch (error) {
-      console.error("Card creation failed:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create card",
-      );
-    } finally {
-      setIsCreatingCard(false);
-    }
-  };
 
   return (
     <div className="flex h-full w-full justify-center overflow-auto">
