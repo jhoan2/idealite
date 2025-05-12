@@ -257,6 +257,12 @@ const BodyEditor = ({
         `Custom ${cardType === "qa" ? "question-answer" : "cloze"} card created successfully`,
       );
 
+      window.dispatchEvent(
+        new CustomEvent("flashcard:created", {
+          detail: { pageId },
+        }),
+      );
+
       // Close the modal
       setIsModalOpen(false);
 

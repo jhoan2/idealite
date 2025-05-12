@@ -31,6 +31,24 @@ export function CardList({ pageId, userTagTree, isMobile }: CardListProps) {
     };
 
     loadCards();
+
+    const handleFlashcardCreated = (event: CustomEvent) => {
+      if (event.detail.pageId === pageId) {
+        loadCards();
+      }
+    };
+
+    window.addEventListener(
+      "flashcard:created",
+      handleFlashcardCreated as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "flashcard:created",
+        handleFlashcardCreated as EventListener,
+      );
+    };
   }, [pageId]);
 
   if (isLoading) {
