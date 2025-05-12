@@ -10,6 +10,12 @@ const requestSchema = z.object({
   pageId: z.string().uuid(),
   type: z.enum(["question-answer", "cloze"]),
   tagIds: z.array(z.string().uuid()).optional(),
+  sourceLocator: z
+    .object({
+      type: z.enum(["page", "canvas"]),
+      pointer: z.string().optional(),
+    })
+    .optional(),
 });
 
 export async function POST(req: Request) {
@@ -31,6 +37,7 @@ export async function POST(req: Request) {
       content: validatedData.content,
       type: validatedData.type,
       tagIds: validatedData.tagIds,
+      sourceLocator: validatedData.sourceLocator,
     });
 
     // Start processing the job asynchronously

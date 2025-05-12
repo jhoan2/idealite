@@ -147,6 +147,18 @@ const BodyEditor = ({
     }
   };
 
+  const getNodeIdFromSelection = (editor: Editor): string | undefined => {
+    const { from } = editor.state.selection;
+    const $pos = editor.state.doc.resolve(from);
+
+    for (let depth = $pos.depth; depth >= 0; depth--) {
+      const node = $pos.node(depth);
+      const nodeId = node?.attrs?.nodeId;
+      if (nodeId) return nodeId as string;
+    }
+    return undefined;
+  };
+
   const handleOpenFlashcardModal = (editor: Editor) => {
     if (!editor) return;
 
@@ -200,7 +212,7 @@ const BodyEditor = ({
 
     try {
       setIsSubmitting(true);
-
+      const nodeId = getNodeIdFromSelection(editor!);
       const twoWeeksFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
       const baseCardData = {
@@ -208,6 +220,10 @@ const BodyEditor = ({
         content: selectedText,
         nextReview: twoWeeksFromNow.toISOString(),
         tagIds: tags.map((tag) => tag.id),
+        sourceLocator: {
+          type: "page" as const,
+          pointer: nodeId,
+        },
       };
 
       let cardData;
@@ -266,6 +282,7 @@ const BodyEditor = ({
 
     const selection = editor.state.selection;
     const content = editor.state.doc.textBetween(selection.from, selection.to);
+    const nodeId = getNodeIdFromSelection(editor!);
 
     if (!content.trim()) {
       toast.error("Please select some text to create a Q&A card");
@@ -285,6 +302,10 @@ const BodyEditor = ({
           pageId,
           type: "question-answer",
           tagIds: tags.map((tag) => tag.id),
+          sourceLocator: {
+            type: "page" as const,
+            pointer: nodeId,
+          },
         }),
       });
 
@@ -324,7 +345,7 @@ const BodyEditor = ({
 
     const selection = editor.state.selection;
     const content = editor.state.doc.textBetween(selection.from, selection.to);
-
+    const nodeId = getNodeIdFromSelection(editor!);
     if (!content.trim()) {
       toast.error("Please select some text to create a Cloze card");
       return;
@@ -343,6 +364,10 @@ const BodyEditor = ({
           pageId,
           type: "cloze",
           tagIds: tags.map((tag) => tag.id),
+          sourceLocator: {
+            type: "page" as const,
+            pointer: nodeId,
+          },
         }),
       });
 

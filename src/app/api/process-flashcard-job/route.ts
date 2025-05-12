@@ -22,6 +22,12 @@ const jobSchema = z.object({
     content: z.string(),
     type: z.enum(["question-answer", "cloze"]),
     tagIds: z.array(z.string().uuid()).optional(),
+    sourceLocator: z
+      .object({
+        type: z.enum(["page", "canvas"]),
+        pointer: z.string().optional(),
+      })
+      .optional(),
   }),
   status: z.enum(["pending", "processing", "completed", "failed"]),
   createdAt: z.string(),
@@ -106,7 +112,7 @@ function parseClozeResponse(text: string) {
 }
 
 async function processFlashcardJob(job: QueuedFlashcardJob) {
-  const { userId, pageId, content, type, tagIds } = job.data;
+  const { userId, pageId, content, type, tagIds, sourceLocator } = job.data;
 
   // Construct prompt based on flashcard type
   const prompt =
@@ -140,6 +146,7 @@ async function processFlashcardJob(job: QueuedFlashcardJob) {
       tagIds,
       cardType: "qa" as const,
       nextReview: twoWeeksFromNow.toISOString(),
+      sourceLocator,
     };
   } else {
     const clozeResult = parseClozeResponse(textContent);
@@ -155,6 +162,7 @@ async function processFlashcardJob(job: QueuedFlashcardJob) {
       tagIds,
       cardType: "cloze" as const,
       nextReview: twoWeeksFromNow.toISOString(),
+      sourceLocator,
     };
   }
 

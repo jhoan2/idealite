@@ -49,6 +49,10 @@ export interface FlashcardJobData {
   content: string;
   type: "question-answer" | "cloze";
   tagIds?: string[];
+  sourceLocator?: {
+    type: "page" | "canvas";
+    pointer?: string;
+  };
 }
 
 export interface QueuedFlashcardJob {
