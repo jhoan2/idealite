@@ -427,6 +427,9 @@ export const cards = createTable(
       () => new Date(),
     ),
     deleted: boolean("deleted").default(false),
+    source_locator: jsonb("source_locator")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
   },
   (table) => ({
     user_idx: index("card_user_idx").on(table.user_id),

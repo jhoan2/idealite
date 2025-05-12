@@ -32,6 +32,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import QuestionSparklesIcon from "./QuestionSparklesIcon";
 import ClozeSparklesIcon from "./ClozeSparklesIcon";
+import { ImageFlashcardCreator } from "./CreateImageFlashcard";
 import { ParagraphWithId } from "./ParagraphWithIds";
 import { ImageWithId } from "./ImageWithId";
 
@@ -577,93 +578,51 @@ const BodyEditor = ({
         {editor && (
           <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
             <div className="bubble-menu flex gap-2 rounded border border-border bg-background p-2 shadow-md">
-              <button
-                onClick={() => editor.chain().focus().toggleBold().run()}
-                className={editor.isActive("bold") ? "is-active" : ""}
-              >
-                Bold
-              </button>
-              <button
-                onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={editor.isActive("italic") ? "is-active" : ""}
-              >
-                Italic
-              </button>
-              <button
-                onClick={() => editor.chain().focus().toggleStrike().run()}
-                className={editor.isActive("strike") ? "is-active" : ""}
-              >
-                Strike
-              </button>
-              <div className="w-[1px] bg-slate-200" />
-              <button
-                onClick={() => handleGenerateQA(editor)}
-                className="rounded bg-background px-2 py-1 text-secondary-foreground transition-colors hover:bg-secondary/90"
-                disabled={isGeneratingQA}
-                title="Generate Q&A Cards"
-              >
-                <QuestionSparklesIcon className="h-6 w-6" />
-              </button>
-              <button
-                onClick={() => handleGenerateCloze(editor)}
-                className="rounded bg-background px-2 py-1 text-secondary-foreground transition-colors hover:bg-secondary/90"
-                disabled={isGeneratingCloze}
-                title="Generate Cloze Cards"
-              >
-                <ClozeSparklesIcon className="h-6 w-6" />
-              </button>
-              <button
-                onClick={() => handleOpenFlashcardModal(editor)}
-                className="rounded bg-background px-2 py-1 text-secondary-foreground transition-colors hover:bg-secondary/90"
-                disabled={isCreatingCard}
-                title="Create Custom Flashcard"
-              >
-                <Wrench className="h-4 w-4" />
-              </button>
+              {!isImageSelected && (
+                <>
+                  <button
+                    onClick={() => editor.chain().focus().toggleBold().run()}
+                  >
+                    Bold
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().toggleItalic().run()}
+                  >
+                    Italic
+                  </button>
+                  <button
+                    onClick={() => editor.chain().focus().toggleStrike().run()}
+                  >
+                    Strike
+                  </button>
+                  <div className="w-[1px] bg-slate-200" />
+                  <button
+                    onClick={() => handleGenerateQA(editor)}
+                    title="Generate Q&A Cards"
+                  >
+                    <QuestionSparklesIcon className="h-6 w-6" />
+                  </button>
+                  <button
+                    onClick={() => handleGenerateCloze(editor)}
+                    title="Generate Cloze Cards"
+                  >
+                    <ClozeSparklesIcon className="h-6 w-6" />
+                  </button>
+                  <button
+                    onClick={() => handleOpenFlashcardModal(editor)}
+                    title="Create Custom Flashcard"
+                  >
+                    <Wrench className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+
               {isImageSelected && (
-                <div className="absolute -top-10 left-0 right-0 flex gap-2 bg-background">
-                  <Input
-                    type="text"
-                    placeholder="Enter description..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    autoFocus
-                    className="h-8 min-w-[300px] bg-background text-sm"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleCreateCard(editor);
-                        setDescription("");
-                      }
-                      if (e.key === "Escape") {
-                        setDescription("");
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      if (description.trim()) {
-                        handleCreateCard(editor);
-                        setDescription("");
-                      }
-                    }}
-                    disabled={isCreatingCard}
-                    className="rounded bg-primary px-2 py-1 text-sm text-primary-foreground transition-colors hover:bg-muted-foreground"
-                  >
-                    {isCreatingCard ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Add"
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDescription("");
-                    }}
-                    className="rounded bg-background px-2 py-1 text-sm text-secondary-foreground transition-colors hover:bg-muted"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                <ImageFlashcardCreator
+                  editor={editor}
+                  pageId={pageId}
+                  tags={tags}
+                />
               )}
             </div>
           </BubbleMenu>

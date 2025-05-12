@@ -22,6 +22,12 @@ const createCardSchema = z.object({
   answer: z.string().optional(),
   clozeTemplate: z.string().optional(),
   clozeAnswers: z.string().optional(),
+  sourceLocator: z
+    .object({
+      type: z.enum(["page", "canvas"]),
+      pointer: z.string().optional(),
+    })
+    .optional(),
 });
 
 export async function createCardFromPage(
@@ -74,6 +80,7 @@ export async function createCardFromPage(
           answer: validatedInput.answer,
           cloze_template: validatedInput.clozeTemplate,
           cloze_answers: validatedInput.clozeAnswers,
+          source_locator: validatedInput.sourceLocator,
         })
         .returning();
 
@@ -125,6 +132,12 @@ const updateCardSchema = z.object({
   content: z.string().optional(),
   description: z.string().optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
+  sourceLocator: z
+    .object({
+      type: z.enum(["page", "canvas"]),
+      pointer: z.string().optional(),
+    })
+    .optional(),
 });
 
 export async function updateCard(input: z.infer<typeof updateCardSchema>) {
