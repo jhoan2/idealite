@@ -33,6 +33,8 @@ import { Label } from "~/components/ui/label";
 import QuestionSparklesIcon from "./QuestionSparklesIcon";
 import ClozeSparklesIcon from "./ClozeSparklesIcon";
 import { ParagraphWithId } from "./ParagraphWithIds";
+import { ImageWithId } from "./ImageWithId";
+
 const BodyEditor = ({
   content,
   immediatelyRender = false,
@@ -421,7 +423,7 @@ const BodyEditor = ({
       ParagraphWithId,
       CustomTypography,
       CustomKeymap,
-      Image,
+      ImageWithId,
       TaskList,
       TaskItem.configure({
         nested: true, // Enable nested task lists
