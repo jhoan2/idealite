@@ -16,8 +16,6 @@ import Image from "@tiptap/extension-image";
 import LoadingOverlay from "./LoadingOverlay";
 import { createCardFromPage } from "~/server/actions/card";
 import { NodeSelection } from "@tiptap/pm/state";
-import { Input } from "~/components/ui/input";
-import StackCardsIcon from "./StackCardsIcon";
 import { Loader2, Wrench } from "lucide-react";
 import { Tag } from "~/server/db/schema";
 import {
@@ -34,6 +32,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import QuestionSparklesIcon from "./QuestionSparklesIcon";
 import ClozeSparklesIcon from "./ClozeSparklesIcon";
+import { ParagraphWithId } from "./ParagraphWithIds";
 const BodyEditor = ({
   content,
   immediatelyRender = false,
@@ -416,7 +415,10 @@ const BodyEditor = ({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        paragraph: false,
+      }),
+      ParagraphWithId,
       CustomTypography,
       CustomKeymap,
       Image,
