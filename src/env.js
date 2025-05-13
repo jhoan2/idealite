@@ -36,6 +36,7 @@ export const env = createEnv({
     RESEND_FROM_EMAIL: z.string(),
     CLERK_SECRET_KEY: z.string(),
     CLERK_WEBHOOK_SECRET: z.string(),
+    INTEGRATION_SECRET_KEY: z.string(),
   },
 
   /**
@@ -97,6 +98,7 @@ export const env = createEnv({
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    INTEGRATION_SECRET_KEY: process.env.INTEGRATION_SECRET_KEY,
   },
   /**
 

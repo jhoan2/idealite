@@ -675,5 +675,47 @@ export const featureDiscoveriesRelations = relations(
 );
 
 // =====================
+// Integration Schema
 // =====================
-// =====================
+
+export const integrationCredentials = createTable(
+  "integration_credential",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    provider: varchar("provider", { length: 32 }).notNull(), // 'obsidian' | 'notion' | …
+    type: varchar("type", { length: 16 }).notNull(), // 'machine' | 'oauth' | 'pat'
+    // One of the two branches below is **always** null
+    hashed_token: varchar("hashed_token", { length: 256 }), // machine keys (stored hashed)
+    access_token_enc: text("access_token_enc"), // AES-GCM encrypted blob
+    refresh_token_enc: text("refresh_token_enc"), // nullable
+    expires_at: timestamp("expires_at", { withTimezone: true }),
+    scope: text("scope")
+      .array()
+      .default(sql`ARRAY[]::text[]`),
+    last_used: timestamp("last_used", { withTimezone: true }),
+    revoked_at: timestamp("revoked_at", { withTimezone: true }),
+    created_at: timestamp("created_at", { withTimezone: true }).default(
+      sql`now()`,
+    ),
+  },
+  (table) => {
+    return {
+      token_prefix_idx: index("integration_credentials_token_prefix_idx").on(
+        table.hashed_token,
+      ),
+    };
+  },
+);
+
+export const integrationCredentialsRelations = relations(
+  integrationCredentials,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [integrationCredentials.user_id],
+      references: [users.id],
+    }),
+  }),
+);
