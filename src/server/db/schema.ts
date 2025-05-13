@@ -46,8 +46,6 @@ export const users = createTable("user", {
   updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
     () => new Date(),
   ),
-  points: integer("points").notNull().default(0),
-  cash: integer("cash").notNull().default(0),
 });
 
 export type Image = typeof images.$inferSelect;
@@ -615,48 +613,6 @@ export const cardsTagsRelations = relations(cards_tags, ({ one }) => ({
   tag: one(tags, {
     fields: [cards_tags.tag_id],
     references: [tags.id],
-  }),
-}));
-
-// =====================
-// Games Related Schema
-// =====================
-
-export const points_history = createTable(
-  "points_history",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    user_id: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    points: integer("points").notNull(),
-    week_start: timestamp("week_start", { withTimezone: true })
-      .notNull()
-      .$default(() => sql`date_trunc('week', CURRENT_TIMESTAMP)`),
-    source_type: varchar("source_type", {
-      enum: ["game_move", "achievement", "bonus", "other"],
-    }).notNull(),
-    source_id: uuid("source_id"),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (table) => ({
-    user_idx: index("points_history_user_idx").on(table.user_id),
-    week_start_idx: index("points_history_week_start_idx").on(table.week_start),
-    source_type_idx: index("points_history_source_type_idx").on(
-      table.source_type,
-    ),
-  }),
-);
-
-export const pointsHistoryRelations = relations(points_history, ({ one }) => ({
-  user: one(users, {
-    fields: [points_history.user_id],
-    references: [users.id],
   }),
 }));
 
