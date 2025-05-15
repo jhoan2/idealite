@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Folder, UserRound, Gamepad2, Inbox } from "lucide-react";
+import { Home, Folder, UserRound, Inbox } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ModeToggle } from "./NextThemeButton";
@@ -13,6 +13,11 @@ import { SignInButton, SignedOut, SignedIn, UserButton } from "@clerk/nextjs";
 
 export default function SideNav() {
   const pathname = usePathname();
+
+  // Don't render on landing page
+  if (pathname === "/") {
+    return null;
+  }
 
   const menuItems = [
     { icon: Home, label: "Home", href: "/home" },
