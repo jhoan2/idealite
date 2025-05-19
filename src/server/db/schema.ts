@@ -16,6 +16,7 @@ import {
   pgEnum,
   jsonb,
   serial,
+  vector,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -71,6 +72,7 @@ export const tags = createTable(
       .notNull()
       .$default(() => sql`lower(name)`),
     parent_id: uuid("parent_id").references((): AnyPgColumn => tags.id),
+    embedding: vector("embedding", { dimensions: 1536 }),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -80,13 +82,15 @@ export const tags = createTable(
     deleted: boolean("deleted").default(false),
     is_template: boolean("is_template").default(false).notNull(),
   },
-  (table) => {
-    return {
-      name_idx: index("tag_name_idx").on(table.name),
-      created_at_idx: index("tag_created_at_idx").on(table.created_at),
-      deleted_idx: index("tag_deleted_idx").on(table.deleted),
-    };
-  },
+  (t) => [
+    index("tag_name_idx").on(t.name),
+    index("tag_created_at_idx").on(t.created_at),
+    index("tag_deleted_idx").on(t.deleted),
+    index("tag_embedding_ivfflat").using(
+      "ivfflat",
+      sql`embedding vector_cosine_ops`,
+    ),
+  ],
 );
 
 export const users_tags = createTable(
@@ -104,13 +108,11 @@ export const users_tags = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.user_id, table.tag_id] }),
-      user_id_idx: index("users_tags_user_id_idx").on(table.user_id),
-      tag_id_idx: index("users_tags_tag_id_idx").on(table.tag_id),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.tag_id] }),
+    index("users_tags_user_id_idx").on(table.user_id),
+    index("users_tags_tag_id_idx").on(table.tag_id),
+  ],
 );
 
 export type Page = typeof pages.$inferSelect;
@@ -136,19 +138,15 @@ export const pages = createTable(
     ),
     deleted: boolean("deleted").default(false),
   },
-  (table) => {
-    return {
-      created_at_idx: index("page_created_at_idx").on(table.created_at),
-      deleted_idx: index("page_deleted_idx").on(table.deleted),
-      primary_tag_id_idx: index("page_primary_tag_id_idx").on(
-        table.primary_tag_id,
-      ),
-      title_search_idx: index("page_title_search_idx").using(
-        "gin",
-        sql`to_tsvector('english', ${table.title})`,
-      ),
-    };
-  },
+  (table) => [
+    index("page_created_at_idx").on(table.created_at),
+    index("page_deleted_idx").on(table.deleted),
+    index("page_primary_tag_id_idx").on(table.primary_tag_id),
+    index("page_title_search_idx").using(
+      "gin",
+      sql`to_tsvector('english', ${table.title})`,
+    ),
+  ],
 );
 
 export const pages_tags = createTable(
@@ -164,13 +162,11 @@ export const pages_tags = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.page_id, table.tag_id] }),
-      page_id_idx: index("page_id_idx").on(table.page_id),
-      tag_id_idx: index("tag_id_idx").on(table.tag_id),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.page_id, table.tag_id] }),
+    index("page_id_idx").on(table.page_id),
+    index("tag_id_idx").on(table.tag_id),
+  ],
 );
 
 export const users_pages = createTable(
@@ -190,14 +186,12 @@ export const users_pages = createTable(
       () => new Date(),
     ),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.user_id, table.page_id] }),
-      user_id_idx: index("users_pages_user_id_idx").on(table.user_id),
-      page_id_idx: index("users_pages_page_id_idx").on(table.page_id),
-      role_idx: index("users_pages_role_idx").on(table.role),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.page_id] }),
+    index("users_pages_user_id_idx").on(table.user_id),
+    index("users_pages_page_id_idx").on(table.page_id),
+    index("users_pages_role_idx").on(table.role),
+  ],
 );
 
 export const resources = createTable(
@@ -224,27 +218,23 @@ export const resources = createTable(
     ),
     url: text("url").notNull(),
   },
-  (table) => {
-    return {
-      url_idx: index("resource_url_idx").on(table.url),
-      created_at_idx: index("resource_created_at_idx").on(table.created_at),
-      title_tsv_idx: index("idx_resource_title_tsv").using(
-        "gin",
-        sql`to_tsvector('english', ${table.title})`,
-      ),
-      url_tsv_idx: index("idx_resource_url_tsv").using(
-        "gin",
-        sql`to_tsvector('english', ${table.url})`,
-      ),
-      author_tsv_idx: index("idx_resource_author_tsv").using(
-        "gin",
-        sql`to_tsvector('english', ${table.author})`,
-      ),
-      open_library_id_idx: index("idx_resource_open_library_id_idx").on(
-        table.open_library_id,
-      ),
-    };
-  },
+  (table) => [
+    index("resource_url_idx").on(table.url),
+    index("resource_created_at_idx").on(table.created_at),
+    index("idx_resource_title_tsv").using(
+      "gin",
+      sql`to_tsvector('english', ${table.title})`,
+    ),
+    index("idx_resource_url_tsv").using(
+      "gin",
+      sql`to_tsvector('english', ${table.url})`,
+    ),
+    index("idx_resource_author_tsv").using(
+      "gin",
+      sql`to_tsvector('english', ${table.author})`,
+    ),
+    index("idx_resource_open_library_id_idx").on(table.open_library_id),
+  ],
 );
 
 export const usersResources = createTable(
@@ -271,15 +261,11 @@ export const usersResources = createTable(
       () => new Date(),
     ),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.user_id, table.resource_id] }),
-      user_id_idx: index("users_resources_user_id_idx").on(table.user_id),
-      resource_id_idx: index("users_resources_resource_id_idx").on(
-        table.resource_id,
-      ),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.resource_id] }),
+    index("users_resources_user_id_idx").on(table.user_id),
+    index("users_resources_resource_id_idx").on(table.resource_id),
+  ],
 );
 
 export const resourcesPages = createTable(
@@ -298,15 +284,11 @@ export const resourcesPages = createTable(
       () => new Date(),
     ),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.resource_id, table.page_id] }),
-      resource_id_idx: index("resources_pages_resource_id_idx").on(
-        table.resource_id,
-      ),
-      page_id_idx: index("resources_pages_page_id_idx").on(table.page_id),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.resource_id, table.page_id] }),
+    index("resources_pages_resource_id_idx").on(table.resource_id),
+    index("resources_pages_page_id_idx").on(table.page_id),
+  ],
 );
 
 export const tabs = createTable(
@@ -328,11 +310,11 @@ export const tabs = createTable(
       () => new Date(),
     ),
   },
-  (table) => ({
-    user_idx: index("tabs_user_idx").on(table.user_id),
-    position_idx: index("tabs_position_idx").on(table.position),
-    path_idx: index("tabs_path_idx").on(table.path),
-  }),
+  (table) => [
+    index("tabs_user_idx").on(table.user_id),
+    index("tabs_position_idx").on(table.position),
+    index("tabs_path_idx").on(table.path),
+  ],
 );
 
 export type Folder = typeof folders.$inferSelect;
@@ -360,12 +342,10 @@ export const folders = createTable(
       () => new Date(),
     ),
   },
-  (table) => {
-    return {
-      tag_id_idx: index("folder_tag_id_idx").on(table.tag_id),
-      user_id_idx: index("folder_user_id_idx").on(table.user_id),
-    };
-  },
+  (table) => [
+    index("folder_tag_id_idx").on(table.tag_id),
+    index("folder_user_id_idx").on(table.user_id),
+  ],
 );
 
 export const users_folders = createTable(
@@ -382,13 +362,11 @@ export const users_folders = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.user_id, table.folder_id] }),
-      user_id_idx: index("users_folders_user_id_idx").on(table.user_id),
-      folder_id_idx: index("users_folders_folder_id_idx").on(table.folder_id),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.folder_id] }),
+    index("users_folders_user_id_idx").on(table.user_id),
+    index("users_folders_folder_id_idx").on(table.folder_id),
+  ],
 );
 
 export const cards = createTable(
@@ -429,17 +407,17 @@ export const cards = createTable(
       .notNull()
       .default(sql`'{}'::jsonb`),
   },
-  (table) => ({
-    user_idx: index("card_user_idx").on(table.user_id),
-    page_idx: index("card_page_idx").on(table.page_id),
-    resource_idx: index("card_resource_idx").on(table.resource_id),
-    content_search_idx: index("card_content_search_idx").using(
+  (table) => [
+    index("card_user_idx").on(table.user_id),
+    index("card_page_idx").on(table.page_id),
+    index("card_resource_idx").on(table.resource_id),
+    index("card_content_search_idx").using(
       "gin",
       sql`to_tsvector('english', ${table.content})`,
     ),
-    status_idx: index("card_status_idx").on(table.status),
-    deleted_idx: index("card_deleted_idx").on(table.deleted),
-  }),
+    index("card_status_idx").on(table.status),
+    index("card_deleted_idx").on(table.deleted),
+  ],
 );
 
 export type CardTag = typeof cards_tags.$inferSelect;
@@ -456,11 +434,11 @@ export const cards_tags = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.card_id, table.tag_id] }),
-    card_idx: index("cards_tags_card_idx").on(table.card_id),
-    tag_idx: index("cards_tags_tag_idx").on(table.tag_id),
-  }),
+  (table) => [
+    primaryKey({ columns: [table.card_id, table.tag_id] }),
+    index("cards_tags_card_idx").on(table.card_id),
+    index("cards_tags_tag_idx").on(table.tag_id),
+  ],
 );
 
 export const pagesRelations = relations(pages, ({ many, one }) => ({
