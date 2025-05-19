@@ -14,6 +14,8 @@ import {
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { currentUser } from "@clerk/nextjs/server";
+import { generateTagEmbedding } from "~/lib/embeddings/generateEmbedding";
+import * as Sentry from "@sentry/nextjs";
 
 export async function deleteTag({ id }: { id: string }) {
   try {
@@ -338,6 +340,25 @@ export async function createTagForUser(input: CreateTagInput) {
     // Validate input
     const validatedInput = createTagForUserSchema.parse(input);
 
+    let embedding = null;
+    try {
+      embedding = await generateTagEmbedding(validatedInput.name);
+    } catch (error) {
+      console.error("Error generating embedding:", error);
+
+      Sentry.captureException(error, {
+        extra: {
+          tagName: validatedInput.name,
+          operation: "createTagForUser",
+          userId,
+        },
+        tags: {
+          feature: "tag_embedding",
+          source: "tag_creation",
+        },
+      });
+    }
+
     return await db.transaction(async (tx) => {
       // Create the new tag
       const [newTag] = await tx
@@ -345,6 +366,7 @@ export async function createTagForUser(input: CreateTagInput) {
         .values({
           name: validatedInput.name,
           parent_id: validatedInput.parentId || null,
+          embedding: embedding,
           deleted: false,
           is_template: false,
         })
