@@ -34,6 +34,10 @@ import ClozeSparklesIcon from "./ClozeSparklesIcon";
 import { ImageFlashcardCreator } from "./CreateImageFlashcard";
 import { ParagraphWithId } from "./ParagraphWithIds";
 import { ImageWithId } from "./ImageWithId";
+import { HeadingWithId } from "./HeadingWithId";
+import { ListItemWithId } from "./ListItemWithId";
+import { BlockquoteWithId } from "./BlockquoteWithId";
+import { CodeBlockWithId } from "./CodeBlockWithId";
 
 const BodyEditor = ({
   content,
@@ -448,11 +452,19 @@ const BodyEditor = ({
     extensions: [
       StarterKit.configure({
         paragraph: false,
+        heading: false,
+        listItem: false,
+        blockquote: false,
+        codeBlock: false,
       }),
       ParagraphWithId,
       CustomTypography,
       CustomKeymap,
       ImageWithId,
+      HeadingWithId,
+      ListItemWithId,
+      BlockquoteWithId,
+      CodeBlockWithId,
       TaskList,
       TaskItem.configure({
         nested: true, // Enable nested task lists
