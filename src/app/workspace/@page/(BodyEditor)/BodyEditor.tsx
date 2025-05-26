@@ -114,7 +114,7 @@ const BodyEditor = ({
         .chain()
         .focus()
         .setImage({
-          src: privateGateway + data.image.url,
+          src: privateGateway + "/ipfs/" + data.image.url,
           alt: data.image.filename,
           title: data.image.filename,
         })
