@@ -14,6 +14,7 @@ export type Card = typeof cards.$inferSelect & {
     updated_at: Date | null;
     deleted: boolean | null;
     is_template: boolean | null;
+    embedding: number[];
   }[];
 };
 export async function getPageCards(pageId: string): Promise<Card[]> {
@@ -49,6 +50,7 @@ export async function getPageCards(pageId: string): Promise<Card[]> {
       updated_at: tag.updated_at,
       deleted: tag.deleted,
       is_template: tag.is_template,
+      embedding: tag.embedding ?? [],
     })),
   }));
 }

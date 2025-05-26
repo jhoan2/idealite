@@ -76,6 +76,7 @@ export function CardList({ pageId, userTagTree, isMobile }: CardListProps) {
                 updated_at: tag.updated_at,
                 deleted: tag.deleted,
                 is_template: tag.is_template ?? false,
+                embedding: tag.embedding,
               }))}
               currentCardId={card.id}
               isMobile={isMobile}

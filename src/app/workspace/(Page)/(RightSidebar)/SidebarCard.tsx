@@ -33,6 +33,7 @@ interface SidebarCardProps {
   userTagTree: TreeTag[];
   currentCardId: string;
   isMobile: boolean;
+  embedding?: number[];
 }
 
 export function SidebarCard({
@@ -45,6 +46,7 @@ export function SidebarCard({
   tags,
   currentCardId,
   isMobile,
+  embedding,
 }: SidebarCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content || "");
