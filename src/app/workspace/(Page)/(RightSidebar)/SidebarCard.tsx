@@ -199,7 +199,7 @@ export function SidebarCard({
             {image_cid ? (
               <div className="space-y-2">
                 <img
-                  src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY}${image_cid}`}
+                  src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${image_cid}`}
                   alt="Card content"
                   className="w-full rounded-md"
                 />
