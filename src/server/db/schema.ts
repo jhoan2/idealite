@@ -58,6 +58,7 @@ export const images = createTable("images", {
   filename: varchar("filename", { length: 256 }).notNull(),
   url: varchar("url", { length: 1024 }).notNull(),
   size: integer("size").notNull(),
+  is_temporary: boolean("is_temporary").default(false),
   created_at: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
