@@ -27,6 +27,9 @@ interface SidebarCardProps {
   id: string;
   content: string | null;
   description: string | null;
+  question?: string | null;
+  answer?: string | null;
+  card_type?: string | null;
   status: "active" | "mastered" | "suspended";
   image_cid: string | null;
   tags: Tag[];
@@ -40,6 +43,9 @@ export function SidebarCard({
   id,
   content,
   description,
+  question,
+  answer,
+  card_type,
   status,
   image_cid,
   userTagTree,
@@ -51,6 +57,8 @@ export function SidebarCard({
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content || "");
   const [editedDescription, setEditedDescription] = useState(description || "");
+  const [editedQuestion, setEditedQuestion] = useState(question || "");
+  const [editedAnswer, setEditedAnswer] = useState(answer || "");
   const [showTags, setShowTags] = useState(false);
   const availableTags = flattenTagTree(userTagTree, tags);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -116,12 +124,22 @@ export function SidebarCard({
     setEditedDescription(e.target.value);
   };
 
+  const handleQuestionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedQuestion(e.target.value);
+  };
+
+  const handleAnswerChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedAnswer(e.target.value);
+  };
+
   const handleSave = async () => {
     try {
       await updateCard({
         id,
         content: editedContent,
         description: editedDescription,
+        question: editedQuestion,
+        answer: editedAnswer,
       });
       setIsEditing(false);
       toast.success("Card updated successfully");
@@ -163,6 +181,27 @@ export function SidebarCard({
                   onChange={handleDescriptionChange}
                   className="mt-1 min-h-[100px] resize-none overflow-hidden"
                 />
+              </div>
+            ) : card_type === "qa" ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Question</label>
+                  <Textarea
+                    value={editedQuestion}
+                    onChange={handleQuestionChange}
+                    className="mt-1 min-h-[60px] resize-none overflow-hidden"
+                    placeholder="Enter question..."
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Answer</label>
+                  <Textarea
+                    value={editedAnswer}
+                    onChange={handleAnswerChange}
+                    className="mt-1 min-h-[60px] resize-none overflow-hidden"
+                    placeholder="Enter answer..."
+                  />
+                </div>
               </div>
             ) : (
               <div>
@@ -207,6 +246,25 @@ export function SidebarCard({
                 />
                 {description && (
                   <p className="text-sm text-muted-foreground">{description}</p>
+                )}
+              </div>
+            ) : card_type === "qa" ? (
+              <div className="space-y-2">
+                {question && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Question:
+                    </p>
+                    <p className="text-sm">{question}</p>
+                  </div>
+                )}
+                {answer && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Answer:
+                    </p>
+                    <p className="text-sm">{answer}</p>
+                  </div>
                 )}
               </div>
             ) : (

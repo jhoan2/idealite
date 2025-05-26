@@ -131,6 +131,8 @@ const updateCardSchema = z.object({
   id: z.string().uuid(),
   content: z.string().optional(),
   description: z.string().optional(),
+  question: z.string().optional(),
+  answer: z.string().optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
   sourceLocator: z
     .object({
