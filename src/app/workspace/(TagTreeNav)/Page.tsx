@@ -99,11 +99,11 @@ export const PageComponent: React.FC<PageComponentProps> = ({
             style={{ paddingLeft: `${(level + 1) * 16}px` }}
           >
             {page.content_type === "canvas" ? (
-              <PanelTop className="mr-2 h-4 w-4 text-gray-400" />
+              <PanelTop className="mr-2 h-4 w-4 flex-shrink-0 text-gray-400" />
             ) : (
-              <StickyNote className="mr-2 h-4 w-4 text-gray-400" />
+              <StickyNote className="mr-2 h-4 w-4 flex-shrink-0 text-gray-400" />
             )}
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">
               {page.title}
             </span>
           </Link>
