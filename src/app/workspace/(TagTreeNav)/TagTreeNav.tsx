@@ -614,7 +614,7 @@ const MinimalistTree: React.FC<
         </FeatureTooltip>
       </div>
       <div
-        className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto pl-4`}
+        className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto pb-48 pl-4`}
       >
         {data.map((node) => (
           <TreeNode
