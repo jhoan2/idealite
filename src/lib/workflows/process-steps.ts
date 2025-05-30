@@ -405,7 +405,8 @@ export async function processResources(
     const urls = Array.isArray(frontMatter.urls)
       ? frontMatter.urls
       : [frontMatter.urls];
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const origin =
+      process.env.NEXT_PUBLIC_DEPLOYMENT_URL || "http://localhost:3000";
 
     for (const [index, url] of urls.entries()) {
       try {

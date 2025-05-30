@@ -218,8 +218,7 @@ export const POST = async (req: NextRequest) => {
     });
 
     const { workflowRunId } = await client.trigger({
-      //   url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/workflow`,
-      url: `https://3ec1-146-74-94-117.ngrok-free.app/api/workflows/obsidian-upload`,
+      url: `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/workflows/obsidian-upload`,
       body: {
         userId,
         fileName: mdFile.name,

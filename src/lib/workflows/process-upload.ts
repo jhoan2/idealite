@@ -150,8 +150,7 @@ export const POST = async (req: NextRequest) => {
       };
     },
     {
-      baseUrl:
-        "https://c095-2601-646-897f-a740-a1bb-525c-54b9-fbce.ngrok-free.app",
+      baseUrl: process.env.NEXT_PUBLIC_DEPLOYMENT_URL,
 
       failureFunction: async ({ context, failStatus, failResponse }) => {
         const input = context.requestPayload;
