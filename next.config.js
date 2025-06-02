@@ -33,6 +33,7 @@ const coreConfig = {
       },
     ];
   },
+  // CORS headers for Obsidian plugin
   async headers() {
     return [
       {
@@ -45,6 +46,7 @@ const coreConfig = {
             value: "Content-Type, Authorization",
           },
           { key: "Access-Control-Max-Age", value: "86400" },
+          { key: "Access-Control-Allow-Credentials", value: "false" },
         ],
       },
     ];
