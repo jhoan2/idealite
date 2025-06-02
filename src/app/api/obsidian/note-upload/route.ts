@@ -11,15 +11,6 @@ import {
 } from "~/lib/pinata/uploadTempFiles";
 import * as Sentry from "@sentry/nextjs";
 
-// CORS headers
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Max-Age": "86400",
-  "Access-Control-Allow-Credentials": "false",
-};
-
 // Simple rate limiters optimized for Obsidian batch upload use case
 const uploadRatelimit = new Ratelimit({
   redis: Redis.fromEnv(),
@@ -106,21 +97,13 @@ async function checkRateLimits(userId: string) {
   };
 }
 
-export const OPTIONS = async (req: NextRequest) => {
-  return NextResponse.json(
-    { message: "CORS preflight successful" },
-    { status: 200, headers: corsHeaders },
-  );
-};
-
-export const POST = async (req: NextRequest) => {
+export async function POST(req: NextRequest) {
   try {
-    // Authenticate the user first
     const userId = await authenticateUser(req.headers.get("Authorization"));
     if (!userId) {
       return NextResponse.json(
         { error: "Unauthorized: Invalid or missing API token" },
-        { status: 401, headers: corsHeaders },
+        { status: 401 },
       );
     }
 
@@ -132,7 +115,7 @@ export const POST = async (req: NextRequest) => {
     if (!mdFile) {
       return NextResponse.json(
         { error: "Markdown file missing" },
-        { status: 400, headers: corsHeaders },
+        { status: 400 },
       );
     }
 
@@ -143,7 +126,7 @@ export const POST = async (req: NextRequest) => {
           error: "Markdown file too large",
           maxSize: `${MAX_FILE_SIZE / 1024 / 1024}MB`,
         },
-        { status: 413, headers: corsHeaders },
+        { status: 413 },
       );
     }
 
@@ -154,7 +137,7 @@ export const POST = async (req: NextRequest) => {
           error: "Total image size too large",
           maxSize: `${MAX_TOTAL_IMAGES_SIZE / 1024 / 1024}MB`,
         },
-        { status: 413, headers: corsHeaders },
+        { status: 413 },
       );
     }
 
@@ -170,9 +153,8 @@ export const POST = async (req: NextRequest) => {
         {
           status: 429,
           headers: {
-            ...corsHeaders,
-            "Retry-After": "60", // seconds
-            "X-RateLimit-Limit": "40", // uploads per minute
+            "Retry-After": "60",
+            "X-RateLimit-Limit": "40",
             "X-RateLimit-Remaining":
               rateLimitResult.details.remaining?.toString() || "0",
           },
@@ -186,10 +168,9 @@ export const POST = async (req: NextRequest) => {
       try {
         frontMatter = JSON.parse(frontMatterJson);
       } catch (error) {
-        console.error("Error parsing front matter JSON:", error);
         return NextResponse.json(
           { error: "Invalid frontMatter JSON" },
-          { status: 400, headers: corsHeaders },
+          { status: 400 },
         );
       }
     }
@@ -200,20 +181,13 @@ export const POST = async (req: NextRequest) => {
       mdFile.name,
       userId,
     );
-
     const imageUploads = await uploadTempFilesToPinata(
-      imageFiles.map((file) => ({
-        file,
-        name: file.name,
-      })),
+      imageFiles.map((file) => ({ file, name: file.name })),
       userId,
     );
 
-    // Start workflow with all data
-    const client = new Client({
-      token: process.env.QSTASH_TOKEN!,
-    });
-
+    // Start workflow
+    const client = new Client({ token: process.env.QSTASH_TOKEN! });
     const { workflowRunId } = await client.trigger({
       url: `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/workflows/obsidian-upload`,
       body: {
@@ -235,7 +209,6 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
-    // Return success with rate limit info
     return NextResponse.json(
       {
         success: true,
@@ -262,7 +235,6 @@ export const POST = async (req: NextRequest) => {
       },
       {
         headers: {
-          ...corsHeaders,
           "X-RateLimit-Daily-Remaining":
             rateLimitResult.details.dailyRemaining?.toString() || "0",
           "X-RateLimit-Minute-Remaining":
@@ -272,17 +244,14 @@ export const POST = async (req: NextRequest) => {
     );
   } catch (error) {
     Sentry.captureException(error, {
-      tags: {
-        action: "obsidian-note-upload",
-      },
+      tags: { action: "obsidian-note-upload" },
     });
-
     return NextResponse.json(
       {
         error: "Internal server error",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500, headers: corsHeaders },
+      { status: 500 },
     );
   }
-};
+}
