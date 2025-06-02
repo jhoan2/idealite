@@ -245,3 +245,28 @@ export async function getPageType(pageId: string) {
 
   return result?.content_type ?? null;
 }
+
+export async function getPageById(pageId: string) {
+  const user = await currentUser();
+  if (!user?.externalId) {
+    throw new Error("Unauthorized");
+  }
+
+  // Check if user has access to this page
+  const userPage = await db.query.users_pages.findFirst({
+    where: and(
+      eq(users_pages.page_id, pageId),
+      eq(users_pages.user_id, user.externalId),
+    ),
+  });
+
+  if (!userPage) {
+    throw new Error("Page not found or unauthorized");
+  }
+
+  const page = await db.query.pages.findFirst({
+    where: eq(pages.id, pageId),
+  });
+
+  return page;
+}

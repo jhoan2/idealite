@@ -5,7 +5,6 @@ import { CirclePlus } from "lucide-react";
 import { Info } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { type Tag } from "~/server/db/schema";
-import { SidebarTrigger } from "~/components/ui/sidebar";
 import { usePathname } from "next/navigation";
 import { TreeTag } from "~/server/queries/usersTags";
 import AddMetadata from "../@page/(AddResource)/AddMetadata";
@@ -64,7 +63,6 @@ export function PageHeader({
           >
             <Info className="h-4 w-4" aria-label="Metadata tab" />
           </Button>
-          <SidebarTrigger />
         </div>
       </div>
       <div>

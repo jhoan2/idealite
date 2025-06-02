@@ -26,6 +26,7 @@ export const env = createEnv({
     ROOT_TAG_ID: z.string(),
     ADMIN_USER_ID: z.string(),
     ANTHROPIC_API_KEY: z.string(),
+    OPENAI_API_KEY: z.string(),
     QSTASH_URL: z.string(),
     QSTASH_TOKEN: z.string(),
     QSTASH_CURRENT_SIGNING_KEY: z.string(),
@@ -36,6 +37,7 @@ export const env = createEnv({
     RESEND_FROM_EMAIL: z.string(),
     CLERK_SECRET_KEY: z.string(),
     CLERK_WEBHOOK_SECRET: z.string(),
+    INTEGRATION_SECRET_KEY: z.string(),
   },
 
   /**
@@ -85,6 +87,7 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     ADMIN_USER_ID: process.env.ADMIN_USER_ID,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     QSTASH_URL: process.env.QSTASH_URL,
     QSTASH_TOKEN: process.env.QSTASH_TOKEN,
     QSTASH_CURRENT_SIGNING_KEY: process.env.QSTASH_CURRENT_SIGNING_KEY,
@@ -97,6 +100,7 @@ export const env = createEnv({
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    INTEGRATION_SECRET_KEY: process.env.INTEGRATION_SECRET_KEY,
   },
   /**
 

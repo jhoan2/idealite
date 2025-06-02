@@ -5,6 +5,7 @@ import { PostHogProvider } from "posthog-js/react";
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useUser } from "@clerk/nextjs";
+import { TooltipProvider } from "~/components/ui/tooltip";
 
 if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
@@ -21,7 +22,9 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
   return (
     <PostHogProvider client={posthog}>
       <PostHogAuthWrapper>
-        <WagmiProvider>{children}</WagmiProvider>
+        <TooltipProvider>
+          <WagmiProvider>{children}</WagmiProvider>
+        </TooltipProvider>
       </PostHogAuthWrapper>
     </PostHogProvider>
   );

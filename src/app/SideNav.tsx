@@ -1,54 +1,33 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Home,
-  Folder,
-  UserRound,
-  ChevronLeft,
-  ChevronRight,
-  Gamepad2,
-  LogIn,
-} from "lucide-react";
+import { Home, Folder, UserRound, Inbox } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ModeToggle } from "./NextThemeButton";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import {
-  SignInButton,
-  SignedOut,
-  SignedIn,
-  UserButton,
-  useAuth,
-} from "@clerk/nextjs";
+import { SignInButton, SignedOut, SignedIn, UserButton } from "@clerk/nextjs";
 
 export default function SideNav() {
   const pathname = usePathname();
-  const { isSignedIn } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(isSignedIn ? true : false);
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  // Don't render on landing page
+  if (pathname === "/") {
+    return null;
+  }
 
   const menuItems = [
     { icon: Home, label: "Home", href: "/home" },
     { icon: Folder, label: "Workspace", href: "/workspace" },
-    { icon: Gamepad2, label: "Play", href: "/play" },
+    { icon: Inbox, label: "Review", href: "/review" },
     { icon: UserRound, label: "Profile", href: "/profile" },
   ];
 
-  if (pathname.includes("/channelFrame") || pathname === "/") {
-    return null;
-  }
-
   return (
-    <nav
-      className={`flex h-screen flex-col bg-background text-foreground transition-all duration-300 ${isCollapsed ? "w-20" : "w-64"} rounded-r-xl border-r-2 border-border`}
-    >
+    <nav className="flex h-screen w-20 flex-col rounded-r-xl border-r-2 border-border bg-background text-foreground transition-all duration-300">
       <div className="flex items-center justify-between border-b bg-background p-4 text-foreground">
         <Link href="/">
           <div className="flex items-center space-x-2">
@@ -59,53 +38,41 @@ export default function SideNav() {
               height={48}
               priority
             />
-            {!isCollapsed && (
-              <h1 className="text-xl font-semibold text-amber-400">Idealite</h1>
-            )}
           </div>
         </Link>
-        <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-          {isCollapsed ? (
-            <ChevronRight className="h-5 w-5" />
-          ) : (
-            <ChevronLeft className="h-5 w-5" />
-          )}
-        </Button>
       </div>
       <ScrollArea className="flex h-full flex-col justify-between">
         <nav className="space-y-4 p-2">
-          {menuItems.map((item, index) => (
-            <Link href={item.href} key={index}>
-              <Button
-                variant="ghost"
-                className={clsx(
-                  "w-full",
-                  isCollapsed ? "px-2" : "justify-start px-4",
-                  "bg-background hover:bg-gray-100 dark:hover:bg-gray-800",
-                  {
-                    "bg-gray-100 text-foreground dark:bg-gray-800":
-                      pathname.includes(item.href),
-                    "text-foreground": !pathname.includes(item.href),
-                  },
-                )}
-              >
-                <item.icon className="mr-2 h-6 w-6" />
-                {!isCollapsed && <span>{item.label}</span>}
-              </Button>
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            const isActive = pathname.includes(item.href);
+            return (
+              <Link href={item.href} key={item.href}>
+                <Button
+                  variant="ghost"
+                  title={item.label}
+                  className={clsx(
+                    "w-full justify-start bg-background px-4 hover:bg-gray-100 dark:hover:bg-gray-800",
+                    {
+                      "bg-gray-100 text-foreground dark:bg-gray-800": isActive,
+                      "text-foreground": !isActive,
+                    },
+                  )}
+                >
+                  <item.icon className="mr-2 h-6 w-6" />
+                </Button>
+              </Link>
+            );
+          })}
         </nav>
       </ScrollArea>
-      <div className="flex items-center justify-between border-t bg-background p-4 text-foreground">
-        {/* {!isCollapsed && <NeynarAuthButton />} */}
+      <div className="flex flex-col items-center justify-between space-y-4 border-t bg-background p-4 text-foreground">
         <SignedIn>
           <UserButton />
         </SignedIn>
         <SignedOut>
-          <LogIn className="h-6 w-6" />
           <SignInButton />
         </SignedOut>
-        {!isCollapsed && <ModeToggle />}
+        <ModeToggle />
       </div>
     </nav>
   );

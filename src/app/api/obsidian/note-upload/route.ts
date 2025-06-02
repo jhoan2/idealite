@@ -1,0 +1,291 @@
+// app/api/obsidian/note-upload/route.ts - Enhanced with rate limiting
+import "server-only";
+import { NextRequest, NextResponse } from "next/server";
+import { Client } from "@upstash/workflow";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import { validateCredential } from "~/lib/integrations/validate";
+import {
+  uploadTempFileToPinata,
+  uploadTempFilesToPinata,
+} from "~/lib/pinata/uploadTempFiles";
+import * as Sentry from "@sentry/nextjs";
+
+// CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// Simple rate limiters optimized for Obsidian batch upload use case
+const uploadRatelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(40, "60 s"), // 40 uploads per minute
+  analytics: true,
+  prefix: "@upstash/ratelimit/uploads",
+});
+
+const dailyUploadLimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.fixedWindow(1000, "24 h"), // 1000 uploads per day
+  analytics: true,
+  prefix: "@upstash/ratelimit/daily",
+});
+
+// File size limits
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB per file
+const MAX_TOTAL_IMAGES_SIZE = 50 * 1024 * 1024; // 50MB total for images
+
+// Authenticate user by API token
+async function authenticateUser(
+  authHeader: string | null,
+): Promise<string | null> {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+
+  try {
+    const credential = await validateCredential("obsidian", token);
+    if (!credential) {
+      console.log("No valid credential found for token");
+      return null;
+    }
+    return credential.user_id;
+  } catch (error) {
+    console.error("Error authenticating user:", error);
+    return null;
+  }
+}
+
+// Simple rate limit check
+async function checkRateLimits(userId: string, totalSize: number) {
+  const identifier = `user:${userId}`;
+
+  // Check daily limit first
+  const { success: dailyOk, remaining: dailyRemaining } =
+    await dailyUploadLimit.limit(identifier);
+
+  if (!dailyOk) {
+    return {
+      success: false,
+      error: "Daily upload limit exceeded (1000 files/day)",
+      details: {
+        type: "daily_limit",
+        remaining: dailyRemaining,
+        resetTime: "24 hours",
+      },
+    };
+  }
+
+  // Check per-minute rate limit
+  const {
+    success: rateOk,
+    remaining: rateRemaining,
+    reset,
+  } = await uploadRatelimit.limit(identifier);
+
+  if (!rateOk) {
+    return {
+      success: false,
+      error: "Upload rate limit exceeded (40 files/minute)",
+      details: {
+        type: "rate_limit",
+        remaining: rateRemaining,
+        resetTime: reset ? new Date(reset).toISOString() : "1 minute",
+        suggestion:
+          "Slow down uploads slightly - you can upload again in about a minute",
+      },
+    };
+  }
+
+  return {
+    success: true,
+    details: {
+      dailyRemaining,
+      minuteRemaining: rateRemaining,
+    },
+  };
+}
+
+export const OPTIONS = async (req: NextRequest) => {
+  return NextResponse.json({}, { status: 200, headers: corsHeaders });
+};
+
+export const POST = async (req: NextRequest) => {
+  try {
+    // Authenticate the user first
+    const userId = await authenticateUser(req.headers.get("Authorization"));
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized: Invalid or missing API token" },
+        { status: 401, headers: corsHeaders },
+      );
+    }
+
+    const form = await req.formData();
+    const mdFile = form.get("markdown") as File;
+    const frontMatterJson = form.get("frontMatter") as string;
+    const imageFiles = form.getAll("images[]") as File[];
+
+    if (!mdFile) {
+      return NextResponse.json(
+        { error: "Markdown file missing" },
+        { status: 400, headers: corsHeaders },
+      );
+    }
+
+    // Validate file sizes
+    if (mdFile.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        {
+          error: "Markdown file too large",
+          maxSize: `${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        },
+        { status: 413, headers: corsHeaders },
+      );
+    }
+
+    const totalImageSize = imageFiles.reduce((sum, file) => sum + file.size, 0);
+    if (totalImageSize > MAX_TOTAL_IMAGES_SIZE) {
+      return NextResponse.json(
+        {
+          error: "Total image size too large",
+          maxSize: `${MAX_TOTAL_IMAGES_SIZE / 1024 / 1024}MB`,
+        },
+        { status: 413, headers: corsHeaders },
+      );
+    }
+
+    const totalSize = mdFile.size + totalImageSize;
+
+    // Check rate limits
+    const rateLimitResult = await checkRateLimits(userId, totalSize);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: rateLimitResult.error,
+          rateLimit: rateLimitResult.details,
+          retryAfter: rateLimitResult.details.resetTime,
+        },
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Retry-After": "60", // seconds
+            "X-RateLimit-Limit": "40", // uploads per minute
+            "X-RateLimit-Remaining":
+              rateLimitResult.details.remaining?.toString() || "0",
+          },
+        },
+      );
+    }
+
+    // Parse front matter
+    let frontMatter: Record<string, any> | null = null;
+    if (frontMatterJson) {
+      try {
+        frontMatter = JSON.parse(frontMatterJson);
+      } catch (error) {
+        console.error("Error parsing front matter JSON:", error);
+        return NextResponse.json(
+          { error: "Invalid frontMatter JSON" },
+          { status: 400, headers: corsHeaders },
+        );
+      }
+    }
+
+    // Upload files to IPFS
+    const markdownUpload = await uploadTempFileToPinata(
+      mdFile,
+      mdFile.name,
+      userId,
+    );
+
+    const imageUploads = await uploadTempFilesToPinata(
+      imageFiles.map((file) => ({
+        file,
+        name: file.name,
+      })),
+      userId,
+    );
+
+    // Start workflow with all data
+    const client = new Client({
+      token: process.env.QSTASH_TOKEN!,
+    });
+
+    const { workflowRunId } = await client.trigger({
+      url: `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/workflows/obsidian-upload`,
+      body: {
+        userId,
+        fileName: mdFile.name,
+        fileSize: mdFile.size,
+        markdownCid: markdownUpload.cid,
+        markdownAccessUrl: markdownUpload.accessUrl,
+        markdownAccessExpires: markdownUpload.accessExpiresAt.toISOString(),
+        imageData: imageUploads.map((upload) => ({
+          cid: upload.cid,
+          name: upload.name,
+          size: upload.size,
+          isTemp: upload.isTemp,
+          accessUrl: upload.accessUrl,
+          accessExpiresAt: upload.accessExpiresAt.toISOString(),
+        })),
+        frontMatter,
+      },
+    });
+
+    // Return success with rate limit info
+    return NextResponse.json(
+      {
+        success: true,
+        workflowRunId,
+        status: "RUNNING",
+        message: "Files uploaded to Private IPFS, workflow started",
+        filesUploaded: {
+          markdown: {
+            cid: markdownUpload.cid,
+            size: markdownUpload.size,
+            accessExpiresAt: markdownUpload.accessExpiresAt,
+          },
+          images: imageUploads.map((img) => ({
+            cid: img.cid,
+            name: img.name,
+            size: img.size,
+            accessExpiresAt: img.accessExpiresAt,
+          })),
+        },
+        rateLimit: {
+          dailyRemaining: rateLimitResult.details.dailyRemaining,
+          minuteRemaining: rateLimitResult.details.minuteRemaining,
+        },
+      },
+      {
+        headers: {
+          ...corsHeaders,
+          "X-RateLimit-Daily-Remaining":
+            rateLimitResult.details.dailyRemaining?.toString() || "0",
+          "X-RateLimit-Minute-Remaining":
+            rateLimitResult.details.minuteRemaining?.toString() || "0",
+        },
+      },
+    );
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: {
+        action: "obsidian-note-upload",
+      },
+    });
+
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500, headers: corsHeaders },
+    );
+  }
+};
