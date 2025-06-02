@@ -8,54 +8,51 @@ const isProtectedRoute = createRouteMatcher([
   "/chat(.*)",
 ]);
 
-const isCorsRoute = (req: NextRequest) => {
-  return req.nextUrl.pathname.startsWith("/api/obsidian/");
-};
+const isCorsRoute = (path: string) => path.startsWith("/api/obsidian/");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Max-Age": "86400",
-  "Access-Control-Allow-Credentials": "false",
-};
+function applyCors(res: NextResponse, origin: string) {
+  res.headers.set("Access-Control-Allow-Origin", origin);
+  res.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization",
+  );
+  res.headers.set("Access-Control-Max-Age", "86400");
+  res.headers.set(
+    "Access-Control-Expose-Headers",
+    "Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining",
+  );
+  res.headers.set("Vary", "Origin"); // keep caches honest when you echo Origin
+  return res;
+}
 
 export default clerkMiddleware(
   async (auth, req: NextRequest) => {
-    // Handle CORS for Obsidian API routes
-    if (isCorsRoute(req)) {
-      if (req.method === "OPTIONS") {
-        return new NextResponse(null, {
-          status: 200,
-          headers: corsHeaders,
-        });
-      }
+    const { pathname } = req.nextUrl;
+    const origin = req.headers.get("origin") ?? "*";
+
+    /* ---------- 1. CORS pre-flight early exit --------------------------- */
+    if (req.method === "OPTIONS" && isCorsRoute(pathname)) {
+      return applyCors(new NextResponse(null, { status: 200 }), origin);
     }
 
-    // Clerk auth for protected routes
+    /* ---------- 2. Protected Clerk routes ------------------------------- */
     const { userId } = await auth();
     if (isProtectedRoute(req) && !userId) {
-      const url = new URL("/profile", req.url);
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL("/profile", req.url));
     }
 
-    // Add CORS headers to CORS route responses
-    if (isCorsRoute(req)) {
-      const response = NextResponse.next();
-      Object.entries(corsHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      return response;
-    }
-
-    return NextResponse.next();
+    /* ---------- 3. Pass-through, but attach CORS to response ------------ */
+    const res = NextResponse.next();
+    if (isCorsRoute(pathname)) applyCors(res, origin);
+    return res;
   },
   {
     authorizedParties: [
       "https://www.idealite.xyz",
       "http://localhost:3000",
-      "www.idealight.xyz",
       "https://www.idealight.xyz",
+      "http://www.idealight.xyz",
     ],
   },
 );
