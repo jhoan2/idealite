@@ -1,4 +1,4 @@
-// app/api/obsidian/note-upload/route.ts - Enhanced with rate limiting
+// app/api/obsidian/note-upload/route.ts - Enhanced with rate limiting and CORS
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { Client } from "@upstash/workflow";
@@ -10,6 +10,31 @@ import {
   uploadTempFilesToPinata,
 } from "~/lib/pinata/uploadTempFiles";
 import * as Sentry from "@sentry/nextjs";
+
+// CORS headers function
+function setCorsHeaders(response: NextResponse) {
+  response.headers.set("Access-Control-Allow-Origin", "*");
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,OPTIONS",
+  );
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With",
+  );
+  response.headers.set("Access-Control-Max-Age", "86400");
+  response.headers.set(
+    "Access-Control-Expose-Headers",
+    "Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Daily-Remaining, X-RateLimit-Minute-Remaining",
+  );
+  return response;
+}
+
+// Handle OPTIONS preflight request
+export async function OPTIONS(req: NextRequest) {
+  const response = new NextResponse(null, { status: 200 });
+  return setCorsHeaders(response);
+}
 
 // Simple rate limiters optimized for Obsidian batch upload use case
 const uploadRatelimit = new Ratelimit({
@@ -101,10 +126,11 @@ export async function POST(req: NextRequest) {
   try {
     const userId = await authenticateUser(req.headers.get("Authorization"));
     if (!userId) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: "Unauthorized: Invalid or missing API token" },
         { status: 401 },
       );
+      return setCorsHeaders(response);
     }
 
     const form = await req.formData();
@@ -113,38 +139,41 @@ export async function POST(req: NextRequest) {
     const imageFiles = form.getAll("images[]") as File[];
 
     if (!mdFile) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: "Markdown file missing" },
         { status: 400 },
       );
+      return setCorsHeaders(response);
     }
 
     // Validate file sizes
     if (mdFile.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
           error: "Markdown file too large",
           maxSize: `${MAX_FILE_SIZE / 1024 / 1024}MB`,
         },
         { status: 413 },
       );
+      return setCorsHeaders(response);
     }
 
     const totalImageSize = imageFiles.reduce((sum, file) => sum + file.size, 0);
     if (totalImageSize > MAX_TOTAL_IMAGES_SIZE) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
           error: "Total image size too large",
           maxSize: `${MAX_TOTAL_IMAGES_SIZE / 1024 / 1024}MB`,
         },
         { status: 413 },
       );
+      return setCorsHeaders(response);
     }
 
     // Check rate limits
     const rateLimitResult = await checkRateLimits(userId);
     if (!rateLimitResult.success) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
           error: rateLimitResult.error,
           rateLimit: rateLimitResult.details,
@@ -160,6 +189,7 @@ export async function POST(req: NextRequest) {
           },
         },
       );
+      return setCorsHeaders(response);
     }
 
     // Parse front matter
@@ -168,10 +198,11 @@ export async function POST(req: NextRequest) {
       try {
         frontMatter = JSON.parse(frontMatterJson);
       } catch (error) {
-        return NextResponse.json(
+        const response = NextResponse.json(
           { error: "Invalid frontMatter JSON" },
           { status: 400 },
         );
+        return setCorsHeaders(response);
       }
     }
 
@@ -209,7 +240,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         workflowRunId,
@@ -242,16 +273,19 @@ export async function POST(req: NextRequest) {
         },
       },
     );
+
+    return setCorsHeaders(response);
   } catch (error) {
     Sentry.captureException(error, {
       tags: { action: "obsidian-note-upload" },
     });
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         error: "Internal server error",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );
+    return setCorsHeaders(response);
   }
 }
