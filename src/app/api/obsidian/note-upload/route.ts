@@ -16,6 +16,8 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400",
+  "Access-Control-Allow-Credentials": "false",
 };
 
 // Simple rate limiters optimized for Obsidian batch upload use case
@@ -49,11 +51,7 @@ async function authenticateUser(
 
   try {
     const credential = await validateCredential("obsidian", token);
-    if (!credential) {
-      console.log("No valid credential found for token");
-      return null;
-    }
-    return credential.user_id;
+    return credential?.user_id || null;
   } catch (error) {
     console.error("Error authenticating user:", error);
     return null;
@@ -61,7 +59,7 @@ async function authenticateUser(
 }
 
 // Simple rate limit check
-async function checkRateLimits(userId: string, totalSize: number) {
+async function checkRateLimits(userId: string) {
   const identifier = `user:${userId}`;
 
   // Check daily limit first
@@ -95,8 +93,6 @@ async function checkRateLimits(userId: string, totalSize: number) {
         type: "rate_limit",
         remaining: rateRemaining,
         resetTime: reset ? new Date(reset).toISOString() : "1 minute",
-        suggestion:
-          "Slow down uploads slightly - you can upload again in about a minute",
       },
     };
   }
@@ -111,7 +107,10 @@ async function checkRateLimits(userId: string, totalSize: number) {
 }
 
 export const OPTIONS = async (req: NextRequest) => {
-  return NextResponse.json({}, { status: 200, headers: corsHeaders });
+  return NextResponse.json(
+    { message: "CORS preflight successful" },
+    { status: 200, headers: corsHeaders },
+  );
 };
 
 export const POST = async (req: NextRequest) => {
@@ -159,10 +158,8 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const totalSize = mdFile.size + totalImageSize;
-
     // Check rate limits
-    const rateLimitResult = await checkRateLimits(userId, totalSize);
+    const rateLimitResult = await checkRateLimits(userId);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         {
