@@ -10,13 +10,12 @@ const isProtectedRoute = createRouteMatcher([
 
 const isCorsRoute = (path: string) => path.startsWith("/api/obsidian/");
 
-// Define allowed origins - include the Obsidian app origin
 const ALLOWED_ORIGINS = [
   "https://www.idealite.xyz",
   "http://localhost:3000",
   "https://www.idealight.xyz",
   "http://www.idealight.xyz",
-  "app://obsidian.md", // Add Obsidian origin
+  "app://obsidian.md",
 ];
 
 function applyCors(res: NextResponse, origin: string | null) {
