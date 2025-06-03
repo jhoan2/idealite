@@ -11,7 +11,7 @@ import {
 } from "~/lib/pinata/uploadTempFiles";
 import * as Sentry from "@sentry/nextjs";
 
-// CORS headers function
+// CORS headers function - now only used for error responses
 function setCorsHeaders(response: NextResponse) {
   response.headers.set("Access-Control-Allow-Origin", "*");
   response.headers.set(
@@ -28,12 +28,6 @@ function setCorsHeaders(response: NextResponse) {
     "Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Daily-Remaining, X-RateLimit-Minute-Remaining",
   );
   return response;
-}
-
-// Handle OPTIONS preflight request
-export async function OPTIONS(req: NextRequest) {
-  const response = new NextResponse(null, { status: 200 });
-  return setCorsHeaders(response);
 }
 
 // Simple rate limiters optimized for Obsidian batch upload use case
@@ -240,6 +234,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Note: CORS headers are now handled by middleware, no need to set them here for success responses
     const response = NextResponse.json(
       {
         success: true,
@@ -274,7 +269,7 @@ export async function POST(req: NextRequest) {
       },
     );
 
-    return setCorsHeaders(response);
+    return response; // Middleware will handle CORS headers
   } catch (error) {
     Sentry.captureException(error, {
       tags: { action: "obsidian-note-upload" },
