@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { searchPages } from "~/server/actions/page";
-import { createClozeCards } from "~/server/actions/card";
 
 export default function TestPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,15 +24,6 @@ export default function TestPage() {
     }
   };
 
-  const handleGenerateFlashcards = async () => {
-    try {
-      const cards = await createClozeCards();
-      setFlashcards(cards);
-    } catch (error) {
-      console.error("Error generating flashcards:", error);
-    }
-  };
-
   return (
     <div className="space-y-4 p-4">
       <div className="flex gap-2">
@@ -44,7 +34,6 @@ export default function TestPage() {
           placeholder="Search pages..."
         />
         <Button onClick={handleSearch}>Search</Button>
-        <Button onClick={handleGenerateFlashcards}>Generate Flashcards</Button>
       </div>
 
       {/* Display results */}

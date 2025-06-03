@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const user = await currentUser();
-  const userId = user?.id;
+  const userId = user?.externalId;
 
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });

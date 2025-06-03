@@ -5,7 +5,6 @@ import { z } from "zod";
 import { db } from "~/server/db";
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
-import { getDueFlashCards } from "../queries/card";
 import * as Sentry from "@sentry/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -17,12 +16,23 @@ const createCardSchema = z.object({
   description: z.string().min(1).optional(),
   tagIds: z.array(z.string().uuid()).optional(),
   resourceId: z.string().uuid().optional(),
-
   nextReview: z.string().datetime().optional(),
+  cardType: z.enum(["qa", "image", "cloze"]).optional(),
+  question: z.string().optional(),
+  answer: z.string().optional(),
+  clozeTemplate: z.string().optional(),
+  clozeAnswers: z.string().optional(),
+  sourceLocator: z
+    .object({
+      type: z.enum(["page", "canvas"]),
+      pointer: z.string().optional(),
+    })
+    .optional(),
 });
 
 export async function createCardFromPage(
   input: z.infer<typeof createCardSchema>,
+  overrideUserId?: string,
 ): Promise<{
   success: boolean;
   data?: typeof cards.$inferSelect;
@@ -30,8 +40,16 @@ export async function createCardFromPage(
 }> {
   try {
     const validatedInput = createCardSchema.parse(input);
-    const user = await currentUser();
-    const userId = user?.externalId;
+    let userId: string | undefined;
+
+    if (overrideUserId) {
+      // Use the provided userId (from QStash job)
+      userId = overrideUserId;
+    } else {
+      // Get it from the authenticated user (normal browser request)
+      const user = await currentUser();
+      userId = user?.externalId || undefined;
+    }
 
     if (!userId) {
       return { success: false, error: "Unauthorized" };
@@ -51,6 +69,18 @@ export async function createCardFromPage(
           next_review: validatedInput.nextReview
             ? new Date(validatedInput.nextReview)
             : null,
+          card_type:
+            validatedInput.cardType ||
+            (validatedInput.question && validatedInput.answer
+              ? "qa"
+              : validatedInput.clozeTemplate && validatedInput.clozeAnswers
+                ? "cloze"
+                : "image"),
+          question: validatedInput.question,
+          answer: validatedInput.answer,
+          cloze_template: validatedInput.clozeTemplate,
+          cloze_answers: validatedInput.clozeAnswers,
+          source_locator: validatedInput.sourceLocator,
         })
         .returning();
 
@@ -101,7 +131,15 @@ const updateCardSchema = z.object({
   id: z.string().uuid(),
   content: z.string().optional(),
   description: z.string().optional(),
+  question: z.string().optional(),
+  answer: z.string().optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
+  sourceLocator: z
+    .object({
+      type: z.enum(["page", "canvas"]),
+      pointer: z.string().optional(),
+    })
+    .optional(),
 });
 
 export async function updateCard(input: z.infer<typeof updateCardSchema>) {
@@ -150,88 +188,24 @@ export async function deleteCard(cardId: string) {
   return deletedCard;
 }
 
-export async function createQuestionAndAnswer() {
-  const user = await currentUser();
-  const userId = user?.externalId;
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
-  const dueCards = await getDueFlashCards();
-
-  if (!dueCards.length) {
-    return [];
-  }
-
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/flashcards`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        cards: dueCards,
-        type: "question-answer",
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to generate flashcards");
-  }
-
-  const data = await response.json();
-  return data.flashcards;
-}
-
-export async function createClozeCards() {
-  const user = await currentUser();
-  const userId = user?.externalId;
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
-  const dueCards = await getDueFlashCards();
-
-  if (!dueCards.length) {
-    return [];
-  }
-
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/flashcards`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        cards: dueCards,
-        type: "cloze",
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to generate flashcards");
-  }
-
-  const data = await response.json();
-  return data.flashcards;
-}
-
 const processFlashCardsSchema = z.object({
   id: z.string().uuid(),
   content: z.string().optional(),
   description: z.string().optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
+  next_review: z.string().datetime().optional(),
+  last_reviewed: z.string().datetime().optional(),
 });
 
-// Accept either a single update or an array of updates
 export async function processFlashCards(
   input:
     | z.infer<typeof processFlashCardsSchema>
-    | Array<Pick<z.infer<typeof processFlashCardsSchema>, "id" | "status">>,
+    | Array<{
+        id: string;
+        status: "active" | "mastered" | "suspended";
+        next_review: string | null;
+        last_reviewed: string;
+      }>,
 ) {
   const user = await currentUser();
   const userId = user?.externalId;
@@ -239,7 +213,6 @@ export async function processFlashCards(
     throw new Error("Unauthorized");
   }
 
-  // Handle batch updates
   if (Array.isArray(input)) {
     return await db.transaction(async (tx) => {
       const results = await Promise.all(
@@ -248,6 +221,10 @@ export async function processFlashCards(
             .update(cards)
             .set({
               status: update.status,
+              next_review: update.next_review
+                ? new Date(update.next_review)
+                : null,
+              last_reviewed: new Date(update.last_reviewed),
               updated_at: new Date(),
             })
             .where(and(eq(cards.id, update.id), eq(cards.user_id, userId)))
@@ -256,7 +233,7 @@ export async function processFlashCards(
       );
 
       // Revalidate paths if needed
-      revalidatePath(`/play`);
+      revalidatePath(`/review`);
       return results.map(([card]) => card);
     });
   }
@@ -267,63 +244,17 @@ export async function processFlashCards(
     .update(cards)
     .set({
       ...validatedInput,
+      next_review: validatedInput.next_review
+        ? new Date(validatedInput.next_review)
+        : undefined,
+      last_reviewed: validatedInput.last_reviewed
+        ? new Date(validatedInput.last_reviewed)
+        : undefined,
       updated_at: new Date(),
     })
     .where(and(eq(cards.id, validatedInput.id), eq(cards.user_id, userId)))
     .returning();
 
-  revalidatePath(`/play`);
+  revalidatePath(`/review`);
   return updatedCard;
-}
-
-export async function createCardFromGame(content: string, tagId: string) {
-  try {
-    const user = await currentUser();
-    const userId = user?.externalId;
-
-    if (!userId) {
-      throw new Error("Unauthorized");
-    }
-
-    const twoWeeksFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-
-    return await db.transaction(async (tx) => {
-      // Create the new card
-      const [newCard] = await tx
-        .insert(cards)
-        .values({
-          content,
-          user_id: userId,
-          created_at: new Date(),
-          updated_at: new Date(),
-          next_review: twoWeeksFromNow,
-          status: "active",
-        })
-        .returning();
-
-      if (!newCard) {
-        throw new Error("Failed to create card");
-      }
-
-      // Create card-tag relationship
-      await tx.insert(cards_tags).values({
-        card_id: newCard.id,
-        tag_id: tagId,
-      });
-
-      // Increment user's cash by 1
-      await tx
-        .update(users)
-        .set({
-          cash: sql`${users.cash} + 1`,
-          updated_at: new Date(),
-        })
-        .where(eq(users.id, userId));
-
-      return newCard;
-    });
-  } catch (error) {
-    Sentry.captureException(error);
-    throw error;
-  }
 }

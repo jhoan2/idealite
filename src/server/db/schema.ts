@@ -16,6 +16,7 @@ import {
   pgEnum,
   jsonb,
   serial,
+  vector,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -46,8 +47,6 @@ export const users = createTable("user", {
   updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
     () => new Date(),
   ),
-  points: integer("points").notNull().default(0),
-  cash: integer("cash").notNull().default(0),
 });
 
 export type Image = typeof images.$inferSelect;
@@ -59,6 +58,7 @@ export const images = createTable("images", {
   filename: varchar("filename", { length: 256 }).notNull(),
   url: varchar("url", { length: 1024 }).notNull(),
   size: integer("size").notNull(),
+  is_temporary: boolean("is_temporary").default(false),
   created_at: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -73,6 +73,7 @@ export const tags = createTable(
       .notNull()
       .$default(() => sql`lower(name)`),
     parent_id: uuid("parent_id").references((): AnyPgColumn => tags.id),
+    embedding: vector("embedding", { dimensions: 1536 }),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -82,13 +83,15 @@ export const tags = createTable(
     deleted: boolean("deleted").default(false),
     is_template: boolean("is_template").default(false).notNull(),
   },
-  (table) => {
-    return {
-      name_idx: index("tag_name_idx").on(table.name),
-      created_at_idx: index("tag_created_at_idx").on(table.created_at),
-      deleted_idx: index("tag_deleted_idx").on(table.deleted),
-    };
-  },
+  (t) => [
+    index("tag_name_idx").on(t.name),
+    index("tag_created_at_idx").on(t.created_at),
+    index("tag_deleted_idx").on(t.deleted),
+    index("tag_embedding_ivfflat").using(
+      "ivfflat",
+      sql`embedding vector_cosine_ops`,
+    ),
+  ],
 );
 
 export const users_tags = createTable(
@@ -106,13 +109,11 @@ export const users_tags = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.user_id, table.tag_id] }),
-      user_id_idx: index("users_tags_user_id_idx").on(table.user_id),
-      tag_id_idx: index("users_tags_tag_id_idx").on(table.tag_id),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.tag_id] }),
+    index("users_tags_user_id_idx").on(table.user_id),
+    index("users_tags_tag_id_idx").on(table.tag_id),
+  ],
 );
 
 export type Page = typeof pages.$inferSelect;
@@ -138,19 +139,15 @@ export const pages = createTable(
     ),
     deleted: boolean("deleted").default(false),
   },
-  (table) => {
-    return {
-      created_at_idx: index("page_created_at_idx").on(table.created_at),
-      deleted_idx: index("page_deleted_idx").on(table.deleted),
-      primary_tag_id_idx: index("page_primary_tag_id_idx").on(
-        table.primary_tag_id,
-      ),
-      title_search_idx: index("page_title_search_idx").using(
-        "gin",
-        sql`to_tsvector('english', ${table.title})`,
-      ),
-    };
-  },
+  (table) => [
+    index("page_created_at_idx").on(table.created_at),
+    index("page_deleted_idx").on(table.deleted),
+    index("page_primary_tag_id_idx").on(table.primary_tag_id),
+    index("page_title_search_idx").using(
+      "gin",
+      sql`to_tsvector('english', ${table.title})`,
+    ),
+  ],
 );
 
 export const pages_tags = createTable(
@@ -166,13 +163,11 @@ export const pages_tags = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.page_id, table.tag_id] }),
-      page_id_idx: index("page_id_idx").on(table.page_id),
-      tag_id_idx: index("tag_id_idx").on(table.tag_id),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.page_id, table.tag_id] }),
+    index("page_id_idx").on(table.page_id),
+    index("tag_id_idx").on(table.tag_id),
+  ],
 );
 
 export const users_pages = createTable(
@@ -192,14 +187,12 @@ export const users_pages = createTable(
       () => new Date(),
     ),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.user_id, table.page_id] }),
-      user_id_idx: index("users_pages_user_id_idx").on(table.user_id),
-      page_id_idx: index("users_pages_page_id_idx").on(table.page_id),
-      role_idx: index("users_pages_role_idx").on(table.role),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.page_id] }),
+    index("users_pages_user_id_idx").on(table.user_id),
+    index("users_pages_page_id_idx").on(table.page_id),
+    index("users_pages_role_idx").on(table.role),
+  ],
 );
 
 export const resources = createTable(
@@ -226,27 +219,23 @@ export const resources = createTable(
     ),
     url: text("url").notNull(),
   },
-  (table) => {
-    return {
-      url_idx: index("resource_url_idx").on(table.url),
-      created_at_idx: index("resource_created_at_idx").on(table.created_at),
-      title_tsv_idx: index("idx_resource_title_tsv").using(
-        "gin",
-        sql`to_tsvector('english', ${table.title})`,
-      ),
-      url_tsv_idx: index("idx_resource_url_tsv").using(
-        "gin",
-        sql`to_tsvector('english', ${table.url})`,
-      ),
-      author_tsv_idx: index("idx_resource_author_tsv").using(
-        "gin",
-        sql`to_tsvector('english', ${table.author})`,
-      ),
-      open_library_id_idx: index("idx_resource_open_library_id_idx").on(
-        table.open_library_id,
-      ),
-    };
-  },
+  (table) => [
+    index("resource_url_idx").on(table.url),
+    index("resource_created_at_idx").on(table.created_at),
+    index("idx_resource_title_tsv").using(
+      "gin",
+      sql`to_tsvector('english', ${table.title})`,
+    ),
+    index("idx_resource_url_tsv").using(
+      "gin",
+      sql`to_tsvector('english', ${table.url})`,
+    ),
+    index("idx_resource_author_tsv").using(
+      "gin",
+      sql`to_tsvector('english', ${table.author})`,
+    ),
+    index("idx_resource_open_library_id_idx").on(table.open_library_id),
+  ],
 );
 
 export const usersResources = createTable(
@@ -273,15 +262,11 @@ export const usersResources = createTable(
       () => new Date(),
     ),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.user_id, table.resource_id] }),
-      user_id_idx: index("users_resources_user_id_idx").on(table.user_id),
-      resource_id_idx: index("users_resources_resource_id_idx").on(
-        table.resource_id,
-      ),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.resource_id] }),
+    index("users_resources_user_id_idx").on(table.user_id),
+    index("users_resources_resource_id_idx").on(table.resource_id),
+  ],
 );
 
 export const resourcesPages = createTable(
@@ -300,15 +285,11 @@ export const resourcesPages = createTable(
       () => new Date(),
     ),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.resource_id, table.page_id] }),
-      resource_id_idx: index("resources_pages_resource_id_idx").on(
-        table.resource_id,
-      ),
-      page_id_idx: index("resources_pages_page_id_idx").on(table.page_id),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.resource_id, table.page_id] }),
+    index("resources_pages_resource_id_idx").on(table.resource_id),
+    index("resources_pages_page_id_idx").on(table.page_id),
+  ],
 );
 
 export const tabs = createTable(
@@ -330,11 +311,11 @@ export const tabs = createTable(
       () => new Date(),
     ),
   },
-  (table) => ({
-    user_idx: index("tabs_user_idx").on(table.user_id),
-    position_idx: index("tabs_position_idx").on(table.position),
-    path_idx: index("tabs_path_idx").on(table.path),
-  }),
+  (table) => [
+    index("tabs_user_idx").on(table.user_id),
+    index("tabs_position_idx").on(table.position),
+    index("tabs_path_idx").on(table.path),
+  ],
 );
 
 export type Folder = typeof folders.$inferSelect;
@@ -362,12 +343,10 @@ export const folders = createTable(
       () => new Date(),
     ),
   },
-  (table) => {
-    return {
-      tag_id_idx: index("folder_tag_id_idx").on(table.tag_id),
-      user_id_idx: index("folder_user_id_idx").on(table.user_id),
-    };
-  },
+  (table) => [
+    index("folder_tag_id_idx").on(table.tag_id),
+    index("folder_user_id_idx").on(table.user_id),
+  ],
 );
 
 export const users_folders = createTable(
@@ -384,13 +363,11 @@ export const users_folders = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.user_id, table.folder_id] }),
-      user_id_idx: index("users_folders_user_id_idx").on(table.user_id),
-      folder_id_idx: index("users_folders_folder_id_idx").on(table.folder_id),
-    };
-  },
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.folder_id] }),
+    index("users_folders_user_id_idx").on(table.user_id),
+    index("users_folders_folder_id_idx").on(table.folder_id),
+  ],
 );
 
 export const cards = createTable(
@@ -402,6 +379,13 @@ export const cards = createTable(
       .references(() => users.id),
     page_id: uuid("page_id").references(() => pages.id),
     resource_id: uuid("resource_id").references(() => resources.id),
+    card_type: varchar("card_type", {
+      enum: ["qa", "image", "cloze"],
+    }),
+    question: text("question"),
+    answer: text("answer"),
+    cloze_template: text("cloze_template"),
+    cloze_answers: text("cloze_answers"),
     content: text("content"),
     image_cid: text("image_cid"),
     description: text("description"),
@@ -420,18 +404,21 @@ export const cards = createTable(
       () => new Date(),
     ),
     deleted: boolean("deleted").default(false),
+    source_locator: jsonb("source_locator")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
   },
-  (table) => ({
-    user_idx: index("card_user_idx").on(table.user_id),
-    page_idx: index("card_page_idx").on(table.page_id),
-    resource_idx: index("card_resource_idx").on(table.resource_id),
-    content_search_idx: index("card_content_search_idx").using(
+  (table) => [
+    index("card_user_idx").on(table.user_id),
+    index("card_page_idx").on(table.page_id),
+    index("card_resource_idx").on(table.resource_id),
+    index("card_content_search_idx").using(
       "gin",
       sql`to_tsvector('english', ${table.content})`,
     ),
-    status_idx: index("card_status_idx").on(table.status),
-    deleted_idx: index("card_deleted_idx").on(table.deleted),
-  }),
+    index("card_status_idx").on(table.status),
+    index("card_deleted_idx").on(table.deleted),
+  ],
 );
 
 export type CardTag = typeof cards_tags.$inferSelect;
@@ -448,11 +435,11 @@ export const cards_tags = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.card_id, table.tag_id] }),
-    card_idx: index("cards_tags_card_idx").on(table.card_id),
-    tag_idx: index("cards_tags_tag_idx").on(table.tag_id),
-  }),
+  (table) => [
+    primaryKey({ columns: [table.card_id, table.tag_id] }),
+    index("cards_tags_card_idx").on(table.card_id),
+    index("cards_tags_tag_idx").on(table.tag_id),
+  ],
 );
 
 export const pagesRelations = relations(pages, ({ many, one }) => ({
@@ -608,149 +595,6 @@ export const cardsTagsRelations = relations(cards_tags, ({ one }) => ({
   }),
 }));
 
-// =====================
-// Games Related Schema
-// =====================
-
-export const game_status_enum = pgEnum("game_status", [
-  "created",
-  "in_progress",
-  "completed",
-  "abandoned",
-]);
-
-export const game_type_enum = pgEnum("game_type", [
-  "friend-clash",
-  "spin-wheel",
-  "two-truths",
-  "guess-picture",
-]);
-
-export type GameType = (typeof game_type_enum.enumValues)[number];
-export type GameSession = typeof game_session.$inferSelect;
-export const game_session = createTable(
-  "game_session",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    player_count: integer("player_count").notNull(),
-    players: text("players").array().notNull(),
-    player_info: jsonb("player_info").array().notNull().$type<
-      {
-        username: string;
-        display_name: string | null;
-        fid: number;
-        pfp_url: string | null;
-        avatar_url: string | null;
-        user_id: string;
-      }[]
-    >(),
-    eliminated_players: uuid("eliminated_players")
-      .array()
-      .notNull()
-      .default(sql`ARRAY[]::uuid[]`),
-    current_turn_player_index: integer("current_turn_player_index")
-      .notNull()
-      .default(0),
-    game_type: game_type_enum("game_type").notNull(),
-    notification_ids: text("notification_ids").array(),
-    status: game_status_enum("status").notNull().default("created"),
-    turn_deadline: timestamp("turn_deadline", { withTimezone: true }).notNull(),
-    topics: text("topics").array(),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (table) => ({
-    playersIdx: index("game_session_players_idx").on(table.players),
-    statusIdx: index("game_session_status_idx").on(table.status),
-    turn_deadline_idx: index("game_session_turn_deadline_idx").on(
-      table.turn_deadline,
-    ),
-    player_count_idx: index("game_session_player_count_idx").on(
-      table.player_count,
-    ),
-  }),
-);
-
-export type GameMove = typeof game_move.$inferSelect;
-export const game_move = createTable(
-  "game_move",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    session_id: uuid("session_id")
-      .notNull()
-      .references(() => game_session.id, { onDelete: "cascade" }),
-    player_id: uuid("player_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    player_username: text("player_username").notNull(),
-    points: integer("points").notNull().default(0),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => ({
-    session_id_idx: index("game_move_session_idx").on(table.session_id),
-    player_id_idx: index("game_move_player_idx").on(table.player_id),
-  }),
-);
-
-export const game_sessions_relations = relations(game_session, ({ many }) => ({
-  moves: many(game_move),
-}));
-
-export const game_moves_relations = relations(game_move, ({ one }) => ({
-  session: one(game_session, {
-    fields: [game_move.session_id],
-    references: [game_session.id],
-  }),
-  player: one(users, {
-    fields: [game_move.player_id],
-    references: [users.id],
-  }),
-}));
-
-export const points_history = createTable(
-  "points_history",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    user_id: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    points: integer("points").notNull(),
-    week_start: timestamp("week_start", { withTimezone: true })
-      .notNull()
-      .$default(() => sql`date_trunc('week', CURRENT_TIMESTAMP)`),
-    source_type: varchar("source_type", {
-      enum: ["game_move", "achievement", "bonus", "other"],
-    }).notNull(),
-    source_id: uuid("source_id"),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (table) => ({
-    user_idx: index("points_history_user_idx").on(table.user_id),
-    week_start_idx: index("points_history_week_start_idx").on(table.week_start),
-    source_type_idx: index("points_history_source_type_idx").on(
-      table.source_type,
-    ),
-  }),
-);
-
-export const pointsHistoryRelations = relations(points_history, ({ one }) => ({
-  user: one(users, {
-    fields: [points_history.user_id],
-    references: [users.id],
-  }),
-}));
-
 // export type InteractiveComponent = typeof interactive_components.$inferSelect;
 // export type NewInteractiveComponent =
 //   typeof interactive_components.$inferInsert;
@@ -810,5 +654,47 @@ export const featureDiscoveriesRelations = relations(
 );
 
 // =====================
+// Integration Schema
 // =====================
-// =====================
+
+export const integrationCredentials = createTable(
+  "integration_credential",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    provider: varchar("provider", { length: 32 }).notNull(), // 'obsidian' | 'notion' | …
+    type: varchar("type", { length: 16 }).notNull(), // 'machine' | 'oauth' | 'pat'
+    // One of the two branches below is **always** null
+    hashed_token: varchar("hashed_token", { length: 256 }), // machine keys (stored hashed)
+    access_token_enc: text("access_token_enc"), // AES-GCM encrypted blob
+    refresh_token_enc: text("refresh_token_enc"), // nullable
+    expires_at: timestamp("expires_at", { withTimezone: true }),
+    scope: text("scope")
+      .array()
+      .default(sql`ARRAY[]::text[]`),
+    last_used: timestamp("last_used", { withTimezone: true }),
+    revoked_at: timestamp("revoked_at", { withTimezone: true }),
+    created_at: timestamp("created_at", { withTimezone: true }).default(
+      sql`now()`,
+    ),
+  },
+  (table) => {
+    return {
+      token_prefix_idx: index("integration_credentials_token_prefix_idx").on(
+        table.hashed_token,
+      ),
+    };
+  },
+);
+
+export const integrationCredentialsRelations = relations(
+  integrationCredentials,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [integrationCredentials.user_id],
+      references: [users.id],
+    }),
+  }),
+);

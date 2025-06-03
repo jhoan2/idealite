@@ -31,6 +31,24 @@ export function CardList({ pageId, userTagTree, isMobile }: CardListProps) {
     };
 
     loadCards();
+
+    const handleFlashcardCreated = (event: CustomEvent) => {
+      if (event.detail.pageId === pageId) {
+        loadCards();
+      }
+    };
+
+    window.addEventListener(
+      "flashcard:created",
+      handleFlashcardCreated as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "flashcard:created",
+        handleFlashcardCreated as EventListener,
+      );
+    };
   }, [pageId]);
 
   if (isLoading) {
@@ -58,6 +76,7 @@ export function CardList({ pageId, userTagTree, isMobile }: CardListProps) {
                 updated_at: tag.updated_at,
                 deleted: tag.deleted,
                 is_template: tag.is_template ?? false,
+                embedding: tag.embedding,
               }))}
               currentCardId={card.id}
               isMobile={isMobile}

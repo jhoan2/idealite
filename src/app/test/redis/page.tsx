@@ -7,6 +7,7 @@ export default function TestRedisPage() {
   const [topicName, setTopicName] = useState("");
   const [topicId, setTopicId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeletingTrivia, setIsDeletingTrivia] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
   const generateTrivia = async () => {
@@ -39,6 +40,34 @@ export default function TestRedisPage() {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const deleteAllTriviaKeys = async () => {
+    if (!confirm("Are you sure you want to delete all trivia-related keys?")) {
+      return;
+    }
+
+    setIsDeletingTrivia(true);
+    setResult(null);
+
+    try {
+      const response = await fetch("/api/redis/delete-trivia-keys", {
+        method: "POST",
+      });
+
+      const data = await response.json();
+      setResult(
+        data.success
+          ? `✅ Successfully deleted ${data.deletedCount} trivia keys`
+          : `❌ Failed to delete trivia keys: ${data.error}`,
+      );
+    } catch (error) {
+      setResult(
+        `❌ Error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    } finally {
+      setIsDeletingTrivia(false);
     }
   };
 
@@ -77,6 +106,16 @@ export default function TestRedisPage() {
       >
         {isLoading ? "Generating..." : "Generate Trivia Questions"}
       </button>
+
+      <div className="mt-4">
+        <button
+          onClick={deleteAllTriviaKeys}
+          disabled={isDeletingTrivia}
+          className="w-full rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:bg-red-400"
+        >
+          {isDeletingTrivia ? "Deleting..." : "Delete All Trivia Keys"}
+        </button>
+      </div>
 
       {result && (
         <div
