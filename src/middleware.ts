@@ -53,24 +53,26 @@ export default clerkMiddleware(
     const { pathname } = req.nextUrl;
     const origin = req.headers.get("origin");
 
-    /* ---------- 1. CORS pre-flight early exit --------------------------- */
+    /* ---------- 1. Handle ALL OPTIONS requests for CORS routes FIRST ----------- */
     if (req.method === "OPTIONS" && isCorsRoute(pathname)) {
       const response = new NextResponse(null, { status: 200 });
       return applyCors(response, origin);
     }
 
-    /* ---------- 2. Protected Clerk routes ------------------------------- */
+    /* ---------- 2. Skip Clerk auth entirely for Obsidian API routes ------------ */
+    if (isCorsRoute(pathname)) {
+      const res = NextResponse.next();
+      return applyCors(res, origin);
+    }
+
+    /* ---------- 3. Handle protected Clerk routes -------------------------------*/
     const { userId } = await auth();
     if (isProtectedRoute(req) && !userId) {
       return NextResponse.redirect(new URL("/profile", req.url));
     }
 
-    /* ---------- 3. Pass-through, but attach CORS to response ------------ */
-    const res = NextResponse.next();
-    if (isCorsRoute(pathname)) {
-      applyCors(res, origin);
-    }
-    return res;
+    /* ---------- 4. Default pass-through ------------------------------------ */
+    return NextResponse.next();
   },
   {
     authorizedParties: [
