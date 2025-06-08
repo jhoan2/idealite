@@ -19,3 +19,17 @@ export async function updateStorageUsed(userId: string, sizeChange: number) {
     })
     .where(eq(users.id, userId));
 }
+
+// Workflow-safe version (no authentication required)
+export async function updateStorageUsedWorkflow(
+  userId: string,
+  sizeChange: number,
+) {
+  // No authentication check - trust that workflow was initiated by authenticated user
+  await db
+    .update(users)
+    .set({
+      storage_used: sql`${users.storage_used} + ${sizeChange}`,
+    })
+    .where(eq(users.id, userId));
+}

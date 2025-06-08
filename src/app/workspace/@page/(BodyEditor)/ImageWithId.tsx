@@ -1,40 +1,93 @@
+// File: ./ImageWithId.ts
+
 import Image from "@tiptap/extension-image";
+import { mergeAttributes } from "@tiptap/core";
 import { v4 as uuidv4 } from "uuid";
 
 export const ImageWithId = Image.extend({
   name: "image",
 
+  addOptions() {
+    return {
+      ...this.parent?.(),
+      inline: true,
+      allowBase64: true,
+      HTMLAttributes: {},
+    };
+  },
+
   addAttributes() {
     return {
-      ...this.parent?.(), // retain all existing attrs
+      ...this.parent?.(),
+      // Internal TipTap attribute that gets rendered as both data-node-id and id
       nodeId: {
-        default: null,
-        parseHTML: (element) => element.getAttribute("data-node-id") ?? null,
-        renderHTML: (attrs) => {
-          if (!attrs.nodeId) return {};
+        default: () => uuidv4(),
+        parseHTML: (element) =>
+          element.getAttribute("data-node-id") ||
+          element.getAttribute("id") ||
+          uuidv4(),
+        renderHTML: (attributes) => {
           return {
-            id: attrs.nodeId,
-            "data-node-id": attrs.nodeId,
+            "data-node-id": attributes.nodeId, // For flashcards
+            id: attributes.nodeId, // For general HTML compliance
           };
         },
       },
     };
   },
 
-  onCreate() {
-    const tr = this.editor.state.tr;
-    const state = this.editor.state;
-    let mutated = false;
+  parseHTML() {
+    return [
+      {
+        tag: "img[src]",
+        getAttrs: (dom) => {
+          const element = dom as HTMLElement;
+          const nodeId =
+            element.getAttribute("data-node-id") ||
+            element.getAttribute("id") ||
+            uuidv4();
 
-    state.doc.descendants((node: any, pos: any) => {
-      if (node.type.name === "image" && !node.attrs.nodeId) {
-        tr.setNodeMarkup(pos, undefined, {
-          ...node.attrs,
-          nodeId: uuidv4(),
-        });
-        mutated = true;
-      }
-    });
-    if (mutated) this.editor.view.dispatch(tr);
+          return {
+            src: element.getAttribute("src"),
+            alt: element.getAttribute("alt"),
+            title: element.getAttribute("title"),
+            nodeId: nodeId, // Only store internally
+          };
+        },
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    // Ensure we always have a nodeId
+    if (!HTMLAttributes.nodeId) {
+      HTMLAttributes.nodeId = uuidv4();
+    }
+
+    return [
+      "img",
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        "data-node-id": HTMLAttributes.nodeId, // For flashcards
+        id: HTMLAttributes.nodeId, // For HTML compliance
+      }),
+    ];
+  },
+
+  addCommands() {
+    return {
+      ...this.parent?.(),
+      setImage:
+        (options) =>
+        ({ commands }) => {
+          const nodeId = uuidv4();
+          return commands.insertContent({
+            type: this.name,
+            attrs: {
+              ...options,
+              nodeId, // Only set the internal attribute
+            },
+          });
+        },
+    };
   },
 });

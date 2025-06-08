@@ -11,6 +11,7 @@ import {
   cleanupTempFiles,
 } from "./process-steps";
 
+// Updated interface to reflect public image uploads
 interface WorkflowInput {
   userId: string;
   fileName: string;
@@ -22,9 +23,8 @@ interface WorkflowInput {
     cid: string;
     name: string;
     size: number;
-    isTemp: boolean;
-    accessUrl: string;
-    accessExpiresAt: string;
+    isTemp: false; // Always false now since images go to public IPFS
+    publicUrl: string; // Direct public URL
   }>;
   frontMatter?: Record<string, any> | null;
 }
@@ -53,8 +53,8 @@ export const POST = async (req: NextRequest) => {
         },
       );
 
-      // Step 2: Create the page and handle images
-      const { pageId, imagesUploaded, finalHtml } = await context.run(
+      // Step 2: Create the page and handle images (simplified for public images)
+      const { pageId, imagesProcessed, finalHtml } = await context.run(
         "create-page",
         async () => {
           try {
@@ -124,7 +124,7 @@ export const POST = async (req: NextRequest) => {
         },
       );
 
-      // Step 5: Cleanup temp files
+      // Step 5: Cleanup temp files (only markdown now)
       await context.run("cleanup", async () => {
         try {
           await cleanupTempFiles(input);
@@ -144,9 +144,10 @@ export const POST = async (req: NextRequest) => {
         success: true,
         pageId,
         resourcesCreated,
-        imagesUploaded,
+        imagesProcessed, // Changed from imagesUploaded since they're uploaded earlier
         flashcards: flashcardResults,
         fileName: input.fileName,
+        message: "Page created with images already available via public URLs",
       };
     },
     {

@@ -1,16 +1,13 @@
-// lib/workflows/process-steps.ts - Pure workflow version
+// lib/workflows/process-steps.ts
 import { v4 as uuidv4 } from "uuid";
-import { visit } from "unist-util-visit";
 import { db } from "~/server/db";
 import { images } from "~/server/db/schema";
 import { createPageWithRelationsFromWebhook } from "~/server/actions/page";
-import { updateStorageUsed } from "~/server/actions/storage";
+import { updateStorageUsedWorkflow } from "~/server/actions/storage";
 import { determinePageTag } from "~/lib/embeddings/tagMatching";
 import {
   downloadTextFromIPFS,
-  downloadFileFromIPFS,
   cleanupTempFiles as cleanupIPFS,
-  promoteTempFileToPermanent,
   createAccessLinkForPrivateFile,
 } from "~/lib/pinata/uploadTempFiles";
 import {
@@ -26,7 +23,6 @@ import {
 } from "~/lib/flashcards/processFlashcards";
 import * as Sentry from "@sentry/nextjs";
 
-const GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY!;
 const ROOT_TAG_ID = process.env.ROOT_TAG_ID || "default-tag-id";
 
 interface ImgRef {
@@ -46,9 +42,8 @@ interface WorkflowInput {
     cid: string;
     name: string;
     size: number;
-    isTemp: boolean;
-    accessUrl: string;
-    accessExpiresAt: string;
+    isTemp: false;
+    publicUrl: string;
   }>;
   frontMatter?: Record<string, any> | null;
 }
@@ -67,7 +62,7 @@ async function getValidAccessUrl(
   }
 
   try {
-    return await createAccessLinkForPrivateFile(cid, 1800); // 30 min
+    return await createAccessLinkForPrivateFile(cid, 1800);
   } catch (error) {
     throw new Error(
       `Cannot access file with CID ${cid}: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -75,10 +70,9 @@ async function getValidAccessUrl(
   }
 }
 
-// STEP 1: Download files and convert markdown with consistent node IDs
+// STEP 1: Download files and convert markdown
 export async function downloadAndProcessFiles(input: WorkflowInput) {
   try {
-    // Check if markdown access URL is expired
     const markdownExpiry = new Date(input.markdownAccessExpires);
     const now = new Date();
 
@@ -88,7 +82,6 @@ export async function downloadAndProcessFiles(input: WorkflowInput) {
       );
     }
 
-    // Download markdown with retry logic
     let markdownContent: string;
     try {
       const markdownAccessUrl = await getValidAccessUrl(
@@ -101,77 +94,109 @@ export async function downloadAndProcessFiles(input: WorkflowInput) {
         input.markdownCid,
         markdownAccessUrl,
       );
+
+      // Pre-process: Convert Obsidian wiki-link images to standard markdown
+      let processedMarkdown = markdownContent;
+
+      // Convert ![[filename]] to ![filename](filename) with URL encoding
+      const wikiImageRegex = /!\[\[([^\]]+)\]\]/g;
+      const wikiMatches = [...markdownContent.matchAll(wikiImageRegex)];
+
+      wikiMatches.forEach((match) => {
+        const fullMatch = match[0];
+        const filename = match[1];
+        const encodedFilename = encodeURIComponent(filename || "");
+        const standardMarkdown = `![${filename}](${encodedFilename})`;
+        processedMarkdown = processedMarkdown.replace(
+          fullMatch,
+          standardMarkdown,
+        );
+      });
+
+      // Fix existing standard markdown images with spaces
+      const existingImageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+      const existingMatches = [
+        ...processedMarkdown.matchAll(existingImageRegex),
+      ];
+
+      existingMatches.forEach((match) => {
+        const fullMatch = match[0];
+        const alt = match[1] || "";
+        const src = match[2] || "";
+
+        if (src && src.includes(" ") && !src.includes("%20")) {
+          const encodedSrc = encodeURIComponent(src);
+          const fixedMarkdown = `![${alt}](${encodedSrc})`;
+          processedMarkdown = processedMarkdown.replace(
+            fullMatch,
+            fixedMarkdown,
+          );
+        }
+      });
+
+      // Normalize indentation to prevent code block creation
+      const lines = processedMarkdown.split("\n");
+      const normalizedLines = lines.map((line) => {
+        if (line.includes("![") && line.includes("](")) {
+          const leadingWhitespaceMatch = line.match(/^[ \t]*/);
+          const leadingWhitespace = leadingWhitespaceMatch
+            ? leadingWhitespaceMatch[0]
+            : "";
+          const leadingSpaces = leadingWhitespace.replace(/\t/g, "    ").length;
+
+          if (leadingSpaces >= 4) {
+            const content = line.trimStart();
+            const newIndent = " ".repeat(3);
+            return newIndent + content;
+          }
+        }
+        return line;
+      });
+
+      markdownContent = normalizedLines.join("\n");
+
+      // Process images
+      const imageContents: {
+        name: string;
+        cid: string;
+        size: number;
+        publicUrl: string;
+      }[] = [];
+
+      if (input.imageData && input.imageData.length > 0) {
+        for (const imageInfo of input.imageData) {
+          imageContents.push({
+            name: imageInfo.name,
+            cid: imageInfo.cid,
+            size: imageInfo.size,
+            publicUrl: imageInfo.publicUrl,
+          });
+        }
+      }
+
+      const { html, frontmatter } =
+        await processMarkdownForTiptap(markdownContent);
+
+      // Extract image references from HTML
+      const imgRefs: ImgRef[] = [];
+      const imgMatches = html.matchAll(
+        /<img[^>]+src=["']([^"']+)["'][^>]*data-node-id=["']([^"']+)["'][^>]*>/g,
+      );
+
+      for (const match of imgMatches) {
+        const filename = match[1];
+        const nodeId = match[2];
+        if (filename && nodeId) {
+          imgRefs.push({ filename, nodeId });
+        }
+      }
+
+      return { html, imageContents, imgRefs, frontmatter };
     } catch (error) {
       throw new Error(
         `Failed to download markdown file: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
-
-    const imageContents: { name: string; data: ArrayBuffer; cid: string }[] =
-      [];
-    let skippedImages = 0;
-
-    if (input.imageData && input.imageData.length > 0) {
-      for (const imageInfo of input.imageData) {
-        try {
-          const imageExpiry = new Date(imageInfo.accessExpiresAt);
-
-          if (imageExpiry <= now) {
-            skippedImages++;
-            continue;
-          }
-
-          const imageAccessUrl = await getValidAccessUrl(
-            imageInfo.cid,
-            imageInfo.accessUrl,
-            imageInfo.accessExpiresAt,
-          );
-
-          const imageData = await downloadFileFromIPFS(
-            imageInfo.cid,
-            imageAccessUrl,
-          );
-
-          imageContents.push({
-            name: imageInfo.name,
-            data: imageData,
-            cid: imageInfo.cid,
-          });
-        } catch (error) {
-          skippedImages++;
-
-          // Don't fail the entire workflow for individual image failures
-          Sentry.captureException(error, {
-            tags: {
-              action: "downloadImage",
-              fileName: input.fileName,
-              imageName: imageInfo.name,
-              severity: "warning",
-            },
-            extra: { imageInfo },
-          });
-        }
-      }
-    }
-
-    const { html, frontmatter } =
-      await processMarkdownForTiptap(markdownContent);
-
-    // Extract image references
-    const imgRefs: ImgRef[] = [];
-    const imgMatches = html.matchAll(
-      /<img[^>]+src=["']([^"']+)["'][^>]*data-node-id=["']([^"']+)["'][^>]*>/g,
-    );
-
-    for (const match of imgMatches) {
-      const filename = match[1];
-      const nodeId = match[2];
-      if (filename && nodeId) {
-        imgRefs.push({ filename, nodeId });
-      }
-    }
-
-    return { html, imageContents, imgRefs, frontmatter };
   } catch (error) {
     throw error;
   }
@@ -185,39 +210,60 @@ export async function createPageFromContent(
   imgRefs: ImgRef[],
 ) {
   let finalHtml = html;
-  let imagesUploaded = 0;
+  let imagesProcessed = 0;
 
-  // Process images if any
+  // Process images
   if (imageContents.length > 0) {
     for (const imageContent of imageContents) {
-      const ref = imgRefs.find((r) => r.filename === imageContent.name);
-      if (!ref) continue;
+      const ref = imgRefs.find((r) => {
+        const decodedRefFilename = decodeURIComponent(r.filename);
+        return (
+          r.filename === imageContent.name ||
+          decodedRefFilename === imageContent.name
+        );
+      });
 
-      const permanentCid = await promoteTempFileToPermanent(imageContent.cid);
+      if (!ref) {
+        continue;
+      }
 
+      // Create database record for the image
       await db.insert(images).values({
         id: uuidv4(),
         user_id: input.userId,
         filename: imageContent.name,
-        url: permanentCid,
-        size: imageContent.data.byteLength,
+        url: imageContent.cid,
+        size: imageContent.size,
         is_temporary: false,
       });
 
-      await updateStorageUsed(input.userId, imageContent.data.byteLength);
+      // Update storage quota
+      await updateStorageUsedWorkflow(input.userId, imageContent.size);
 
-      ref.cid = permanentCid;
-      imagesUploaded++;
+      // Update image reference with the public URL
+      ref.cid = imageContent.cid;
+      imagesProcessed++;
     }
 
-    // Update image references in HTML
+    // Update image references in HTML to use public URLs
     for (const { filename, cid } of imgRefs) {
-      if (!cid) continue;
-      const regex = new RegExp(
-        `(<img[^>]+src=["'])${filename}(["'][^>]*>)`,
-        "g",
+      if (!cid) {
+        continue;
+      }
+
+      const decodedFilename = decodeURIComponent(filename);
+      const imageContent = imageContents.find(
+        (img) => img.name === filename || img.name === decodedFilename,
       );
-      finalHtml = finalHtml.replace(regex, `$1${GATEWAY}/ipfs/${cid}$2`);
+
+      if (imageContent?.publicUrl) {
+        const escapedFilename = filename.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(
+          `(<img[^>]+src=["'])${escapedFilename}(["'][^>]*>)`,
+          "g",
+        );
+        finalHtml = finalHtml.replace(regex, `$1${imageContent.publicUrl}$2`);
+      }
     }
   }
 
@@ -258,30 +304,25 @@ export async function createPageFromContent(
   }
 
   const page = pageResult as { success: true; page: { id: string } };
-  return { pageId: page.page.id, imagesUploaded, finalHtml };
+  return { pageId: page.page.id, imagesProcessed, finalHtml };
 }
 
-// NEW STEP 3: Generate flashcards from the page content
+// STEP 3: Generate flashcards from the page content
 export async function generateFlashcards(
   userId: string,
   pageId: string,
   htmlContent: string,
 ) {
   try {
-    // Step 3a: Chunk the HTML content
     const chunks = semanticHtmlSplitter(htmlContent);
 
     if (chunks.length === 0) {
       return { chunks: 0, validCards: 0 };
     }
 
-    // Step 3b: Generate flashcards using LLM
     const rawCards = await cardsForChunks(chunks, pageId);
-
-    // Step 3c: Post-process and validate cards
     const validatedCards = postProcess(rawCards);
 
-    // Step 3d: Save flashcards to database with automatic tag association
     if (validatedCards.length > 0) {
       const result = await saveFlashcardsWithPageTags(
         validatedCards,
@@ -302,7 +343,6 @@ export async function generateFlashcards(
       failed: 0,
     };
   } catch (error) {
-    // Don't fail the entire workflow if flashcard generation fails
     return {
       chunks: 0,
       validCards: 0,
@@ -320,7 +360,7 @@ export async function processResources(
   let resourcesCreated = 0;
   const errors: string[] = [];
 
-  // Process books with error handling
+  // Process books
   if (frontMatter.books) {
     const books = Array.isArray(frontMatter.books)
       ? frontMatter.books
@@ -334,13 +374,11 @@ export async function processResources(
           typeof raw === "object" ? raw.author || raw.authors || "" : "";
 
         if (!title) {
-          console.warn(`[Step 4] Skipping book ${index + 1}: no title`);
           continue;
         }
 
-        // Add timeout to external API call
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await fetch(
           `https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&limit=1`,
@@ -380,15 +418,11 @@ export async function processResources(
             pageId,
           );
           if (resource) resourcesCreated++;
-        } else {
-          console.warn(`[Step 4] No book found for: ${title}`);
         }
       } catch (error) {
         const errorMsg = `Failed to process book ${index + 1}: ${error instanceof Error ? error.message : "Unknown error"}`;
-        console.error(`[Step 4] ${errorMsg}`);
         errors.push(errorMsg);
 
-        // Don't fail entire step for individual book failures
         Sentry.captureException(error, {
           tags: {
             action: "processBook",
@@ -400,7 +434,7 @@ export async function processResources(
     }
   }
 
-  // Process URLs with similar error handling
+  // Process URLs
   if (frontMatter.urls) {
     const urls = Array.isArray(frontMatter.urls)
       ? frontMatter.urls
@@ -415,9 +449,8 @@ export async function processResources(
           urlStr.includes(domain),
         );
 
-        // Add timeout to metadata fetch
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         const metaRes = await fetch(
           isTwitter
@@ -455,7 +488,6 @@ export async function processResources(
         if (resource) resourcesCreated++;
       } catch (error) {
         const errorMsg = `Failed to process URL ${index + 1}: ${error instanceof Error ? error.message : "Unknown error"}`;
-        console.error(`[Step 4] ${errorMsg}`);
         errors.push(errorMsg);
 
         Sentry.captureException(error, {
@@ -469,23 +501,11 @@ export async function processResources(
     }
   }
 
-  if (errors.length > 0) {
-    console.warn(
-      `[Step 4] Completed with ${errors.length} errors: ${errors.join("; ")}`,
-    );
-  }
-
   return resourcesCreated;
 }
 
 // STEP 5: Cleanup
 export async function cleanupTempFiles(input: WorkflowInput) {
-  console.log("[Step 5] Cleaning up temporary files...");
-
-  const tempCids = [
-    input.markdownCid,
-    ...(input.imageData?.map((img) => img.cid) || []),
-  ];
-
+  const tempCids = [input.markdownCid];
   await cleanupIPFS(tempCids);
 }
