@@ -88,9 +88,6 @@ function addConsistentNodeIds() {
           const imgId = uuidv4();
           node.properties["data-node-id"] = imgId;
           node.properties["id"] = imgId;
-          console.log(
-            `[DEBUG] Adding node ID to img: ${imgId}, src: ${node.properties.src}`,
-          );
           break;
 
         // Don't add node IDs to other elements (ul, ol, etc.) as they're containers
