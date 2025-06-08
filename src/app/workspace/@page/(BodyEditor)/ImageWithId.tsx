@@ -13,7 +13,6 @@ export const ImageWithId = Image.extend({
         renderHTML: (attrs) => {
           if (!attrs.nodeId) return {};
           return {
-            id: attrs.nodeId,
             "data-node-id": attrs.nodeId,
           };
         },
