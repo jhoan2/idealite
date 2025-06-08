@@ -4,13 +4,11 @@ import { visit } from "unist-util-visit";
 import { db } from "~/server/db";
 import { images } from "~/server/db/schema";
 import { createPageWithRelationsFromWebhook } from "~/server/actions/page";
-import { updateStorageUsed } from "~/server/actions/storage";
+import { updateStorageUsedWorkflow } from "~/server/actions/storage";
 import { determinePageTag } from "~/lib/embeddings/tagMatching";
 import {
   downloadTextFromIPFS,
-  downloadFileFromIPFS,
   cleanupTempFiles as cleanupIPFS,
-  promoteTempFileToPermanent,
   createAccessLinkForPrivateFile,
 } from "~/lib/pinata/uploadTempFiles";
 import {
@@ -26,7 +24,6 @@ import {
 } from "~/lib/flashcards/processFlashcards";
 import * as Sentry from "@sentry/nextjs";
 
-const GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY!;
 const ROOT_TAG_ID = process.env.ROOT_TAG_ID || "default-tag-id";
 
 interface ImgRef {
@@ -35,6 +32,7 @@ interface ImgRef {
   cid?: string;
 }
 
+// Updated interface to reflect public image uploads
 interface WorkflowInput {
   userId: string;
   fileName: string;
@@ -46,9 +44,8 @@ interface WorkflowInput {
     cid: string;
     name: string;
     size: number;
-    isTemp: boolean;
-    accessUrl: string;
-    accessExpiresAt: string;
+    isTemp: false; // Always false now since images go to public IPFS
+    publicUrl: string; // Direct public URL
   }>;
   frontMatter?: Record<string, any> | null;
 }
@@ -101,54 +98,65 @@ export async function downloadAndProcessFiles(input: WorkflowInput) {
         input.markdownCid,
         markdownAccessUrl,
       );
+      // Check for image references in the raw markdown
+      const markdownImageMatches = markdownContent.match(
+        /!\[.*?\]\([^)]+\)|!\[\[.*?\]\]/g,
+      );
+      markdownImageMatches?.forEach((match, i) => {
+        console.log(`📝 [MARKDOWN] Image ref ${i + 1}: ${match}`);
+      });
+      let processedMarkdown = markdownContent;
+
+      // Convert ![[filename]] to ![filename](filename)
+      const wikiImageRegex = /!\[\[([^\]]+)\]\]/g;
+      const wikiMatches = [...markdownContent.matchAll(wikiImageRegex)];
+      console.log(
+      wikiMatches.forEach((match, i) => {
+        const fullMatch = match[0]; // ![[filename]]
+        const filename = match[1]; // filename
+        const standardMarkdown = `![${filename}](${filename})`;
+        console.log(
+          `🔧 [PREPROCESS] Converting ${i + 1}: ${fullMatch} -> ${standardMarkdown}`,
+        );
+        processedMarkdown = processedMarkdown.replace(
+          fullMatch,
+          standardMarkdown,
+        );
+      });
+
+      if (wikiMatches.length > 0) {
+        console.log(
+          `🔧 [PREPROCESS] Conversion complete. Updated markdown preview:`,
+        );
+        console.log(
+          `🔧 [PREPROCESS] ${processedMarkdown.substring(0, 500)}...`,
+        );
+        markdownContent = processedMarkdown;
+      }
     } catch (error) {
       throw new Error(
         `Failed to download markdown file: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
 
-    const imageContents: { name: string; data: ArrayBuffer; cid: string }[] =
-      [];
-    let skippedImages = 0;
+    // Process images - since they're already public, we just need the metadata
+    const imageContents: {
+      name: string;
+      cid: string;
+      size: number;
+      publicUrl: string;
+    }[] = [];
+
 
     if (input.imageData && input.imageData.length > 0) {
       for (const imageInfo of input.imageData) {
-        try {
-          const imageExpiry = new Date(imageInfo.accessExpiresAt);
-
-          if (imageExpiry <= now) {
-            skippedImages++;
-            continue;
-          }
-
-          const imageAccessUrl = await getValidAccessUrl(
-            imageInfo.cid,
-            imageInfo.accessUrl,
-            imageInfo.accessExpiresAt,
+          `🖼️ [WORKFLOW] Processing image: ${imageInfo.name}, CID: ${imageInfo.cid}, URL: ${imageInfo.publicUrl}`,
           );
-
-          const imageData = await downloadFileFromIPFS(
-            imageInfo.cid,
-            imageAccessUrl,
-          );
-
           imageContents.push({
             name: imageInfo.name,
-            data: imageData,
             cid: imageInfo.cid,
-          });
-        } catch (error) {
-          skippedImages++;
-
-          // Don't fail the entire workflow for individual image failures
-          Sentry.captureException(error, {
-            tags: {
-              action: "downloadImage",
-              fileName: input.fileName,
-              imageName: imageInfo.name,
-              severity: "warning",
-            },
-            extra: { imageInfo },
+          size: imageInfo.size,
+          publicUrl: imageInfo.publicUrl,
           });
         }
       }
@@ -157,7 +165,19 @@ export async function downloadAndProcessFiles(input: WorkflowInput) {
     const { html, frontmatter } =
       await processMarkdownForTiptap(markdownContent);
 
-    // Extract image references
+    // Check for ANY img tags in the HTML
+    const allImgTags = html.match(/<img[^>]*>/g);
+    allImgTags?.forEach((tag, i) => {
+      console.log(`🔄 [HTML] Img tag ${i + 1}: ${tag}`);
+    });
+
+    // Check specifically for img tags with data-node-id
+    const imgTagsWithNodeId = html.match(/<img[^>]*data-node-id[^>]*>/g);
+    imgTagsWithNodeId?.forEach((tag, i) => {
+      console.log(`🔄 [HTML] Img with node-id ${i + 1}: ${tag}`);
+    });
+
+    // Extract image references from HTML
     const imgRefs: ImgRef[] = [];
     const imgMatches = html.matchAll(
       /<img[^>]+src=["']([^"']+)["'][^>]*data-node-id=["']([^"']+)["'][^>]*>/g,
@@ -177,7 +197,7 @@ export async function downloadAndProcessFiles(input: WorkflowInput) {
   }
 }
 
-// STEP 2: Create page and handle images
+// STEP 2: Create page and handle images (simplified since images are already public)
 export async function createPageFromContent(
   input: WorkflowInput,
   html: string,
@@ -185,29 +205,32 @@ export async function createPageFromContent(
   imgRefs: ImgRef[],
 ) {
   let finalHtml = html;
-  let imagesUploaded = 0;
+  let imagesProcessed = 0;
 
   // Process images if any
   if (imageContents.length > 0) {
     for (const imageContent of imageContents) {
       const ref = imgRefs.find((r) => r.filename === imageContent.name);
-      if (!ref) continue;
-
-      const permanentCid = await promoteTempFileToPermanent(imageContent.cid);
-
+      // Create database record for the image
       await db.insert(images).values({
         id: uuidv4(),
         user_id: input.userId,
         filename: imageContent.name,
-        url: permanentCid,
-        size: imageContent.data.byteLength,
-        is_temporary: false,
+        url: imageContent.cid, // Store the CID
+        size: imageContent.size,
+        is_temporary: false, // Images are permanent from the start
       });
 
-      await updateStorageUsed(input.userId, imageContent.data.byteLength);
+      console.log(
+        `📊 [STORAGE] Updating storage quota: +${imageContent.size} bytes for user ${input.userId}`,
+      );
+      // Update storage quota
+      await updateStorageUsedWorkflow(input.userId, imageContent.size);
 
-      ref.cid = permanentCid;
-      imagesUploaded++;
+      // Update image reference with the public URL
+      ref.cid = imageContent.cid;
+      imagesProcessed++;
+      console.log(`✅ [DB] Successfully processed image: ${imageContent.name}`);
     }
 
     // Update image references in HTML
@@ -261,7 +284,7 @@ export async function createPageFromContent(
   return { pageId: page.page.id, imagesUploaded, finalHtml };
 }
 
-// NEW STEP 3: Generate flashcards from the page content
+// STEP 3: Generate flashcards from the page content
 export async function generateFlashcards(
   userId: string,
   pageId: string,
@@ -478,14 +501,12 @@ export async function processResources(
   return resourcesCreated;
 }
 
-// STEP 5: Cleanup
+// STEP 5: Cleanup (simplified since only markdown needs cleanup now)
 export async function cleanupTempFiles(input: WorkflowInput) {
   console.log("[Step 5] Cleaning up temporary files...");
 
-  const tempCids = [
-    input.markdownCid,
-    ...(input.imageData?.map((img) => img.cid) || []),
-  ];
+  // Only cleanup the markdown file since images are now permanent
+  const tempCids = [input.markdownCid];
 
   await cleanupIPFS(tempCids);
 }
