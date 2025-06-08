@@ -18,6 +18,14 @@ export interface TempFile {
   accessExpiresAt: Date;
 }
 
+export interface PublicFile {
+  cid: string;
+  publicUrl: string; // Direct public IPFS URL
+  size: number;
+  name: string;
+  isTemp: false; // Always false for public uploads
+}
+
 // Upload file to Private IPFS (temporary storage)
 export async function uploadTempFileToPinata(
   file: File | Buffer | ArrayBuffer,
@@ -301,4 +309,79 @@ export async function getFileInfo(cid: string) {
     });
     return null;
   }
+}
+
+// Upload file directly to Public IPFS (permanent storage)
+export async function uploadFileToPublicIPFS(
+  file: File | Buffer | ArrayBuffer,
+  fileName: string,
+  userId: string,
+): Promise<PublicFile> {
+  try {
+    // Convert to File if needed
+    let fileToUpload: File;
+    if (file instanceof File) {
+      fileToUpload = file;
+    } else if (file instanceof ArrayBuffer) {
+      const blob = new Blob([file]);
+      fileToUpload = new File([blob], fileName);
+    } else {
+      // Buffer
+      const blob = new Blob([file]);
+      fileToUpload = new File([blob], fileName);
+    }
+
+    // Upload to Public IPFS using SDK
+    const upload = await pinata.upload.public
+      .file(fileToUpload)
+      .name(`${uuidv4()}-${fileName}`)
+      .keyvalues({
+        userId,
+        isTemporary: "false",
+        uploadedAt: new Date().toISOString(),
+        originalName: fileName,
+        source: "obsidian-plugin",
+      });
+
+    // Generate public URL
+    const publicUrl = `${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${upload.cid}`;
+
+    return {
+      cid: upload.cid,
+      publicUrl,
+      size: upload.size,
+      name: fileName,
+      isTemp: false,
+    };
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: {
+        action: "uploadFileToPublicIPFS",
+        fileName: fileName,
+      },
+    });
+    throw new Error(
+      `Public IPFS upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
+}
+
+// Upload multiple files to Public IPFS
+export async function uploadFilesToPublicIPFS(
+  files: { file: File | Buffer | ArrayBuffer; name: string }[],
+  userId: string,
+): Promise<PublicFile[]> {
+  // Upload files in parallel with concurrency control
+  const chunkSize = 3; // Limit concurrent uploads to avoid rate limits
+  const results: PublicFile[] = [];
+
+  for (let i = 0; i < files.length; i += chunkSize) {
+    const chunk = files.slice(i, i + chunkSize);
+    const chunkResults = await Promise.all(
+      chunk.map(({ file, name }) => uploadFileToPublicIPFS(file, name, userId)),
+    );
+    results.push(...chunkResults);
+  }
+
+  return results;
 }

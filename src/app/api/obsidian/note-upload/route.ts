@@ -7,7 +7,7 @@ import { Redis } from "@upstash/redis";
 import { validateCredential } from "~/lib/integrations/validate";
 import {
   uploadTempFileToPinata,
-  uploadTempFilesToPinata,
+  uploadFilesToPublicIPFS,
 } from "~/lib/pinata/uploadTempFiles";
 import * as Sentry from "@sentry/nextjs";
 
@@ -200,13 +200,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Upload files to IPFS
+    // Upload markdown to private IPFS (still temporary for processing)
     const markdownUpload = await uploadTempFileToPinata(
       mdFile,
       mdFile.name,
       userId,
     );
-    const imageUploads = await uploadTempFilesToPinata(
+
+    // Upload images directly to PUBLIC IPFS (permanent)
+    const imageUploads = await uploadFilesToPublicIPFS(
       imageFiles.map((file) => ({ file, name: file.name })),
       userId,
     );
@@ -226,9 +228,8 @@ export async function POST(req: NextRequest) {
           cid: upload.cid,
           name: upload.name,
           size: upload.size,
-          isTemp: upload.isTemp,
-          accessUrl: upload.accessUrl,
-          accessExpiresAt: upload.accessExpiresAt.toISOString(),
+          isTemp: false, // Images are now permanent from the start
+          publicUrl: upload.publicUrl, // Direct public URL
         })),
         frontMatter,
       },
@@ -240,7 +241,8 @@ export async function POST(req: NextRequest) {
         success: true,
         workflowRunId,
         status: "RUNNING",
-        message: "Files uploaded to Private IPFS, workflow started",
+        message:
+          "Markdown uploaded to Private IPFS, images to Public IPFS, workflow started",
         filesUploaded: {
           markdown: {
             cid: markdownUpload.cid,
@@ -251,7 +253,7 @@ export async function POST(req: NextRequest) {
             cid: img.cid,
             name: img.name,
             size: img.size,
-            accessExpiresAt: img.accessExpiresAt,
+            publicUrl: img.publicUrl, // Include public URL in response
           })),
         },
         rateLimit: {

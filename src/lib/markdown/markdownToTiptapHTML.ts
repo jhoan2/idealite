@@ -39,7 +39,9 @@ function addConsistentNodeIds() {
       switch (node.tagName.toLowerCase()) {
         case "p":
           // Matches ParagraphWithId
-          node.properties["dataNodeId"] = uuidv4();
+          const pId = uuidv4();
+          node.properties["data-node-id"] = pId;
+          node.properties["id"] = pId;
           break;
 
         case "h1":
@@ -49,17 +51,23 @@ function addConsistentNodeIds() {
         case "h5":
         case "h6":
           // Matches HeadingWithId
-          node.properties["dataNodeId"] = uuidv4();
+          const headingId = uuidv4();
+          node.properties["data-node-id"] = headingId;
+          node.properties["id"] = headingId;
           break;
 
         case "li":
           // Matches ListItemWithId
-          node.properties["dataNodeId"] = uuidv4();
+          const liId = uuidv4();
+          node.properties["data-node-id"] = liId;
+          node.properties["id"] = liId;
           break;
 
         case "blockquote":
           // Matches BlockquoteWithId
-          node.properties["dataNodeId"] = uuidv4();
+          const blockquoteId = uuidv4();
+          node.properties["data-node-id"] = blockquoteId;
+          node.properties["id"] = blockquoteId;
           break;
 
         case "pre":
@@ -69,15 +77,17 @@ function addConsistentNodeIds() {
           );
           if (codeChild) {
             // Matches CodeBlockWithId
-            node.properties["dataNodeId"] = uuidv4();
+            const codeId = uuidv4();
+            node.properties["data-node-id"] = codeId;
+            node.properties["id"] = codeId;
           }
           break;
 
         case "img":
           // Matches ImageWithId
-          node.properties["dataNodeId"] = uuidv4();
-          // Also add id attribute like your ImageWithId extension does
-          node.properties["id"] = node.properties["dataNodeId"];
+          const imgId = uuidv4();
+          node.properties["data-node-id"] = imgId;
+          node.properties["id"] = imgId;
           break;
 
         // Don't add node IDs to other elements (ul, ol, etc.) as they're containers

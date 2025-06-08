@@ -10,20 +10,43 @@ const openai = new OpenAI({
 });
 
 /**
- * Extracts the first few paragraphs from HTML content
+ * Returns a clean excerpt of the note for AI analysis.
+ *
+ * How it works ──────────────────────────────────────────
+ * 1.   Strips all HTML tags.
+ * 2.   Splits on blank-line boundaries (“paragraphs”).
+ * 3.   Takes the first `paraCount` paragraphs **or**
+ *      enough extra text to reach `minChars`, whichever is longer.
+ * 4.   Collapses whitespace so the result is tidy.
+ *
+ * @param html       Raw HTML (or Markdown rendered to HTML).
+ * @param paraCount  Number of leading paragraphs you *prefer* to send.
+ * @param minChars   Minimum characters to guarantee even if the first
+ *                   paragraphs are just bullet points or headings.
+ * @returns          A plain-text excerpt ready for the LLM.
  */
-function extractFirstParagraphs(
-  htmlContent: string,
-  paragraphCount = 3,
+export function excerptForLLM(
+  html: string,
+  paraCount = 3,
+  minChars = 400,
 ): string {
-  // Simple extraction of text from HTML for LLM analysis
-  const textContent = htmlContent.replace(/<[^>]*>/g, " ").trim();
+  // 1. Strip tags quickly (good enough for plain content).
+  const plain = html.replace(/<[^>]*>/g, " ");
 
-  // Split by double newlines to get paragraphs
-  const paragraphs = textContent.split(/\n\s*\n/);
+  // 2. Split paragraphs on blank lines.
+  const paras = plain.split(/\n\s*\n/);
 
-  // Take the first N paragraphs or all if there are fewer
-  return paragraphs.slice(0, paragraphCount).join("\n\n");
+  // 3. Take the first N paragraphs.
+  let excerpt = paras.slice(0, paraCount).join("\n\n");
+
+  // 4. If that’s still too short, append more raw text
+  //    until we hit minChars (or run out of content).
+  if (excerpt.length < minChars) {
+    excerpt = plain.slice(0, minChars);
+  }
+
+  // 5. Collapse duplicate whitespace and trim.
+  return excerpt.replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -43,7 +66,7 @@ export async function determinePageTag(
 ): Promise<string> {
   try {
     // Extract text for LLM analysis
-    const textForAnalysis = extractFirstParagraphs(content);
+    const textForAnalysis = excerptForLLM(content);
 
     // If there's not enough text, return fallback
     if (textForAnalysis.length < 20) {
@@ -65,7 +88,6 @@ export async function determinePageTag(
           eq(users_tags.is_archived, false),
         ),
       );
-
     // If user has no tags, return fallback
     if (userTags.length === 0) {
       return fallbackTagId;
@@ -109,7 +131,7 @@ Tag ID:`;
 
     // Call the LLM
     const response = await openai.chat.completions.create({
-      model: "o4-mini",
+      model: "gpt-4.1",
       messages: [
         {
           role: "system",
@@ -121,33 +143,34 @@ Tag ID:`;
           content: prompt,
         },
       ],
-      temperature: 0.1, // Low temperature for consistent results
-      max_tokens: 100, // We only need a short response
+      max_completion_tokens: 100, // We only need a short response
     });
 
-    const llmResponse = response.choices[0]?.message?.content?.trim();
+    const raw = response.choices[0]?.message?.content ?? "";
 
-    if (!llmResponse) {
-      console.warn("No response from LLM for tag determination");
+    const uuid =
+      (raw.match(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+      ) || [])[0] ?? raw.trim(); // fall back to the whole string if no UUID found
+
+    if (!uuid) {
       return fallbackTagId;
     }
 
     // Check if LLM returned FALLBACK
-    if (llmResponse.toUpperCase() === "FALLBACK") {
+    if (uuid.toUpperCase() === "FALLBACK") {
       return fallbackTagId;
     }
 
     // Validate that the returned ID exists in our tag list
-    const selectedTag = userTags.find((tag) => tag.id === llmResponse);
+    const selectedTag = userTags.find((tag) => tag.id === uuid);
 
     if (selectedTag) {
       return selectedTag.id;
     } else {
-      console.warn("LLM returned invalid tag ID:", llmResponse);
-
       // Try to find partial matches (in case LLM added extra characters)
       const partialMatch = userTags.find(
-        (tag) => llmResponse.includes(tag.id) || tag.id.includes(llmResponse),
+        (tag) => uuid.includes(tag.id) || tag.id.includes(uuid),
       );
 
       if (partialMatch) {
@@ -157,8 +180,6 @@ Tag ID:`;
       return fallbackTagId;
     }
   } catch (error) {
-    console.error("Error determining page tag with LLM:", error);
-
     Sentry.captureException(error, {
       extra: {
         userId,
@@ -172,109 +193,5 @@ Tag ID:`;
     });
 
     return fallbackTagId; // Fallback to root tag on error
-  }
-}
-
-/**
- * Analyze and return tag selection reasoning for debugging/testing
- * This helps with understanding how the LLM makes decisions
- */
-export async function analyzeTagSelection(
-  content: string,
-  userId: string,
-  limit = 5,
-) {
-  try {
-    // Extract text for LLM analysis
-    const textForAnalysis = extractFirstParagraphs(content);
-
-    // Get user tags
-    const userTags = await db
-      .select({
-        id: tags.id,
-        name: tags.name,
-      })
-      .from(tags)
-      .innerJoin(users_tags, eq(users_tags.tag_id, tags.id))
-      .where(
-        and(
-          eq(users_tags.user_id, userId),
-          eq(tags.deleted, false),
-          eq(users_tags.is_archived, false),
-        ),
-      )
-      .limit(limit);
-
-    const tagList = userTags.map((tag) => `- ${tag.name}`).join("\n");
-
-    // Create analysis prompt
-    const prompt = `As an academic content categorization specialist, analyze this content and explain your reasoning for academic tag selection:
-
-CONTENT:
-${textForAnalysis}
-
-AVAILABLE TAGS:
-${tagList}
-
-Please provide a detailed academic analysis:
-1. Identify the primary academic discipline(s) and sub-fields represented
-2. Analyze the key concepts, methodologies, and theoretical frameworks present
-3. Determine the scholarly domain and research context
-4. Explain which tag best represents the academic categorization and why
-5. Rate your confidence in this academic classification (1-10)
-6. Suggest any missing academic categories that would provide better classification
-7. Consider interdisciplinary aspects and cross-field connections
-
-Academic Analysis:`;
-
-    console.log("🔬 [TAG_ANALYSIS] Sending analysis prompt to LLM...");
-
-    const response = await openai.chat.completions.create({
-      model: "o4-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert academic librarian and content analysis specialist. Provide detailed scholarly reasoning for content categorization decisions using academic classification principles.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.3,
-      max_tokens: 500,
-    });
-
-    console.log("🔬 [TAG_ANALYSIS] Analysis complete");
-
-    return {
-      success: true,
-      content: textForAnalysis.substring(0, 100) + "...",
-      analysis: response.choices[0]?.message?.content,
-      availableTags: userTags,
-    };
-  } catch (error) {
-    console.error(
-      "🔬 [ACADEMIC_TAG_ANALYSIS] Error analyzing academic tag selection:",
-      error,
-    );
-
-    Sentry.captureException(error, {
-      extra: {
-        userId,
-        contentLength: content?.length,
-        operation: "analyzeTagSelection_Academic_LLM",
-      },
-      tags: {
-        feature: "academic_llm_tagging",
-        source: "academic_tag_analysis",
-      },
-    });
-
-    return {
-      success: false,
-      error: "Failed to analyze tag selection",
-    };
   }
 }
