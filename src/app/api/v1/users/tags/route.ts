@@ -1,6 +1,7 @@
-// app/api/v1/users/tags/route.ts - Dedicated user-tags endpoint
+// app/api/v1/users/tags/route.ts - Dedicated user-tags endpoint with Sentry
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { db } from "~/server/db";
 import { users, users_tags } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(userTags);
   } catch (error) {
+    Sentry.captureException(error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -49,7 +51,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
-
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
       onboardingCompleted: completeOnboarding,
     });
   } catch (error) {
+    Sentry.captureException(error);
     return NextResponse.json(
       {
         error: "Internal server error",
@@ -169,6 +171,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(updatedUserTag[0]);
   } catch (error) {
+    Sentry.captureException(error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
