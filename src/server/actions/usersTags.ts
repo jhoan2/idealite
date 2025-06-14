@@ -10,6 +10,7 @@ import {
   users_tags,
   cards_tags,
   folders,
+  users,
 } from "../db/schema";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -298,20 +299,39 @@ export async function addUserTag(tagId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    await db
-      .insert(users_tags)
-      .values({
-        user_id: userId,
-        tag_id: tagId,
-        is_archived: false,
-        is_collapsed: false,
-      })
-      .onConflictDoUpdate({
-        target: [users_tags.user_id, users_tags.tag_id],
-        set: {
+    // Use a transaction to handle both tag addition and onboarding update
+    await db.transaction(async (tx) => {
+      // Add the tag relationship
+      await tx
+        .insert(users_tags)
+        .values({
+          user_id: userId,
+          tag_id: tagId,
           is_archived: false,
-        },
-      });
+          is_collapsed: false,
+        })
+        .onConflictDoUpdate({
+          target: [users_tags.user_id, users_tags.tag_id],
+          set: {
+            is_archived: false,
+          },
+        });
+
+      // Check if user needs onboarding and update if necessary
+      const userRecord = await tx
+        .select({ is_onboarded: users.is_onboarded })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      // If user exists and is not onboarded, mark them as onboarded
+      if (userRecord[0] && !userRecord[0].is_onboarded) {
+        await tx
+          .update(users)
+          .set({ is_onboarded: true })
+          .where(eq(users.id, userId));
+      }
+    });
 
     revalidatePath("/workspace");
     revalidatePath("/explore");

@@ -39,6 +39,7 @@ export const users = createTable("user", {
   avatar_url: varchar("avatar_url", { length: 256 }),
   bio: text("bio"),
   role: varchar("role", { length: 50 }).default("user").notNull(),
+  is_onboarded: boolean("is_onboarded").default(false).notNull(),
   created_at: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
