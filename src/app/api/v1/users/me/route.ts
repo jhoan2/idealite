@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
+import * as Sentry from "@sentry/nextjs";
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +31,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(user[0]);
   } catch (error) {
     console.error("Error fetching user:", error);
+    Sentry.captureException(error, {
+      tags: {
+        action: "fetch-user",
+      },
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
