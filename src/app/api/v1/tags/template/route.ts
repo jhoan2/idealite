@@ -1,5 +1,5 @@
 // app/api/v1/tags/template/route.ts - Simple version for testing
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { tags } from "~/server/db/schema";
@@ -7,7 +7,8 @@ import { eq, and, ne } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const user = await currentUser();
+    const userId = user?.externalId;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
