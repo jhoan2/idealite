@@ -1,4 +1,4 @@
-// app/api/v1/users/me/route.ts
+// src/app/api/v1/users/me/route.ts
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
