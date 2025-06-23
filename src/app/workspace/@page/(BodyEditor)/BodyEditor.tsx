@@ -38,6 +38,10 @@ import { HeadingWithId } from "./HeadingWithId";
 import { ListItemWithId } from "./ListItemWithId";
 import { BlockquoteWithId } from "./BlockquoteWithId";
 import { CodeBlockWithId } from "./CodeBlockWithId";
+import { TaskListWithId } from "./TaskListWithId";
+import { TaskItemWithId } from "./TaskItemWithId";
+import { BulletListWithId } from "./BulletListWithId";
+import { OrderedListWithId } from "./OrderedListWithId";
 
 const BodyEditor = ({
   content,
@@ -456,6 +460,8 @@ const BodyEditor = ({
         listItem: false,
         blockquote: false,
         codeBlock: false,
+        bulletList: false,
+        orderedList: false,
       }),
       ParagraphWithId,
       CustomTypography,
@@ -465,10 +471,10 @@ const BodyEditor = ({
       ListItemWithId,
       BlockquoteWithId,
       CodeBlockWithId,
-      TaskList,
-      TaskItem.configure({
-        nested: true, // Enable nested task lists
-      }),
+      TaskListWithId,
+      TaskItemWithId.configure({ nested: true }),
+      BulletListWithId,
+      OrderedListWithId,
       Focus.configure({
         className: "has-focus",
         mode: "all",
