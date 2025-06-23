@@ -34,6 +34,7 @@ interface PageComponentProps {
     type: "tag" | "folder" | "page",
     data: TreeTag | TreeFolder | TreePage,
   ) => void;
+  isMobile: boolean;
 }
 
 export const PageComponent: React.FC<PageComponentProps> = ({
@@ -43,6 +44,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
   onMovePageClick,
   handleItemClick,
   onOpenDrawer,
+  isMobile,
 }) => {
   const router = useRouter();
   const longPressTimeout = useRef<NodeJS.Timeout>();
@@ -77,7 +79,35 @@ export const PageComponent: React.FC<PageComponentProps> = ({
     handleItemClick(e, page.id, page.title || "");
   };
 
-  return (
+  return isMobile ? (
+    <div
+      className="touch-action-none select-none"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <Link
+        href={`/workspace?pageId=${page.id}`}
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+          page.id === currentPageId ? "bg-gray-50/80 dark:bg-gray-700/30" : ""
+        } touch-action-none`}
+        style={{ paddingLeft: `${(level + 1) * 16}px` }}
+      >
+        {page.content_type === "canvas" ? (
+          <PanelTop className="mr-2 h-4 w-4 flex-shrink-0 text-gray-400" />
+        ) : (
+          <StickyNote className="mr-2 h-4 w-4 flex-shrink-0 text-gray-400" />
+        )}
+        <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">
+          {page.title}
+        </span>
+      </Link>
+    </div>
+  ) : (
     <ContextMenu>
       <ContextMenuTrigger>
         <div

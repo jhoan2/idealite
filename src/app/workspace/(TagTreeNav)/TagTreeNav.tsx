@@ -433,19 +433,19 @@ const TreeNode: React.FC<{
             </DialogFooter>
           </form>
         </DialogContent>
-        <ContextMenu>
-          <ContextMenuTrigger>
+        {isMobile ? (
+          <div
+            className="touch-action-none select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+            onContextMenu={(e) => e.preventDefault()}
+          >
             <div
-              className={isMobile ? "touch-action-none select-none" : ""}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              onTouchMove={handleTouchMove}
+              className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
+              style={{ paddingLeft: `${level * 16}px` }}
+              onClick={handleToggleExpand}
             >
-              <div
-                className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
-                style={{ paddingLeft: `${level * 16}px` }}
-                onClick={handleToggleExpand}
-              >
                 {
                   <button
                     className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
@@ -467,59 +467,61 @@ const TreeNode: React.FC<{
               {/* Expanded content */}
               {isExpanded && (
                 <div className="ml-2">
-                  {hasPages &&
-                    node.pages.map((page) => (
-                      <PageComponent
-                        key={page.id}
-                        page={{
-                          id: page.id,
-                          title: page.title || "",
-                          folder_id: page.folder_id,
-                          primary_tag_id: page.primary_tag_id,
-                          content_type: page.content_type || "page",
-                        }}
-                        level={level}
-                        currentPageId={currentPageId ?? undefined}
-                        onMovePageClick={(pageId, title) => {
-                          setSelectedPage({
-                            id: pageId,
-                            title,
+                    {hasPages &&
+                      node.pages.map((page) => (
+                        <PageComponent
+                          key={page.id}
+                          page={{
+                            id: page.id,
+                            title: page.title || "",
                             folder_id: page.folder_id,
                             primary_tag_id: page.primary_tag_id,
-                          });
-                          setShowMoveDialog(true);
-                        }}
-                        handleItemClick={handleItemClick}
-                        onOpenDrawer={onOpenDrawer}
-                      />
-                    ))}
+                            content_type: page.content_type || "page",
+                          }}
+                          level={level}
+                          currentPageId={currentPageId ?? undefined}
+                          onMovePageClick={(pageId, title) => {
+                            setSelectedPage({
+                              id: pageId,
+                              title,
+                              folder_id: page.folder_id,
+                              primary_tag_id: page.primary_tag_id,
+                            });
+                            setShowMoveDialog(true);
+                          }}
+                          handleItemClick={handleItemClick}
+                          onOpenDrawer={onOpenDrawer}
+                          isMobile={isMobile}
+                        />
+                      ))}
                   {/* First render folders */}
                   {hasFolders &&
-                    node.folders.map((folder) => (
-                      <FolderComponent
-                        key={folder.id}
-                        folder={folder}
-                        level={level}
-                        parentTagId={node.id}
-                        expandedFolders={expandedFolders}
-                        handleFolderToggle={handleFolderToggle}
-                        handleItemClick={handleItemClick}
-                        currentPageId={currentPageId ?? undefined}
-                        onMovePageClick={(pageId, title) => {
-                          setSelectedPage({
-                            id: pageId,
-                            title,
-                            folder_id: folder.id,
-                            primary_tag_id: node.id,
-                          });
-                          setShowMoveDialog(true);
-                        }}
-                        onCreatePageInFolder={handleCreatePageInFolder}
-                        onCreateSubfolder={handleCreateSubfolder}
-                        isLoading={isLoading}
-                        onOpenDrawer={onOpenDrawer}
-                      />
-                    ))}
+                      node.folders.map((folder) => (
+                        <FolderComponent
+                          key={folder.id}
+                          folder={folder}
+                          level={level}
+                          parentTagId={node.id}
+                          expandedFolders={expandedFolders}
+                          handleFolderToggle={handleFolderToggle}
+                          handleItemClick={handleItemClick}
+                          currentPageId={currentPageId ?? undefined}
+                          onMovePageClick={(pageId, title) => {
+                            setSelectedPage({
+                              id: pageId,
+                              title,
+                              folder_id: folder.id,
+                              primary_tag_id: node.id,
+                            });
+                            setShowMoveDialog(true);
+                          }}
+                          onCreatePageInFolder={handleCreatePageInFolder}
+                          onCreateSubfolder={handleCreateSubfolder}
+                          isLoading={isLoading}
+                          onOpenDrawer={onOpenDrawer}
+                          isMobile={isMobile}
+                        />
+                      ))}
 
                   {/* Finally render child tags */}
                   {hasChildren &&
@@ -537,9 +539,117 @@ const TreeNode: React.FC<{
                 </div>
               )}
             </div>
-          </ContextMenuTrigger>
-          {/* Context menu for tags */}
-          <ContextMenuContent className="w-64">
+          </div>
+        ) : (
+          <ContextMenu>
+            <ContextMenuTrigger>
+              <div
+                className={isMobile ? "touch-action-none select-none" : ""}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                onTouchMove={handleTouchMove}
+              >
+                <div
+                  className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
+                  style={{ paddingLeft: `${level * 16}px` }}
+                  onClick={handleToggleExpand}
+                >
+                  {
+                    <button
+                      className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? "Collapse" : "Expand"}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      )}
+                    </button>
+                  }
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {node.name}
+                  </span>
+                </div>
+
+                {/* Expanded content */}
+                {isExpanded && (
+                  <div className="ml-2">
+                    {hasPages &&
+                      node.pages.map((page) => (
+                        <PageComponent
+                          key={page.id}
+                          page={{
+                            id: page.id,
+                            title: page.title || "",
+                            folder_id: page.folder_id,
+                            primary_tag_id: page.primary_tag_id,
+                            content_type: page.content_type || "page",
+                          }}
+                          level={level}
+                          currentPageId={currentPageId ?? undefined}
+                          onMovePageClick={(pageId, title) => {
+                            setSelectedPage({
+                              id: pageId,
+                              title,
+                              folder_id: page.folder_id,
+                              primary_tag_id: page.primary_tag_id,
+                            });
+                            setShowMoveDialog(true);
+                          }}
+                          handleItemClick={handleItemClick}
+                          onOpenDrawer={onOpenDrawer}
+                          isMobile={isMobile}
+                        />
+                      ))}
+                    {/* First render folders */}
+                    {hasFolders &&
+                      node.folders.map((folder) => (
+                        <FolderComponent
+                          key={folder.id}
+                          folder={folder}
+                          level={level}
+                          parentTagId={node.id}
+                          expandedFolders={expandedFolders}
+                          handleFolderToggle={handleFolderToggle}
+                          handleItemClick={handleItemClick}
+                          currentPageId={currentPageId ?? undefined}
+                          onMovePageClick={(pageId, title) => {
+                            setSelectedPage({
+                              id: pageId,
+                              title,
+                              folder_id: folder.id,
+                              primary_tag_id: node.id,
+                            });
+                            setShowMoveDialog(true);
+                          }}
+                          onCreatePageInFolder={handleCreatePageInFolder}
+                          onCreateSubfolder={handleCreateSubfolder}
+                          isLoading={isLoading}
+                          onOpenDrawer={onOpenDrawer}
+                          isMobile={isMobile}
+                        />
+                      ))}
+
+                    {/* Finally render child tags */}
+                    {hasChildren &&
+                      node.children.map((child) => (
+                        <TreeNode
+                          key={child.id}
+                          node={child}
+                          level={level + 1}
+                          allTags={allTags}
+                          userId={userId}
+                          onOpenDrawer={onOpenDrawer}
+                          isMobile={isMobile}
+                        />
+                      ))}
+                  </div>
+                )}
+              </div>
+            </ContextMenuTrigger>
+            {/* Context menu for tags */}
+            <ContextMenuContent className="w-64">
             <ContextMenuItem
               onSelect={() => handleCreatePage("page")}
               disabled={isLoading}
