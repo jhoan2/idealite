@@ -1,3 +1,4 @@
+// /api/queue-flashcard
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { queueFlashcardGeneration } from "~/lib/flashcards/flashcard-queue";
