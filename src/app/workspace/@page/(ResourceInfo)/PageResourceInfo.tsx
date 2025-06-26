@@ -24,6 +24,7 @@ interface Tag {
   parent_id: string | null;
   deleted: boolean | null;
   is_template: boolean;
+  embedding: number[] | null;
 }
 
 export default function PageResourceInfo({
