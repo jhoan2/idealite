@@ -14,6 +14,7 @@ interface PageResourceInfoProps {
   tags: Tag[];
   userTagTree: TreeTag[];
   currentPageId: string;
+  isMobile: boolean;
 }
 
 interface Tag {
@@ -32,6 +33,7 @@ export default function PageResourceInfo({
   tags,
   userTagTree,
   currentPageId,
+  isMobile,
 }: PageResourceInfoProps) {
   const availableTags = flattenTagTree(userTagTree, tags);
 
@@ -67,6 +69,7 @@ export default function PageResourceInfo({
         tags={tags}
         availableTags={availableTags}
         currentPageId={currentPageId}
+        isMobile={isMobile}
       />
     </div>
   );

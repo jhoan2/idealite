@@ -283,6 +283,7 @@ export function SidebarCard({
                     currentPageId={currentCardId}
                     variant="card"
                     cardId={id}
+                    isMobile={isMobile}
                   />
                 </div>
               )}

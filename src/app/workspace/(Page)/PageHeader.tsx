@@ -72,6 +72,7 @@ export function PageHeader({
             tags={tags}
             userTagTree={userTagTree}
             currentPageId={currentPageId || ""}
+            isMobile={isMobile}
           />
         )}
       </div>
