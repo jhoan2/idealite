@@ -9,7 +9,11 @@ import { Button } from "~/components/ui/button";
 export default function BottomNav() {
   const pathname = usePathname();
 
-  if (pathname.includes("/channelFrame") || pathname === "/") {
+  if (
+    pathname.includes("/channelFrame") ||
+    pathname === "/" ||
+    pathname.includes("/mobile-canvas")
+  ) {
     return null;
   }
 
