@@ -1,8 +1,7 @@
 // app/mobile-canvas/page.tsx
 import { currentUser } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
-import Link from "next/link";
 import MobileCanvas from "./MobileCanvas";
+import { RetryButton } from "./RetryButton";
 
 export default async function MobileCanvasPage({
   searchParams,
@@ -25,12 +24,7 @@ export default async function MobileCanvasPage({
             You must be signed in to access the mobile canvas.
           </p>
           <div className="mt-4">
-            <Link
-              href={`/mobile-canvas?pageId=${encodeURIComponent(pageId)}`}
-              className="inline-block rounded bg-blue-500 px-4 py-2 text-white"
-            >
-              🔄 Retry
-            </Link>
+            <RetryButton />
           </div>
         </div>
       </div>
