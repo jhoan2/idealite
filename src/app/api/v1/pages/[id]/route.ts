@@ -4,6 +4,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { pages, users_pages } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
+import { saveCanvasData } from "~/server/actions/canvas";
+import * as Sentry from "@sentry/nextjs";
 
 // GET /api/v1/pages/[id] - Get basic page data
 export async function GET(
@@ -44,11 +46,15 @@ export async function GET(
       title: page.title,
       content: page.content,
       content_type: page.content_type,
+      canvas_image_cid: page.canvas_image_cid,
       created_at: page.created_at,
       updated_at: page.updated_at,
     });
   } catch (error) {
     console.error("Error fetching page:", error);
+    Sentry.captureException(error, {
+      tags: { api: "pages", operation: "get" },
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -56,7 +62,7 @@ export async function GET(
   }
 }
 
-// PUT /api/v1/pages/[id] - Update page
+// PUT /api/v1/pages/[id] - Update page (enhanced for canvas)
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } },
@@ -82,7 +88,67 @@ export async function PUT(
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
 
-    // Prepare update data
+    // Get current page to check content_type
+    const currentPage = await db.query.pages.findFirst({
+      where: and(eq(pages.id, pageId), eq(pages.deleted, false)),
+    });
+
+    if (!currentPage) {
+      return NextResponse.json({ error: "Page not found" }, { status: 404 });
+    }
+
+    // Handle canvas-specific updates
+    if (currentPage.content_type === "canvas" && body.content) {
+      const {
+        content: snapshot,
+        assetMetadata = [],
+        canvasImageCid = null,
+        tagIds = [],
+      } = body;
+
+      try {
+        const result = await saveCanvasData(
+          pageId,
+          snapshot,
+          assetMetadata,
+          canvasImageCid,
+          tagIds,
+        );
+
+        if (!result.success) {
+          return NextResponse.json(
+            { error: result.error || "Failed to save canvas" },
+            { status: 500 },
+          );
+        }
+
+        // Get updated page data for server-generated fields
+        const updatedPage = await db.query.pages.findFirst({
+          where: eq(pages.id, pageId),
+        });
+
+        return NextResponse.json({
+          success: true,
+          updated_at: updatedPage?.updated_at,
+          canvas_image_cid: updatedPage?.canvas_image_cid,
+          canvas_result: {
+            created: result.created,
+            deleted: result.deleted,
+          },
+        });
+      } catch (error) {
+        console.error("Error saving canvas:", error);
+        Sentry.captureException(error, {
+          tags: { api: "pages", operation: "canvas-save" },
+        });
+        return NextResponse.json(
+          { error: "Failed to save canvas" },
+          { status: 500 },
+        );
+      }
+    }
+
+    // Handle regular page updates
     const updateData: Partial<{
       title: string;
       content: string;
@@ -115,14 +181,14 @@ export async function PUT(
     }
 
     return NextResponse.json({
-      id: updatedPage[0].id,
-      title: updatedPage[0].title,
-      content: updatedPage[0].content,
-      content_type: updatedPage[0].content_type,
-      updated_at: updatedPage[0].updated_at,
+      success: true,
+      updated_at: updatedPage[0].updated_at, // Only server-generated field
     });
   } catch (error) {
     console.error("Error updating page:", error);
+    Sentry.captureException(error, {
+      tags: { api: "pages", operation: "update" },
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
