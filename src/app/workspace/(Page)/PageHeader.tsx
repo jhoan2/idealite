@@ -5,7 +5,7 @@ import { CirclePlus } from "lucide-react";
 import { Info } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { type Tag } from "~/server/db/schema";
-import { usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { TreeTag } from "~/server/queries/usersTags";
 import AddMetadata from "../@page/(AddResource)/AddMetadata";
 import { Resource } from "~/server/queries/resource";
@@ -29,8 +29,8 @@ export function PageHeader({
 }: PageHeaderProps) {
   const [isMetadataOpen, setIsMetadataOpen] = useState(false);
   const [isAddMetadataOpen, setIsAddMetadataOpen] = useState(false);
-  const pathname = usePathname();
-  const currentPageId = pathname.split("/workspace/")[1];
+  const searchParams = useSearchParams();
+  const currentPageId = searchParams.get("pageId") || "";
 
   return (
     <div className="p-4">
@@ -52,7 +52,7 @@ export function PageHeader({
               <AddMetadata
                 isOpen={isAddMetadataOpen}
                 onOpenChange={setIsAddMetadataOpen}
-                pageId={currentPageId || ""}
+                pageId={currentPageId}
               />
             </>
           )}
@@ -71,7 +71,7 @@ export function PageHeader({
             resources={resources}
             tags={tags}
             userTagTree={userTagTree}
-            currentPageId={currentPageId || ""}
+            currentPageId={currentPageId}
             isMobile={isMobile}
           />
         )}
