@@ -5,9 +5,12 @@ import { db } from "~/server/db";
 import { pages, users_pages } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { saveCanvasData } from "~/server/actions/canvas";
+import { getPageTags } from "~/server/queries/page";
+import { getResourcesForPage } from "~/server/queries/resource";
+import { getUserTagTree } from "~/server/queries/usersTags";
 import * as Sentry from "@sentry/nextjs";
 
-// GET /api/v1/pages/[id] - Get basic page data
+// GET /api/v1/pages/[id] - Get enhanced page data with tags, resources, and tag tree
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } },
@@ -41,7 +44,15 @@ export async function GET(
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
 
+    // Fetch additional data in parallel
+    const [pageTags, pageResources, userTagTree] = await Promise.all([
+      getPageTags(pageId),
+      getResourcesForPage(pageId),
+      getUserTagTree(user.externalId),
+    ]);
+
     return NextResponse.json({
+      // Basic page data
       id: page.id,
       title: page.title,
       content: page.content,
@@ -49,11 +60,16 @@ export async function GET(
       canvas_image_cid: page.canvas_image_cid,
       created_at: page.created_at,
       updated_at: page.updated_at,
+
+      // Enhanced data for PageHeader functionality
+      tags: pageTags,
+      resources: pageResources,
+      userTagTree: userTagTree,
     });
   } catch (error) {
-    console.error("Error fetching page:", error);
+    console.error("Error fetching enhanced page data:", error);
     Sentry.captureException(error, {
-      tags: { api: "pages", operation: "get" },
+      tags: { api: "pages", operation: "get_enhanced" },
     });
     return NextResponse.json(
       { error: "Internal server error" },
