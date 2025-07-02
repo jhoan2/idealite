@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
-import { pages, users_pages } from "~/server/db/schema";
+import { pages, users_pages, cards } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { saveCanvasData } from "~/server/actions/canvas";
 import { getPageTags } from "~/server/queries/page";
@@ -10,7 +10,30 @@ import { getResourcesForPage } from "~/server/queries/resource";
 import { getUserTagTree } from "~/server/queries/usersTags";
 import * as Sentry from "@sentry/nextjs";
 
-// GET /api/v1/pages/[id] - Get enhanced page data with tags, resources, and tag tree
+// Helper function to get flashcards for a page
+async function getPageFlashcards(pageId: string, userId: string) {
+  try {
+    const flashcards = await db.query.cards.findMany({
+      where: and(
+        eq(cards.page_id, pageId),
+        eq(cards.user_id, userId),
+        eq(cards.deleted, false),
+      ),
+      orderBy: (cards, { desc }) => [desc(cards.created_at)],
+    });
+
+    return flashcards;
+  } catch (error) {
+    console.error("Error fetching page flashcards:", error);
+    Sentry.captureException(error, {
+      tags: { component: "getPageFlashcards" },
+      extra: { pageId, userId },
+    });
+    return [];
+  }
+}
+
+// GET /api/v1/pages/[id] - Get enhanced page data with tags, resources, tag tree, and flashcards
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } },
@@ -45,11 +68,13 @@ export async function GET(
     }
 
     // Fetch additional data in parallel
-    const [pageTags, pageResources, userTagTree] = await Promise.all([
-      getPageTags(pageId),
-      getResourcesForPage(pageId),
-      getUserTagTree(user.externalId),
-    ]);
+    const [pageTags, pageResources, userTagTree, pageFlashcards] =
+      await Promise.all([
+        getPageTags(pageId),
+        getResourcesForPage(pageId),
+        getUserTagTree(user.externalId),
+        getPageFlashcards(pageId, user.externalId),
+      ]);
 
     return NextResponse.json({
       // Basic page data
@@ -65,6 +90,7 @@ export async function GET(
       tags: pageTags,
       resources: pageResources,
       userTagTree: userTagTree,
+      flashcards: pageFlashcards,
     });
   } catch (error) {
     console.error("Error fetching enhanced page data:", error);
