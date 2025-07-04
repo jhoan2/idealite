@@ -11,6 +11,10 @@ const updateCardSchema = z.object({
   question: z.string().optional(),
   answer: z.string().optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
+  // Add SRS fields for spaced repetition
+  next_review: z.string().datetime().nullable().optional(),
+  last_reviewed: z.string().datetime().optional(),
+  mastered_at: z.string().datetime().nullable().optional(),
 });
 
 export async function PATCH(request: NextRequest) {
