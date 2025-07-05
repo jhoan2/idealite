@@ -100,7 +100,8 @@ const BodyEditor = ({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/image", {
+      // Changed from "/api/image" to "/api/image/cloudflare"
+      const response = await fetch("/api/image/cloudflare", {
         method: "POST",
         body: formData,
       });
@@ -111,14 +112,12 @@ const BodyEditor = ({
       }
 
       const data = await response.json();
-      const privateGateway = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
 
-      // Insert image at cursor position
       editor
         .chain()
         .focus()
         .setImage({
-          src: privateGateway + "/ipfs/" + data.image.url,
+          src: data.cloudflareData.url,
           alt: data.image.filename,
           title: data.image.filename,
         })

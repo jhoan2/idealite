@@ -166,7 +166,7 @@ export default function FlashcardReview({
         <div className="flex flex-col items-center">
           <div className="mb-4 flex max-h-[300px] w-full justify-center">
             <img
-              src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${currentCard.image_cid}`}
+              src={`https://idealite.xyz/${currentCard.image_cid}`}
               alt="Card image"
               className="max-h-[300px] rounded-md object-contain"
             />
@@ -185,7 +185,7 @@ export default function FlashcardReview({
               </h4>
               <div className="flex max-h-[300px] w-full justify-center">
                 <img
-                  src={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${pageCanvas}`}
+                  src={`https://idealite.xyz/${pageCanvas}`}
                   alt="Page canvas"
                   className="max-h-[300px] rounded-md border border-border object-contain"
                 />
