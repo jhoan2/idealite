@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -9,6 +9,7 @@ import {
   FolderPlus,
   FilePlus,
   Palette,
+  Edit3,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -16,8 +17,19 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 import type { TreeFolder, TreePage, TreeTag } from "~/server/queries/usersTags";
 import { deleteFolder } from "~/server/actions/usersFolders";
+import { renameFolder } from "~/server/actions/folder";
 import { toast } from "sonner";
 import { PageComponent } from "./Page";
 
@@ -65,6 +77,12 @@ export const FolderComponent: React.FC<FolderComponentProps> = ({
   const isFolderExpanded = expandedFolders.has(folder.id);
   const longPressTimeout = useRef<NodeJS.Timeout>();
 
+  // Rename state
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [folderName, setFolderName] = useState(folder.name);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
     longPressTimeout.current = setTimeout(() => {
@@ -78,6 +96,41 @@ export const FolderComponent: React.FC<FolderComponentProps> = ({
 
   const handleTouchMove = () => {
     clearTimeout(longPressTimeout.current);
+  };
+
+  const handleRenameFolder = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    if (!folderName.trim()) {
+      toast.error("Folder name cannot be empty");
+      return;
+    }
+
+    if (folderName.trim() === folder.name) {
+      setShowRenameDialog(false);
+      return;
+    }
+
+    try {
+      setIsRenaming(true);
+      const result = await renameFolder({
+        folderId: folder.id,
+        newName: folderName.trim(),
+      });
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to rename folder");
+        return;
+      }
+
+      setShowRenameDialog(false);
+      toast.success("Folder renamed successfully");
+    } catch (error) {
+      console.error("Error renaming folder:", error);
+      toast.error("Failed to rename folder");
+    } finally {
+      setIsRenaming(false);
+    }
   };
 
   const content = (
@@ -142,11 +195,66 @@ export const FolderComponent: React.FC<FolderComponentProps> = ({
           ))}
         </div>
       )}
+
+      {/* Rename Dialog */}
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Rename Folder</DialogTitle>
+            <DialogDescription>
+              Enter a new name for this folder.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleRenameFolder}>
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <Input
+                  ref={inputRef}
+                  id="folderName"
+                  placeholder="Enter folder name"
+                  value={folderName}
+                  onChange={(e) => setFolderName(e.target.value)}
+                  className="col-span-3"
+                  autoFocus
+                  disabled={isRenaming}
+                  onFocus={(e) => e.target.select()}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowRenameDialog(false);
+                  setFolderName(folder.name);
+                }}
+                disabled={isRenaming}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isRenaming}>
+                {isRenaming ? "Renaming..." : "Rename"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
   const contextMenuContent = (
     <ContextMenuContent className="w-64">
+      <ContextMenuItem
+        onSelect={() => {
+          setFolderName(folder.name);
+          setShowRenameDialog(true);
+        }}
+        disabled={isLoading}
+      >
+        <Edit3 className="mr-2 h-4 w-4" />
+        <span>Rename folder</span>
+      </ContextMenuItem>
       <ContextMenuItem
         onSelect={() => onCreatePageInFolder(folder, "page")}
         disabled={isLoading}
