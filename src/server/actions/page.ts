@@ -675,3 +675,110 @@ export async function updatePageTitle(pageId: string, title: string) {
 
   return result[0]?.title;
 }
+
+export async function archivePageManually(pageId: string) {
+  try {
+    const user = await currentUser();
+
+    if (!user?.externalId) {
+      throw new Error("Unauthorized");
+    }
+
+    // Check if the user has access to the page
+    const userPage = await db.query.users_pages.findFirst({
+      where: and(
+        eq(users_pages.user_id, user.externalId),
+        eq(users_pages.page_id, pageId),
+      ),
+    });
+
+    if (!userPage) {
+      throw new Error("Page not found or user doesn't have access");
+    }
+
+    const result = await db
+      .update(pages)
+      .set({
+        archived: true,
+        updated_at: new Date(),
+      })
+      .where(eq(pages.id, pageId))
+      .returning({
+        id: pages.id,
+        title: pages.title,
+        archived: pages.archived,
+      });
+
+    if (result.length === 0 || !result[0]) {
+      throw new Error("Failed to archive page");
+    }
+
+    revalidatePath(`/workspace/${pageId}`);
+    revalidatePath("/workspace");
+
+    return {
+      success: true,
+      data: result[0],
+    };
+  } catch (error) {
+    console.error("Error archiving page:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to archive page",
+    };
+  }
+}
+
+export async function unarchivePageManually(pageId: string) {
+  try {
+    const user = await currentUser();
+
+    if (!user?.externalId) {
+      throw new Error("Unauthorized");
+    }
+
+    // Check if the user has access to the page
+    const userPage = await db.query.users_pages.findFirst({
+      where: and(
+        eq(users_pages.user_id, user.externalId),
+        eq(users_pages.page_id, pageId),
+      ),
+    });
+
+    if (!userPage) {
+      throw new Error("Page not found or user doesn't have access");
+    }
+
+    const result = await db
+      .update(pages)
+      .set({
+        archived: false,
+        updated_at: new Date(),
+      })
+      .where(eq(pages.id, pageId))
+      .returning({
+        id: pages.id,
+        title: pages.title,
+        archived: pages.archived,
+      });
+
+    if (result.length === 0 || !result[0]) {
+      throw new Error("Failed to unarchive page");
+    }
+
+    revalidatePath(`/workspace/${pageId}`);
+    revalidatePath("/workspace");
+
+    return {
+      success: true,
+      data: result[0],
+    };
+  } catch (error) {
+    console.error("Error unarchiving page:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to unarchive page",
+    };
+  }
+}

@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Trash, Replace, StickyNote, PanelTop, Loader2 } from "lucide-react";
+import {
+  Trash,
+  Replace,
+  StickyNote,
+  PanelTop,
+  Loader2,
+  Archive,
+  ArchiveRestore,
+} from "lucide-react";
 import Link from "next/link";
 import {
   ContextMenu,
@@ -9,7 +17,11 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import { deletePage } from "~/server/actions/page";
+import {
+  deletePage,
+  archivePageManually,
+  unarchivePageManually,
+} from "~/server/actions/page";
 import { deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -49,6 +61,8 @@ export const PageComponent: React.FC<PageComponentProps> = ({
   const router = useRouter();
   const longPressTimeout = useRef<NodeJS.Timeout>();
   const touchInteraction = useRef(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [isUnarchiving, setIsUnarchiving] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
@@ -79,6 +93,38 @@ export const PageComponent: React.FC<PageComponentProps> = ({
     handleItemClick(e, page.id, page.title || "");
   };
 
+  const handleArchivePage = async () => {
+    try {
+      setIsArchiving(true);
+      const result = await archivePageManually(page.id);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to archive page");
+      }
+    } catch (error) {
+      console.error("Error archiving page:", error);
+      toast.error("Failed to archive page");
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  const handleUnarchivePage = async () => {
+    try {
+      setIsUnarchiving(true);
+      const result = await unarchivePageManually(page.id);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to unarchive page");
+      }
+    } catch (error) {
+      console.error("Error unarchiving page:", error);
+      toast.error("Failed to unarchive page");
+    } finally {
+      setIsUnarchiving(false);
+    }
+  };
+
   const content = (
     <div
       className="touch-action-none"
@@ -104,6 +150,9 @@ export const PageComponent: React.FC<PageComponentProps> = ({
         <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">
           {page.title}
         </span>
+        {page.archived && (
+          <Archive className="ml-auto h-3 w-3 flex-shrink-0 text-gray-400" />
+        )}
       </Link>
     </div>
   );
@@ -123,6 +172,31 @@ export const PageComponent: React.FC<PageComponentProps> = ({
         <Replace className="mr-2 h-4 w-4" />
         <span>Move to</span>
       </ContextMenuItem>
+
+      {/* Archive/Unarchive Menu Item */}
+      {page.archived ? (
+        <ContextMenuItem
+          onSelect={handleUnarchivePage}
+          disabled={isUnarchiving}
+        >
+          {isUnarchiving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <ArchiveRestore className="mr-2 h-4 w-4" />
+          )}
+          <span>{isUnarchiving ? "Unarchiving..." : "Unarchive page"}</span>
+        </ContextMenuItem>
+      ) : (
+        <ContextMenuItem onSelect={handleArchivePage} disabled={isArchiving}>
+          {isArchiving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Archive className="mr-2 h-4 w-4" />
+          )}
+          <span>{isArchiving ? "Archiving..." : "Archive page"}</span>
+        </ContextMenuItem>
+      )}
+
       <ContextMenuItem
         onSelect={async () => {
           try {
@@ -141,6 +215,7 @@ export const PageComponent: React.FC<PageComponentProps> = ({
             }
           } catch (error) {
             console.error("Error deleting page:", error);
+            toast.error("Failed to delete page");
           }
         }}
         className="text-red-600"
