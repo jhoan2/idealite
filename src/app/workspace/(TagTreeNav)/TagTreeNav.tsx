@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -55,6 +55,42 @@ import { Input } from "~/components/ui/input";
 import Link from "next/link";
 import { FeatureTooltip } from "../(FeatureDiscover)/FeatureTooltip";
 import { FeatureKey } from "../(FeatureDiscover)/FeatureDiscoveryContext";
+
+// Add filtering helper functions
+function filterPages(pages: TreePage[], showArchived: boolean): TreePage[] {
+  return pages.filter((page) => page.archived === showArchived);
+}
+
+function filterFolders(
+  folders: TreeFolder[],
+  showArchived: boolean,
+): TreeFolder[] {
+  return folders
+    .map((folder) => ({
+      ...folder,
+      pages: filterPages(folder.pages, showArchived),
+      subFolders: filterFolders(folder.subFolders, showArchived),
+    }))
+    .filter(
+      (folder) => folder.pages.length > 0 || folder.subFolders.length > 0,
+    );
+}
+
+function filterTagTree(tags: TreeTag[], showArchived: boolean): TreeTag[] {
+  return tags
+    .map((tag) => ({
+      ...tag,
+      pages: filterPages(tag.pages, showArchived),
+      folders: filterFolders(tag.folders, showArchived),
+      children: filterTagTree(tag.children, showArchived),
+    }))
+    .filter(
+      (tag) =>
+        tag.pages.length > 0 ||
+        tag.folders.length > 0 ||
+        tag.children.length > 0,
+    );
+}
 
 interface DrawerState {
   isOpen: boolean;
@@ -478,6 +514,7 @@ const TreeNode: React.FC<{
                             folder_id: page.folder_id,
                             primary_tag_id: page.primary_tag_id,
                             content_type: page.content_type || "page",
+                            archived: page.archived,
                           }}
                           level={level}
                           currentPageId={currentPageId ?? undefined}
@@ -623,6 +660,7 @@ const TreeNode: React.FC<{
                         folder_id: page.folder_id,
                         primary_tag_id: page.primary_tag_id,
                         content_type: page.content_type || "page",
+                        archived: page.archived,
                       }}
                       level={level}
                       currentPageId={currentPageId ?? undefined}
@@ -691,10 +729,13 @@ const TreeNode: React.FC<{
   );
 };
 
+// Update MinimalistTree component
 const MinimalistTree: React.FC<
   TreeProps & {
     userId: string;
     isMobile: boolean;
+    showArchived: boolean;
+    onToggleArchived: () => void;
     onLongPress?: (
       type: "tag" | "folder" | "page",
       data: TreeTag | TreeFolder | TreePage,
@@ -704,7 +745,20 @@ const MinimalistTree: React.FC<
       data: TreeTag | TreeFolder | TreePage,
     ) => void;
   }
-> = ({ data, userId, isMobile, onLongPress, onOpenDrawer }) => {
+> = ({
+  data,
+  userId,
+  isMobile,
+  showArchived,
+  onToggleArchived,
+  onLongPress,
+  onOpenDrawer,
+}) => {
+  // Filter the data based on archive status
+  const filteredData = useMemo(() => {
+    return filterTagTree(data, showArchived);
+  }, [data, showArchived]);
+
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex justify-center pt-2">
@@ -720,23 +774,38 @@ const MinimalistTree: React.FC<
               <Compass className="h-4 w-4" />
             </Link>
           </Button>
+          <Button
+            variant={showArchived ? "default" : "ghost"}
+            size="icon"
+            title={showArchived ? "Show Active Pages" : "Show Archived Pages"}
+            onClick={onToggleArchived}
+          >
+            <Archive className="h-4 w-4" />
+          </Button>
         </FeatureTooltip>
       </div>
       <div
         className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto pb-48 pl-4`}
       >
-        {data.map((node) => (
-          <TreeNode
-            key={node.id}
-            node={node}
-            level={0}
-            allTags={data}
-            userId={userId}
-            onOpenDrawer={onOpenDrawer}
-            isMobile={isMobile}
-          />
-        ))}
+        {filteredData.length === 0 ? (
+          <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+            {showArchived ? "No archived pages found" : "No active pages found"}
+          </div>
+        ) : (
+          filteredData.map((node) => (
+            <TreeNode
+              key={node.id}
+              node={node}
+              level={0}
+              allTags={data} // Pass original data for context
+              userId={userId}
+              onOpenDrawer={onOpenDrawer}
+              isMobile={isMobile}
+            />
+          ))
+        )}
       </div>
+
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
@@ -782,6 +851,7 @@ export default function TagTreeNav({
   isMobile: boolean;
 }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const handleCreateRootPage = async (type: "page" | "canvas") => {
     try {
@@ -825,6 +895,11 @@ export default function TagTreeNav({
     data: TreeTag | TreeFolder | TreePage,
   ) => {
     setDrawerState({ isOpen: true, type, data });
+  };
+
+  // Function to toggle archive state
+  const handleToggleArchived = () => {
+    setShowArchived(!showArchived);
   };
 
   return (
@@ -871,14 +946,19 @@ export default function TagTreeNav({
             )}
           </DrawerContent>
         </Drawer>
+
         <MinimalistTree
           data={userTagTree}
           userId={userId}
-          isMobile={isMobile ? true : false}
+          isMobile={isMobile}
+          showArchived={showArchived}
+          onToggleArchived={handleToggleArchived}
           onOpenDrawer={handleOpenDrawer}
         />
       </div>
-      {isMobile && (
+
+      {/* Hide create buttons when viewing archived pages */}
+      {isMobile && !showArchived && (
         <div className="mb-4 bg-background px-4 py-3 md:hidden">
           <div className="flex w-full justify-between space-x-1">
             <Button
@@ -904,9 +984,6 @@ export default function TagTreeNav({
               disabled={isLoading}
             >
               <FolderPlus className="h-6 w-6" />
-            </Button>
-            <Button variant="ghost" className="flex-1">
-              {/* <Archive className="h-6 w-6" /> */}
             </Button>
           </div>
         </div>

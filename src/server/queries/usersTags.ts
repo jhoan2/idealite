@@ -20,6 +20,7 @@ export interface TreePage {
   primary_tag_id: string | null;
   folder_id: string | null;
   content_type: "page" | "canvas";
+  archived: boolean;
 }
 
 export interface TreeFolder {
@@ -121,6 +122,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       primary_tag_id: pages.primary_tag_id,
       folder_id: pages.folder_id,
       content_type: pages.content_type,
+      archived: pages.archived,
     })
     .from(pages)
     .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
@@ -139,6 +141,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         title: string;
         folder_id: string | null;
         primary_tag_id: string | null;
+        archived: boolean;
       }>;
     }>
   >();
@@ -151,6 +154,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       folder_id: string | null;
       primary_tag_id: string | null;
       content_type: "page" | "canvas";
+      archived: boolean;
     }>
   >();
 
@@ -162,6 +166,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       folder_id: string | null;
       primary_tag_id: string | null;
       content_type: "page" | "canvas";
+      archived: boolean;
     }>
   >();
 
@@ -177,6 +182,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         folder_id: page.folder_id,
         primary_tag_id: page.primary_tag_id,
         content_type: page.content_type,
+        archived: page.archived ?? false,
       });
     } else if (page.primary_tag_id) {
       if (!unfolderedPagesByTag.has(page.primary_tag_id)) {
@@ -188,6 +194,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
         folder_id: page.folder_id,
         primary_tag_id: page.primary_tag_id,
         content_type: page.content_type,
+        archived: page.archived ?? false,
       });
     }
   });
@@ -213,7 +220,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
       name: string;
       is_collapsed: boolean | null;
       parent_folder_id: string | null;
-      pages: Array<{ id: string; title: string }>;
+      pages: Array<{ id: string; title: string; archived: boolean }>;
     }>,
     parentId: string | null = null,
   ): TreeFolder[] {
