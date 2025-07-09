@@ -150,9 +150,6 @@ export const PageComponent: React.FC<PageComponentProps> = ({
         <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">
           {page.title}
         </span>
-        {page.archived && (
-          <Archive className="ml-auto h-3 w-3 flex-shrink-0 text-gray-400" />
-        )}
       </Link>
     </div>
   );
