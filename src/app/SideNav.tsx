@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Folder, UserRound, Inbox } from "lucide-react";
+import { Home, Folder, UserRound, Inbox, Bell } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ModeToggle } from "./NextThemeButton";
@@ -24,6 +24,7 @@ export default function SideNav() {
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Inbox, label: "Review", href: "/review" },
     { icon: UserRound, label: "Profile", href: "/profile" },
+    { icon: Bell, label: "Notifications", href: "/notifications" },
   ];
 
   return (
