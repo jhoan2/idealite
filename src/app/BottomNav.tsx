@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Folder, UserRound, Inbox, Bell } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { NotificationBadge } from "~/app/NotificationBadge";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -38,7 +39,11 @@ export default function BottomNav() {
                   : "hover:bg-accent/50"
               }`}
             >
-              <item.icon className="h-5 w-5" />
+              {item.href === "/notifications" ? (
+                <NotificationBadge className="h-5 w-5" />
+              ) : (
+                <item.icon className="h-5 w-5" />
+              )}
               <span className="text-[10px]">{item.label}</span>
             </Button>
           </Link>

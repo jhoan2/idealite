@@ -3,13 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Folder, UserRound, Inbox, Bell } from "lucide-react";
+import { Home, Folder, UserRound, Inbox } from "lucide-react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ModeToggle } from "./NextThemeButton";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { SignInButton, SignedOut, SignedIn, UserButton } from "@clerk/nextjs";
+import { NotificationBadge } from "~/app/NotificationBadge";
 
 export default function SideNav() {
   const pathname = usePathname();
@@ -24,7 +25,6 @@ export default function SideNav() {
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Inbox, label: "Review", href: "/review" },
     { icon: UserRound, label: "Profile", href: "/profile" },
-    { icon: Bell, label: "Notifications", href: "/notifications" },
   ];
 
   return (
@@ -64,6 +64,26 @@ export default function SideNav() {
               </Link>
             );
           })}
+
+          {/* Notifications button with badge */}
+          <Link href="/notifications">
+            <Button
+              variant="ghost"
+              title="Notifications"
+              className={clsx(
+                "w-full justify-start bg-background px-4 hover:bg-gray-100 dark:hover:bg-gray-800",
+                {
+                  "bg-gray-100 text-foreground dark:bg-gray-800":
+                    pathname.includes("/notifications"),
+                  "text-foreground": !pathname.includes("/notifications"),
+                },
+              )}
+            >
+              <div className="mr-2">
+                <NotificationBadge className="h-6 w-6" />
+              </div>
+            </Button>
+          </Link>
         </nav>
       </ScrollArea>
       <div className="flex flex-col items-center justify-between space-y-4 border-t bg-background p-4 text-foreground">
