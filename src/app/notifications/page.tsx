@@ -14,7 +14,11 @@ import {
   Loader2,
   Undo
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { undoPageArchive } from "~/server/actions/autoArchive";
+import { toast } from "sonner";
+import * as Sentry from "@sentry/nextjs";
+
 
 // Simple relative time function (no external dependencies)
 function getRelativeTime(date: Date): string {
@@ -75,6 +79,68 @@ function ErrorBanner({
 export default function NotificationsPage() {
   const { notifications, isLoading, hasMore, error, refresh, sentinelRef, queueForMarkingRead } =
     useInfiniteNotifications();
+const [undoingNotifications, setUndoingNotifications] = useState<Set<string>>(new Set());
+
+const handleUndo = async (notificationId: string, eventType: string) => {
+  // Prevent multiple clicks
+  if (undoingNotifications.has(notificationId)) {
+    return;
+  }
+  
+  // Add notification to loading set
+  setUndoingNotifications(prev => new Set([...prev, notificationId]));
+  
+  try {
+    if (eventType === "auto_archive") {
+      const result = await undoPageArchive(notificationId);
+      
+      if (result.success) {
+        toast.success("Page archive action has been undone");
+      } else {
+        throw new Error("Failed to undo archive action");
+      }
+    } else if (eventType === "creation") {
+      // Placeholder for future undo creation logic
+      toast.error("Undo for creation actions not yet implemented");
+    } else if (eventType === "deletion") {
+      // Placeholder for future undo deletion logic  
+      toast.error("Undo for deletion actions not yet implemented");
+    } else if (eventType === "update") {
+      // Placeholder for future undo update logic
+      toast.error("Undo for update actions not yet implemented");
+    } else {
+      toast.error(`Undo action for ${eventType} is not supported`);
+    }
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: {
+        action: "undo_notification",
+        event_type: eventType,
+        notification_id: notificationId,
+      },
+      contexts: {
+        notification: {
+          id: notificationId,
+          event_type: eventType,
+        }
+      }
+    });
+    
+    // Extract error message
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : "Failed to undo action. Please try again.";
+    
+    toast.error(errorMessage);
+  } finally {
+    // Remove notification from loading set
+    setUndoingNotifications(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(notificationId);
+      return newSet;
+    });
+  }
+};
 
   // Create refs for each notification
   const notificationRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -184,11 +250,24 @@ export default function NotificationsPage() {
                         {getRelativeTime(new Date(notification.created_at))}
                       </p>
                       {/* Only show undo button for actionable notifications */}
-                      {["creation", "deletion", "update"].includes(notification.notification_type) && (
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-1" title="Undo Action">
-                          <Undo className="h-3 w-3" />
-                        </Button>
-                      )}
+{(["creation", "deletion", "update"].includes(notification.notification_type) || 
+  (notification.event_type === "auto_archive")) && 
+  notification.status !== "reversed" && (
+  <Button 
+    variant="ghost" 
+    size="sm" 
+    className={`h-6 w-6 p-1 ${undoingNotifications.has(notification.id) ? "cursor-not-allowed opacity-50" : ""}`}
+    title="Undo Action"
+    disabled={undoingNotifications.has(notification.id)}
+    onClick={() => handleUndo(notification.id, notification.event_type)}
+  >
+    {undoingNotifications.has(notification.id) ? (
+      <Loader2 className="h-3 w-3 animate-spin" />
+    ) : (
+      <Undo className="h-3 w-3" />
+    )}
+  </Button>
+)}
                     </div>
                   </div>
                   <p className="line-clamp-2 text-sm text-muted-foreground">

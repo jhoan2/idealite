@@ -4,6 +4,14 @@
 import { db } from "~/server/db";
 import { pages, cards, users_pages, notifications } from "~/server/db/schema";
 import { eq, and, lt, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+
+type AutoArchiveContextData = {
+  original_archived_state: boolean;
+  archived_at: string;
+  reason: string;
+  page_title: string;
+};
 
 // Helper function to find pages eligible for archiving
 export async function findPagesEligibleForArchiving() {
@@ -145,4 +153,46 @@ export async function runAutoArchiveWorkflow() {
 // For testing - function to manually trigger the workflow
 export async function triggerAutoArchiveWorkflow() {
   return await runAutoArchiveWorkflow();
+}
+
+export async function undoPageArchive(notificationId: string) {
+  try {
+    // Get the notification to access context data
+    const notification = await db.query.notifications.findFirst({
+      where: eq(notifications.id, notificationId),
+    });
+
+    if (!notification || notification.event_type !== "auto_archive") {
+      throw new Error("Invalid notification for undo");
+    }
+
+    const { entity_id: pageId, context_data } = notification;
+    
+    // Type assertion for context_data
+    const contextData = context_data as AutoArchiveContextData;
+    const originalArchivedState = contextData.original_archived_state;
+
+    // Restore the page to its original archived state
+    await db
+      .update(pages)
+      .set({
+        archived: originalArchivedState,
+        updated_at: new Date(),
+      })
+      .where(eq(pages.id, pageId));
+
+    // Mark the notification as reversed
+    await db
+      .update(notifications)
+      .set({
+        status: "reversed",
+        status_changed_at: new Date(),
+      })
+      .where(eq(notifications.id, notificationId));
+      revalidatePath("/workspace");
+    return { success: true };
+  } catch (error) {
+    console.error("Error undoing page archive:", error);
+    throw error;
+  }
 }
