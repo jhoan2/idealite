@@ -12,13 +12,12 @@ import {
   Lightbulb,
   RefreshCw,
   Loader2,
-  Undo
+  Undo,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { undoPageArchive } from "~/server/actions/autoArchive";
 import { toast } from "sonner";
 import * as Sentry from "@sentry/nextjs";
-
 
 // Simple relative time function (no external dependencies)
 function getRelativeTime(date: Date): string {
@@ -77,70 +76,80 @@ function ErrorBanner({
 }
 
 export default function NotificationsPage() {
-  const { notifications, isLoading, hasMore, error, refresh, sentinelRef, queueForMarkingRead } =
-    useInfiniteNotifications();
-const [undoingNotifications, setUndoingNotifications] = useState<Set<string>>(new Set());
+  const {
+    notifications,
+    isLoading,
+    hasMore,
+    error,
+    refresh,
+    sentinelRef,
+    queueForMarkingRead,
+  } = useInfiniteNotifications();
+  const [undoingNotifications, setUndoingNotifications] = useState<Set<string>>(
+    new Set(),
+  );
 
-const handleUndo = async (notificationId: string, eventType: string) => {
-  // Prevent multiple clicks
-  if (undoingNotifications.has(notificationId)) {
-    return;
-  }
-  
-  // Add notification to loading set
-  setUndoingNotifications(prev => new Set([...prev, notificationId]));
-  
-  try {
-    if (eventType === "auto_archive") {
-      const result = await undoPageArchive(notificationId);
-      
-      if (result.success) {
-        toast.success("Page archive action has been undone");
-      } else {
-        throw new Error("Failed to undo archive action");
-      }
-    } else if (eventType === "creation") {
-      // Placeholder for future undo creation logic
-      toast.error("Undo for creation actions not yet implemented");
-    } else if (eventType === "deletion") {
-      // Placeholder for future undo deletion logic  
-      toast.error("Undo for deletion actions not yet implemented");
-    } else if (eventType === "update") {
-      // Placeholder for future undo update logic
-      toast.error("Undo for update actions not yet implemented");
-    } else {
-      toast.error(`Undo action for ${eventType} is not supported`);
+  const handleUndo = async (notificationId: string, eventType: string) => {
+    // Prevent multiple clicks
+    if (undoingNotifications.has(notificationId)) {
+      return;
     }
-  } catch (error) {
-    Sentry.captureException(error, {
-      tags: {
-        action: "undo_notification",
-        event_type: eventType,
-        notification_id: notificationId,
-      },
-      contexts: {
-        notification: {
-          id: notificationId,
-          event_type: eventType,
+
+    // Add notification to loading set
+    setUndoingNotifications((prev) => new Set([...prev, notificationId]));
+
+    try {
+      if (eventType === "auto_archive") {
+        const result = await undoPageArchive(notificationId);
+
+        if (result.success) {
+          toast.success("Page archive action has been undone");
+        } else {
+          throw new Error("Failed to undo archive action");
         }
+      } else if (eventType === "creation") {
+        // Placeholder for future undo creation logic
+        toast.error("Undo for creation actions not yet implemented");
+      } else if (eventType === "deletion") {
+        // Placeholder for future undo deletion logic
+        toast.error("Undo for deletion actions not yet implemented");
+      } else if (eventType === "update") {
+        // Placeholder for future undo update logic
+        toast.error("Undo for update actions not yet implemented");
+      } else {
+        toast.error(`Undo action for ${eventType} is not supported`);
       }
-    });
-    
-    // Extract error message
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : "Failed to undo action. Please try again.";
-    
-    toast.error(errorMessage);
-  } finally {
-    // Remove notification from loading set
-    setUndoingNotifications(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(notificationId);
-      return newSet;
-    });
-  }
-};
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: {
+          action: "undo_notification",
+          event_type: eventType,
+          notification_id: notificationId,
+        },
+        contexts: {
+          notification: {
+            id: notificationId,
+            event_type: eventType,
+          },
+        },
+      });
+
+      // Extract error message
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to undo action. Please try again.";
+
+      toast.error(errorMessage);
+    } finally {
+      // Remove notification from loading set
+      setUndoingNotifications((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(notificationId);
+        return newSet;
+      });
+    }
+  };
 
   // Create refs for each notification
   const notificationRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -148,7 +157,7 @@ const handleUndo = async (notificationId: string, eventType: string) => {
   // Set up intersection observers for unread notifications
   useEffect(() => {
     const observers = new Map<string, IntersectionObserver>();
-    
+
     notifications.forEach((notification) => {
       if (notification.status === "unread") {
         const element = notificationRefs.current.get(notification.id);
@@ -159,12 +168,12 @@ const handleUndo = async (notificationId: string, eventType: string) => {
                 queueForMarkingRead(notification.id);
               }
             },
-            { 
+            {
               threshold: 0.5,
-              rootMargin: "0px 0px -50px 0px"
-            }
+              rootMargin: "0px 0px -50px 0px",
+            },
           );
-          
+
           observer.observe(element);
           observers.set(notification.id, observer);
         }
@@ -178,13 +187,14 @@ const handleUndo = async (notificationId: string, eventType: string) => {
   }, [notifications, queueForMarkingRead]);
 
   // Function to set notification ref
-  const setNotificationRef = (id: string) => (element: HTMLDivElement | null) => {
-    if (element) {
-      notificationRefs.current.set(id, element);
-    } else {
-      notificationRefs.current.delete(id);
-    }
-  };
+  const setNotificationRef =
+    (id: string) => (element: HTMLDivElement | null) => {
+      if (element) {
+        notificationRefs.current.set(id, element);
+      } else {
+        notificationRefs.current.delete(id);
+      }
+    };
 
   return (
     <div className="min-h-screen bg-background">
@@ -250,24 +260,31 @@ const handleUndo = async (notificationId: string, eventType: string) => {
                         {getRelativeTime(new Date(notification.created_at))}
                       </p>
                       {/* Only show undo button for actionable notifications */}
-{(["creation", "deletion", "update"].includes(notification.notification_type) || 
-  (notification.event_type === "auto_archive")) && 
-  notification.status !== "reversed" && (
-  <Button 
-    variant="ghost" 
-    size="sm" 
-    className={`h-6 w-6 p-1 ${undoingNotifications.has(notification.id) ? "cursor-not-allowed opacity-50" : ""}`}
-    title="Undo Action"
-    disabled={undoingNotifications.has(notification.id)}
-    onClick={() => handleUndo(notification.id, notification.event_type)}
-  >
-    {undoingNotifications.has(notification.id) ? (
-      <Loader2 className="h-3 w-3 animate-spin" />
-    ) : (
-      <Undo className="h-3 w-3" />
-    )}
-  </Button>
-)}
+                      {(["creation", "deletion", "update"].includes(
+                        notification.notification_type,
+                      ) ||
+                        notification.event_type === "auto_archive") &&
+                        notification.status !== "reversed" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-6 w-6 p-1 ${undoingNotifications.has(notification.id) ? "cursor-not-allowed opacity-50" : ""}`}
+                            title="Undo Action"
+                            disabled={undoingNotifications.has(notification.id)}
+                            onClick={() =>
+                              handleUndo(
+                                notification.id,
+                                notification.event_type,
+                              )
+                            }
+                          >
+                            {undoingNotifications.has(notification.id) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Undo className="h-3 w-3" />
+                            )}
+                          </Button>
+                        )}
                     </div>
                   </div>
                   <p className="line-clamp-2 text-sm text-muted-foreground">
