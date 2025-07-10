@@ -39,8 +39,8 @@ export function NotificationBadge({ className }: NotificationBadgeProps) {
     if (isLoaded && isSignedIn) {
       fetchCounts();
 
-      // Set up polling every 300 seconds
-      const interval = setInterval(fetchCounts, 300000);
+      // Set up polling every 30 seconds
+      const interval = setInterval(fetchCounts, 30000);
 
       // Cleanup interval on unmount
       return () => clearInterval(interval);
