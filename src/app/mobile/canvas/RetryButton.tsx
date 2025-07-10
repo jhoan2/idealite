@@ -1,4 +1,4 @@
-// app/mobile-canvas/RetryButton.tsx
+// app/mobile/canvas/RetryButton.tsx
 "use client";
 
 import React from "react";

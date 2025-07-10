@@ -13,7 +13,7 @@ export default function BottomNav() {
   if (
     pathname.includes("/channelFrame") ||
     pathname === "/" ||
-    pathname.includes("/mobile-canvas")
+    pathname.includes("/mobile/canvas")
   ) {
     return null;
   }

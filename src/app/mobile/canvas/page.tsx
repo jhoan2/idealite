@@ -1,4 +1,4 @@
-// app/mobile-canvas/page.tsx
+// app/mobile/canvas/page.tsx
 import { currentUser } from "@clerk/nextjs/server";
 import { RetryButton } from "./RetryButton";
 import { getPageContent, getPageTags } from "~/server/queries/page";
