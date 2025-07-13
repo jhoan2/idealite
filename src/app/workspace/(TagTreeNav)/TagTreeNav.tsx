@@ -65,31 +65,20 @@ function filterFolders(
   folders: TreeFolder[],
   showArchived: boolean,
 ): TreeFolder[] {
-  return folders
-    .map((folder) => ({
-      ...folder,
-      pages: filterPages(folder.pages, showArchived),
-      subFolders: filterFolders(folder.subFolders, showArchived),
-    }))
-    .filter(
-      (folder) => folder.pages.length > 0 || folder.subFolders.length > 0,
-    );
+  return folders.map((folder) => ({
+    ...folder,
+    pages: filterPages(folder.pages, showArchived),
+    subFolders: filterFolders(folder.subFolders, showArchived),
+  }));
 }
 
 function filterTagTree(tags: TreeTag[], showArchived: boolean): TreeTag[] {
-  return tags
-    .map((tag) => ({
-      ...tag,
-      pages: filterPages(tag.pages, showArchived),
-      folders: filterFolders(tag.folders, showArchived),
-      children: filterTagTree(tag.children, showArchived),
-    }))
-    .filter(
-      (tag) =>
-        tag.pages.length > 0 ||
-        tag.folders.length > 0 ||
-        tag.children.length > 0,
-    );
+  return tags.map((tag) => ({
+    ...tag,
+    pages: filterPages(tag.pages, showArchived),
+    folders: filterFolders(tag.folders, showArchived),
+    children: filterTagTree(tag.children, showArchived),
+  }));
 }
 
 interface DrawerState {
