@@ -121,7 +121,6 @@ const TreeNode: React.FC<{
   const [isExpanded, setIsExpanded] = useState(!node.is_collapsed);
   const router = useRouter();
 
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPageId = searchParams.get("pageId");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
