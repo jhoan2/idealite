@@ -87,13 +87,7 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
     })
     .from(tags)
     .innerJoin(users_tags, eq(users_tags.tag_id, tags.id))
-    .where(
-      and(
-        eq(users_tags.user_id, userId),
-        eq(tags.deleted, false),
-        eq(users_tags.is_archived, false),
-      ),
-    );
+    .where(and(eq(users_tags.user_id, userId), eq(tags.deleted, false)));
 
   // 2. Get all folders
   const userFolders = await db
