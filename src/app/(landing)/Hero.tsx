@@ -99,7 +99,7 @@ export default function Hero() {
           <div className="mb-12 mt-8">
             <Link
               href="/workspace"
-              className="inline-flex transform items-center rounded-md bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all transition-colors duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-xl"
+              className="inline-flex transform items-center rounded-md bg-orange-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all transition-colors duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-xl"
             >
               Get Started for free
               <span className="ml-2">→</span>
