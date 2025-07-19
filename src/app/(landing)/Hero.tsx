@@ -64,7 +64,7 @@ export default function Hero() {
                 </button>
               </SignInButton>
               <SignUpButton>
-                <button className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-indigo-700">
+                <button className="rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-orange-700">
                   Sign Up
                 </button>
               </SignUpButton>
@@ -99,27 +99,23 @@ export default function Hero() {
           <div className="mb-12 mt-8">
             <Link
               href="/workspace"
-              className="inline-flex transform items-center rounded-md bg-orange-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all transition-colors duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-xl"
+              className="inline-flex transform items-center rounded-md bg-orange-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all transition-colors duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-xl"
             >
               Get Started for free
               <span className="ml-2">→</span>
             </Link>
           </div>
-
-          {/* Phone Mockup - Larger Space */}
-          <div className="flex justify-center overflow-hidden">
-            <div className="h-96 w-auto overflow-hidden">
-              <Image
-                src="/phone-mockup.png" // Save the phone image as phone-mockup.png in your public folder
-                alt="App interface on mobile"
-                width={350}
-                height={700}
-                className="object-contain"
-                priority
-              />
-            </div>
-          </div>
         </div>
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 flex justify-center">
+        <Image
+          src="/phone-mockup.png"
+          alt="App interface on mobile"
+          width={350}
+          height={700}
+          className="object-contain"
+          priority
+        />
       </div>
     </div>
   );
