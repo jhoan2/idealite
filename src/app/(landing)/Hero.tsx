@@ -12,7 +12,7 @@ export default function Hero() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Gradient Background with Grid Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="absolute inset-0 bg-white">
         <svg
           className="absolute inset-0 h-full w-full"
           xmlns="http://www.w3.org/2000/svg"
@@ -27,7 +27,7 @@ export default function Hero() {
               <path
                 d="M 60 0 L 0 0 0 60"
                 fill="none"
-                stroke="rgb(99 102 241 / 0.1)"
+                stroke="rgb(3 49 140 / 0.4)"
                 strokeWidth="1"
               />
             </pattern>
