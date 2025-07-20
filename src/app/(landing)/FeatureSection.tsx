@@ -42,29 +42,7 @@ export default function MinimalVariation() {
   return (
     <section className="relative py-20">
       {/* Background with gradient and grid */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100">
-        <svg
-          className="absolute inset-0 h-full w-full"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <pattern
-              id="grid"
-              width="60"
-              height="60"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 60 0 L 0 0 0 60"
-                fill="none"
-                stroke="rgb(99 102 241 / 0.1)"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-      </div>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100"></div>
 
       {/* Content */}
       <div className="container relative mx-auto max-w-6xl px-4">
