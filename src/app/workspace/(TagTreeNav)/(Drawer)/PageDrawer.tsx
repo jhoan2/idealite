@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Replace, Trash, File } from "lucide-react";
+import { Replace, Trash, File, Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { DrawerTitle } from "~/components/ui/drawer";
 import { DrawerHeader } from "~/components/ui/drawer";
 import { TreePage, TreeTag } from "~/server/queries/usersTags";
-import { deletePage } from "~/server/actions/page";
+import {
+  deletePage,
+  movePage,
+  archivePageManually,
+  unarchivePageManually,
+} from "~/server/actions/page";
 import { toast } from "sonner";
 import { MoveToDialog } from "../MoveToDialog";
-import { movePage } from "~/server/actions/page";
 
 interface PageDrawerProps {
   page: TreePage;
@@ -27,6 +31,8 @@ export default function PageDrawer({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [isUnarchiving, setIsUnarchiving] = useState(false);
 
   const handleDeletePage = async () => {
     try {
@@ -43,6 +49,42 @@ export default function PageDrawer({
       toast.error("Failed to delete page");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleArchivePage = async () => {
+    try {
+      setIsArchiving(true);
+      const result = await archivePageManually(page.id);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to archive page");
+      }
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error archiving page:", error);
+      toast.error("Failed to archive page");
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  const handleUnarchivePage = async () => {
+    try {
+      setIsUnarchiving(true);
+      const result = await unarchivePageManually(page.id);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to unarchive page");
+      }
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error unarchiving page:", error);
+      toast.error("Failed to unarchive page");
+    } finally {
+      setIsUnarchiving(false);
     }
   };
 
@@ -71,6 +113,7 @@ export default function PageDrawer({
       setIsMoving(false);
     }
   };
+
   return (
     <>
       <MoveToDialog
@@ -100,6 +143,31 @@ export default function PageDrawer({
             <Replace className="mr-3 h-4 w-4" />
             <span>Move to</span>
           </Button>
+
+          {/* Archive/Unarchive Button */}
+          {page.archived ? (
+            <Button
+              variant="ghost"
+              className="w-full justify-start py-6 text-sm font-normal"
+              onClick={handleUnarchivePage}
+              disabled={isUnarchiving}
+            >
+              <ArchiveRestore className="mr-3 h-4 w-4" />
+              <span>{isUnarchiving ? "Unarchiving..." : "Unarchive Page"}</span>
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              className="w-full justify-start py-6 text-sm font-normal"
+              onClick={handleArchivePage}
+              disabled={isArchiving}
+            >
+              <Archive className="mr-3 h-4 w-4" />
+              <span>{isArchiving ? "Archiving..." : "Archive Page"}</span>
+            </Button>
+          )}
+
+          <div className="h-px bg-border" />
           <Button
             variant="ghost"
             className="w-full justify-start py-6 text-sm font-normal text-destructive"
@@ -107,7 +175,7 @@ export default function PageDrawer({
             disabled={isDeleting}
           >
             <Trash className="mr-3 h-4 w-4" />
-            <span>Delete Page</span>
+            <span>{isDeleting ? "Deleting..." : "Delete Page"}</span>
           </Button>
         </div>
       </div>

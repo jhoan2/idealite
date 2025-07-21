@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Trash, Replace, StickyNote, PanelTop, Loader2 } from "lucide-react";
+import {
+  Trash,
+  Replace,
+  StickyNote,
+  PanelTop,
+  Loader2,
+  Archive,
+  ArchiveRestore,
+} from "lucide-react";
 import Link from "next/link";
 import {
   ContextMenu,
@@ -9,7 +17,11 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import { deletePage } from "~/server/actions/page";
+import {
+  deletePage,
+  archivePageManually,
+  unarchivePageManually,
+} from "~/server/actions/page";
 import { deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -34,6 +46,7 @@ interface PageComponentProps {
     type: "tag" | "folder" | "page",
     data: TreeTag | TreeFolder | TreePage,
   ) => void;
+  isMobile: boolean;
 }
 
 export const PageComponent: React.FC<PageComponentProps> = ({
@@ -43,10 +56,13 @@ export const PageComponent: React.FC<PageComponentProps> = ({
   onMovePageClick,
   handleItemClick,
   onOpenDrawer,
+  isMobile,
 }) => {
   const router = useRouter();
   const longPressTimeout = useRef<NodeJS.Timeout>();
   const touchInteraction = useRef(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [isUnarchiving, setIsUnarchiving] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
@@ -77,78 +93,144 @@ export const PageComponent: React.FC<PageComponentProps> = ({
     handleItemClick(e, page.id, page.title || "");
   };
 
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <div
-          className="touch-action-none"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onTouchMove={handleTouchMove}
-        >
-          <Link
-            href={`/workspace?pageId=${page.id}`}
-            onClick={handleClick}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-              page.id === currentPageId
-                ? "bg-gray-50/80 dark:bg-gray-700/30"
-                : ""
-            } touch-action-none`}
-            style={{ paddingLeft: `${(level + 1) * 16}px` }}
-          >
-            {page.content_type === "canvas" ? (
-              <PanelTop className="mr-2 h-4 w-4 flex-shrink-0 text-gray-400" />
-            ) : (
-              <StickyNote className="mr-2 h-4 w-4 flex-shrink-0 text-gray-400" />
-            )}
-            <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">
-              {page.title}
-            </span>
-          </Link>
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="w-64">
-        <ContextMenuItem
-          onSelect={() => {
-            onMovePageClick(
-              page.id,
-              page.title || "",
-              page.folder_id,
-              page.primary_tag_id,
-            );
-          }}
-        >
-          <Replace className="mr-2 h-4 w-4" />
-          <span>Move to</span>
-        </ContextMenuItem>
-        <ContextMenuItem
-          onSelect={async () => {
-            try {
-              const [pageResult, tabResult] = await Promise.all([
-                deletePage({ id: page.id }),
-                deleteTabMatchingPageTitle(page.title || ""),
-              ]);
+  const handleArchivePage = async () => {
+    try {
+      setIsArchiving(true);
+      const result = await archivePageManually(page.id);
 
-              if (!pageResult.success || !tabResult.success) {
-                toast.error("Failed to delete page and associated tabs");
-                return;
-              }
+      if (!result.success) {
+        throw new Error(result.error || "Failed to archive page");
+      }
+    } catch (error) {
+      console.error("Error archiving page:", error);
+      toast.error("Failed to archive page");
+    } finally {
+      setIsArchiving(false);
+    }
+  };
 
-              if (currentPageId && page.id === currentPageId) {
-                router.push("/workspace");
-              }
-            } catch (error) {
-              console.error("Error deleting page:", error);
-            }
-          }}
-          className="text-red-600"
-        >
-          <Trash className="mr-2 h-4 w-4" />
-          <span>Delete page</span>
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+  const handleUnarchivePage = async () => {
+    try {
+      setIsUnarchiving(true);
+      const result = await unarchivePageManually(page.id);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to unarchive page");
+      }
+    } catch (error) {
+      console.error("Error unarchiving page:", error);
+      toast.error("Failed to unarchive page");
+    } finally {
+      setIsUnarchiving(false);
+    }
+  };
+
+  const content = (
+    <div
+      className="touch-action-none"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+    >
+      <Link
+        href={`/workspace?pageId=${page.id}`}
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className={`flex cursor-pointer items-center py-1 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+          page.id === currentPageId ? "bg-gray-50/80 dark:bg-gray-700/30" : ""
+        } touch-action-none`}
+        style={{ paddingLeft: `${(level + 1) * 16}px` }}
+      >
+        {page.content_type === "canvas" ? (
+          <PanelTop className="mr-2 h-4 w-4 flex-shrink-0 text-gray-400" />
+        ) : (
+          <StickyNote className="mr-2 h-4 w-4 flex-shrink-0 text-gray-400" />
+        )}
+        <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">
+          {page.title}
+        </span>
+      </Link>
+    </div>
   );
+
+  const contextMenuContent = (
+    <ContextMenuContent className="w-64">
+      <ContextMenuItem
+        onSelect={() => {
+          onMovePageClick(
+            page.id,
+            page.title || "",
+            page.folder_id,
+            page.primary_tag_id,
+          );
+        }}
+      >
+        <Replace className="mr-2 h-4 w-4" />
+        <span>Move to</span>
+      </ContextMenuItem>
+
+      {/* Archive/Unarchive Menu Item */}
+      {page.archived ? (
+        <ContextMenuItem
+          onSelect={handleUnarchivePage}
+          disabled={isUnarchiving}
+        >
+          {isUnarchiving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <ArchiveRestore className="mr-2 h-4 w-4" />
+          )}
+          <span>{isUnarchiving ? "Unarchiving..." : "Unarchive page"}</span>
+        </ContextMenuItem>
+      ) : (
+        <ContextMenuItem onSelect={handleArchivePage} disabled={isArchiving}>
+          {isArchiving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Archive className="mr-2 h-4 w-4" />
+          )}
+          <span>{isArchiving ? "Archiving..." : "Archive page"}</span>
+        </ContextMenuItem>
+      )}
+
+      <ContextMenuItem
+        onSelect={async () => {
+          try {
+            const [pageResult, tabResult] = await Promise.all([
+              deletePage({ id: page.id }),
+              deleteTabMatchingPageTitle(page.title || ""),
+            ]);
+
+            if (!pageResult.success || !tabResult.success) {
+              toast.error("Failed to delete page and associated tabs");
+              return;
+            }
+
+            if (currentPageId && page.id === currentPageId) {
+              router.push("/workspace");
+            }
+          } catch (error) {
+            console.error("Error deleting page:", error);
+            toast.error("Failed to delete page");
+          }
+        }}
+        className="text-red-600"
+      >
+        <Trash className="mr-2 h-4 w-4" />
+        <span>Delete page</span>
+      </ContextMenuItem>
+    </ContextMenuContent>
+  );
+
+  if (!isMobile) {
+    return (
+      <ContextMenu>
+        <ContextMenuTrigger>{content}</ContextMenuTrigger>
+        {contextMenuContent}
+      </ContextMenu>
+    );
+  }
+
+  return content;
 };

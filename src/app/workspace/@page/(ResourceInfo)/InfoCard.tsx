@@ -77,29 +77,31 @@ export function InfoCard({
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <div className="flex items-center justify-between space-x-2">
-            <div className="flex items-center space-x-2">
+            <div className="flex min-w-0 items-center space-x-2">
               {type === "url" ? (
-                <LinkIcon className="h-5 w-5 text-primary" />
+                <LinkIcon className="h-5 w-5 flex-shrink-0 text-primary" />
               ) : type === "book" ? (
-                <BookIcon className="h-5 w-5 text-primary" />
+                <BookIcon className="h-5 w-5 flex-shrink-0 text-primary" />
               ) : type === "research-paper" ? (
-                <MicroscopeIcon className="h-5 w-5 text-primary" />
+                <MicroscopeIcon className="h-5 w-5 flex-shrink-0 text-primary" />
               ) : (
-                <LinkIcon className="h-5 w-5 text-primary" />
+                <LinkIcon className="h-5 w-5 flex-shrink-0 text-primary" />
               )}
-              <span className="text-sm text-muted-foreground">{type}</span>
+              <span className="truncate text-sm text-muted-foreground">
+                {type}
+              </span>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => onDelete(resourceId, pageId)}
-              className="h-6 w-6 rounded-full hover:bg-muted"
+              className="h-6 w-6 flex-shrink-0 rounded-full hover:bg-muted"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-hidden">
           <TwitterEmbed html={twitterHtml || ""} />
         </CardContent>
       </Card>
@@ -107,90 +109,97 @@ export function InfoCard({
   }
 
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="w-full max-w-2xl overflow-hidden">
       <CardHeader>
         <div className="flex items-center justify-between space-x-2">
-          <div className="flex items-center space-x-2">
+          <div className="flex min-w-0 flex-1 items-center space-x-2">
             {type === "url" ? (
-              <LinkIcon className="h-5 w-5 text-primary" />
+              <LinkIcon className="h-5 w-5 flex-shrink-0 text-primary" />
             ) : type === "book" ? (
-              <BookIcon className="h-5 w-5 text-primary" />
+              <BookIcon className="h-5 w-5 flex-shrink-0 text-primary" />
             ) : type === "research-paper" ? (
-              <MicroscopeIcon className="h-5 w-5 text-primary" />
+              <MicroscopeIcon className="h-5 w-5 flex-shrink-0 text-primary" />
             ) : (
-              <LinkIcon className="h-5 w-5 text-primary" />
+              <LinkIcon className="h-5 w-5 flex-shrink-0 text-primary" />
             )}
-            <span className="text-sm text-muted-foreground">{type}</span>
+            <span className="truncate text-sm text-muted-foreground">
+              {type}
+            </span>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onDelete(resourceId, pageId)}
-            className="h-6 w-6 rounded-full hover:bg-muted"
+            className="h-6 w-6 flex-shrink-0 rounded-full hover:bg-muted"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="grid grid-cols-[160px_1fr] gap-4">
+      <CardContent className="grid grid-cols-[160px_1fr] gap-4 overflow-hidden">
         <a
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="group relative h-[90px] w-[160px] overflow-hidden rounded-md"
+          className="group relative h-[90px] w-[160px] flex-shrink-0 overflow-hidden rounded-md"
         >
           <img
             src={image}
             alt={title}
-            className="transition-all duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover transition-all duration-300 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover:bg-black/10" />
         </a>
-        <div className="space-y-2">
-          <CardTitle className="text-xl font-bold">{title}</CardTitle>
-          <span
-            className={
-              !isExpanded
-                ? "line-clamp-2 text-sm text-muted-foreground"
-                : undefined
-            }
-          >
-            {description}
-          </span>
-          {!isExpanded && "... "}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-auto p-0 text-primary"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? (
-              <>
-                Show less
-                <ChevronUp className="ml-1 h-3 w-3" />
-              </>
-            ) : (
-              <>
-                Show more
-                <ChevronDown className="ml-1 h-3 w-3" />
-              </>
+        <div className="min-w-0 space-y-2 overflow-hidden">
+          <CardTitle className="break-words text-xl font-bold leading-tight">
+            {title}
+          </CardTitle>
+          <div className="space-y-1">
+            <span
+              className={
+                !isExpanded
+                  ? "line-clamp-2 break-words text-sm text-muted-foreground"
+                  : "break-words text-sm text-muted-foreground"
+              }
+            >
+              {description}
+            </span>
+            {description && description.length > 100 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0 text-xs text-primary"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? (
+                  <>
+                    Show less
+                    <ChevronUp className="ml-1 h-3 w-3" />
+                  </>
+                ) : (
+                  <>
+                    Show more
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </>
+                )}
+              </Button>
             )}
-          </Button>
+          </div>
 
-          <div className="mt-4 flex flex-wrap gap-4">
+          <div className="mt-4 flex flex-wrap gap-4 overflow-hidden">
             {author && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <UserIcon className="h-4 w-4" />
-                <span>{author}</span>
+              <div className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
+                <UserIcon className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{author}</span>
               </div>
             )}
             {date_published && (
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <CalendarIcon className="h-4 w-4" />
-                <span>
+                <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">
                   {new Date(date_published).toLocaleDateString(undefined, {
                     year: "numeric",
-                    month: "long",
+                    month: "short",
                     day: "numeric",
                   })}
                 </span>

@@ -20,6 +20,7 @@ interface TagListProps {
   variant?: "page" | "card";
   cardId?: string;
   className?: string;
+  isMobile?: boolean;
 }
 
 interface Tag {
@@ -34,6 +35,7 @@ export function TagList({
   variant = "page",
   cardId,
   className = "",
+  isMobile = false,
 }: TagListProps) {
   const handleRemoveTag = async (tagId: string) => {
     try {
@@ -63,90 +65,94 @@ export function TagList({
     }
   };
 
+  const contextMenuContent = (
+    <ContextMenuContent className="max-h-[300px] overflow-y-auto">
+      {availableTags.map((tag: Tag) => (
+        <ContextMenuItem key={tag.id} onClick={() => void handleAddTag(tag.id)}>
+          {tag.name}
+        </ContextMenuItem>
+      ))}
+    </ContextMenuContent>
+  );
+
   // For cards, we'll just show the tags without the container
   if (variant === "card") {
+    const cardContent = (
+      <div className={`flex flex-wrap gap-2 ${className}`}>
+        {tags.map((tag: Tag) => (
+          <Badge
+            key={tag.id}
+            variant="secondary"
+            className="group relative hover:bg-destructive hover:text-destructive-foreground"
+          >
+            {tag.name}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                void handleRemoveTag(tag.id);
+              }}
+              className="ml-1 hidden group-hover:inline-flex"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        ))}
+      </div>
+    );
+
+    if (!isMobile) {
+      return (
+        <ContextMenu>
+          <ContextMenuTrigger>{cardContent}</ContextMenuTrigger>
+          {contextMenuContent}
+        </ContextMenu>
+      );
+    }
+
+    return cardContent;
+  }
+
+  // Original page variant with the card container
+  const pageContent = (
+    <div className={`mt-4 w-full max-w-2xl ${className}`}>
+      <Card className="mt-4 w-full max-w-2xl cursor-context-menu transition-colors hover:bg-muted/50">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-2">
+            <TagIcon className="h-5 w-5 text-muted-foreground" />
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag: Tag) => (
+                <Badge
+                  key={tag.id}
+                  variant="secondary"
+                  className="group relative hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  {tag.name}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void handleRemoveTag(tag.id);
+                    }}
+                    className="ml-1 hidden group-hover:inline-flex"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  if (!isMobile) {
     return (
       <ContextMenu>
-        <ContextMenuTrigger>
-          <div className={`flex flex-wrap gap-2 ${className}`}>
-            {tags.map((tag: Tag) => (
-              <Badge
-                key={tag.id}
-                variant="secondary"
-                className="group relative hover:bg-destructive hover:text-destructive-foreground"
-              >
-                {tag.name}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    void handleRemoveTag(tag.id);
-                  }}
-                  className="ml-1 hidden group-hover:inline-flex"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        </ContextMenuTrigger>
-        <ContextMenuContent className="max-h-[300px] overflow-y-auto">
-          {availableTags.map((tag: Tag) => (
-            <ContextMenuItem
-              key={tag.id}
-              onClick={() => void handleAddTag(tag.id)}
-            >
-              {tag.name}
-            </ContextMenuItem>
-          ))}
-        </ContextMenuContent>
+        <ContextMenuTrigger>{pageContent}</ContextMenuTrigger>
+        {contextMenuContent}
       </ContextMenu>
     );
   }
 
-  // Original page variant with the card container
-  return (
-    <div className={`mt-4 w-full max-w-2xl ${className}`}>
-      <ContextMenu>
-        <ContextMenuTrigger>
-          <Card className="mt-4 w-full max-w-2xl cursor-context-menu transition-colors hover:bg-muted/50">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <TagIcon className="h-5 w-5 text-muted-foreground" />
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag: Tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant="secondary"
-                      className="group relative hover:bg-destructive hover:text-destructive-foreground"
-                    >
-                      {tag.name}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          void handleRemoveTag(tag.id);
-                        }}
-                        className="ml-1 hidden group-hover:inline-flex"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </ContextMenuTrigger>
-        <ContextMenuContent className="max-h-[300px] overflow-y-auto">
-          {availableTags.map((tag: Tag) => (
-            <ContextMenuItem
-              key={tag.id}
-              onClick={() => void handleAddTag(tag.id)}
-            >
-              {tag.name}
-            </ContextMenuItem>
-          ))}
-        </ContextMenuContent>
-      </ContextMenu>
-    </div>
-  );
+  return pageContent;
 }

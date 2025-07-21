@@ -29,7 +29,6 @@ export default async function WorkspaceLayout({
   const userAgent = headersList.get("user-agent");
 
   const isMobile = userAgent?.toLowerCase().includes("mobile");
-
   if (userId) {
     trackEvent(Number(userId), "workspace_viewed", {
       username: user?.emailAddresses[0]?.emailAddress,

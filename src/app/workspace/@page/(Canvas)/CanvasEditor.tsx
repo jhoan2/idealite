@@ -20,7 +20,6 @@ import {
 import "tldraw/tldraw.css";
 import { toast } from "sonner";
 import { useCallback, useState, useRef, useEffect } from "react";
-import { ImageResponse } from "~/app/api/image/route";
 import { saveCanvasData } from "~/server/actions/canvas";
 import { debounce } from "lodash";
 import * as Sentry from "@sentry/nextjs";
@@ -31,6 +30,18 @@ import { TreeTag } from "~/server/queries/usersTags";
 import HeadingEditor from "../HeadingEditor";
 import { ScreenshotTool } from "./SnippetTool/Screenshot";
 import { ScreenshotDragging } from "./SnippetTool/ChildStates/Dragging";
+
+// Local type definitions to avoid import issues
+interface CloudflareUploadResponse {
+  key: string;
+  url: string;
+  size: number;
+  etag: string;
+}
+
+interface ImageResponse {
+  cloudflareData: CloudflareUploadResponse;
+}
 
 const myAssetStore: TLAssetStore = {
   async upload(asset, file) {
@@ -82,7 +93,7 @@ const myAssetStore: TLAssetStore = {
         formData.append("file", file);
         toast.loading("Uploading image...");
 
-        const response = await fetch("/api/image", {
+        const response = await fetch("/api/image/cloudflare", {
           method: "POST",
           credentials: "include",
           body: formData,
@@ -95,18 +106,18 @@ const myAssetStore: TLAssetStore = {
           throw new Error(`Failed to upload image: ${errorResponse}`);
         }
 
-        const { pinataData } = (await response.json()) as ImageResponse;
+        const { cloudflareData } = (await response.json()) as ImageResponse;
         toast.dismiss();
 
         window.dispatchEvent(
           new CustomEvent("tldraw:asset:uploaded", {
             detail: {
               assetId: asset.id,
-              src: `https://purple-defensive-anglerfish-674.mypinata.cloud/ipfs/${pinataData.IpfsHash}`,
+              src: cloudflareData.url,
               meta: {
                 description: metadata.description,
                 status: "uploaded",
-                ipfsHash: pinataData.IpfsHash,
+                r2Key: cloudflareData.key,
               },
             },
           }),
@@ -198,7 +209,7 @@ export default function CanvasEditor({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/image", {
+      const response = await fetch("/api/image/cloudflare", {
         method: "POST",
         body: formData,
       });
@@ -210,8 +221,8 @@ export default function CanvasEditor({
         throw new Error(`Failed to upload canvas image: ${errorResponse}`);
       }
 
-      const { pinataData } = (await response.json()) as ImageResponse;
-      return pinataData.IpfsHash;
+      const { cloudflareData } = (await response.json()) as ImageResponse;
+      return cloudflareData.key;
     } catch (error) {
       Sentry.captureException(error);
       console.error("Error exporting canvas:", error);
@@ -246,18 +257,18 @@ export default function CanvasEditor({
 
       const assetMetadata = activeAssets.map((asset) => {
         const src = asset.props.src || "";
-        let ipfsHash = null;
+        let r2Key = null;
 
-        if (src && src.includes("mypinata.cloud/ipfs/")) {
-          const matches = src.match(/ipfs\/([^/?#]+)/);
-          ipfsHash = matches?.[1] || null;
+        if (src && src.includes("idealite.xyz/")) {
+          const matches = src.match(/idealite\.xyz\/(.+)$/);
+          r2Key = matches?.[1] || null;
         }
 
         return {
           id: asset.id,
           src,
           type: asset.type,
-          ipfsHash,
+          r2Key,
           meta: asset.meta,
         };
       });

@@ -13,12 +13,23 @@ import { revalidatePath } from "next/cache";
 import { updateStorageUsed } from "~/server/actions/storage";
 import * as Sentry from "@sentry/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+
+// Configure Cloudflare R2 client
+const r2Client = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+  },
+});
 
 type AssetMetadata = {
   id: string;
   src: string;
   type: string;
-  ipfsHash: string | null;
+  r2Key: string | null;
   meta: any;
 };
 
@@ -67,28 +78,28 @@ export async function saveCanvasData(
     if (page.content && page.content_type === "canvas") {
       try {
         const oldSnapshot = JSON.parse(page.content);
-        // Extract IPFS hashes from old snapshot
-        // This depends on how your snapshot structure works
+        // Extract R2 keys from old snapshot
         if (oldSnapshot.store?.assets) {
           oldAssetMetadata = Object.values(oldSnapshot.store.assets).map(
             (asset: any) => {
               const src = asset.props?.src;
-              let ipfsHash = null;
+              let r2Key = null;
 
               if (
                 src &&
                 typeof src === "string" &&
-                src.includes("mypinata.cloud/ipfs/")
+                src.includes("idealite.xyz/")
               ) {
-                const matches = src.match(/ipfs\/([^/?#]+)/);
-                ipfsHash = matches?.[1] || null;
+                // Extract R2 key from URL like https://idealite.xyz/images/userId/uuid.ext
+                const matches = src.match(/idealite\.xyz\/(.+)$/);
+                r2Key = matches?.[1] || null;
               }
 
               return {
                 id: asset.id,
                 src: asset.props?.src || "",
                 type: asset.type || "",
-                ipfsHash,
+                r2Key,
                 meta: asset.meta,
               };
             },
@@ -99,10 +110,10 @@ export async function saveCanvasData(
       }
     }
 
-    // 5. Get all assets with IPFS hashes that are currently used on the canvas
-    const usedAssetsWithIpfs = assetMetadata.filter((a) => a.ipfsHash);
-    const usedIpfsHashes = usedAssetsWithIpfs
-      .map((a) => a.ipfsHash)
+    // 5. Get all assets with R2 keys that are currently used on the canvas
+    const usedAssetsWithR2 = assetMetadata.filter((a) => a.r2Key);
+    const usedR2Keys = usedAssetsWithR2
+      .map((a) => a.r2Key)
       .filter(Boolean) as string[];
 
     // 6. Get existing cards for this page
@@ -110,16 +121,16 @@ export async function saveCanvasData(
       where: and(eq(cards.page_id, pageId), eq(cards.user_id, userId)),
     });
 
-    const existingIpfsHashes = existingCards.map((card) => card.image_cid);
+    const existingR2Keys = existingCards.map((card) => card.image_cid);
 
     // 7. Find which assets need cards created (used on canvas but no card exists)
-    const ipfsHashesNeedingCards = usedIpfsHashes.filter(
-      (hash) => !existingIpfsHashes.includes(hash),
+    const r2KeysNeedingCards = usedR2Keys.filter(
+      (key) => !existingR2Keys.includes(key),
     );
 
     // 8. Find which cards need deletion (card exists but asset not used on canvas)
-    const ipfsHashesToDelete = existingIpfsHashes.filter(
-      (hash) => !usedIpfsHashes.includes(hash as string),
+    const r2KeysToDelete = existingR2Keys.filter(
+      (key) => !usedR2Keys.includes(key as string),
     );
 
     let createdCount = 0;
@@ -128,16 +139,14 @@ export async function saveCanvasData(
     // Use a single transaction for all database operations
     await db.transaction(async (tx) => {
       // Create cards for new assets (bulk insert)
-      if (ipfsHashesNeedingCards.length > 0) {
-        const newCards = ipfsHashesNeedingCards
-          .map((ipfsHash) => {
-            const asset = usedAssetsWithIpfs.find(
-              (a) => a.ipfsHash === ipfsHash,
-            );
+      if (r2KeysNeedingCards.length > 0) {
+        const newCards = r2KeysNeedingCards
+          .map((r2Key) => {
+            const asset = usedAssetsWithR2.find((a) => a.r2Key === r2Key);
             return {
               user_id: userId,
               page_id: pageId,
-              image_cid: ipfsHash,
+              image_cid: r2Key,
               description: asset?.meta?.description || "",
             };
           })
@@ -174,17 +183,17 @@ export async function saveCanvasData(
       }
 
       // Delete cards in bulk
-      if (ipfsHashesToDelete.length > 0) {
+      if (r2KeysToDelete.length > 0) {
         await tx
           .delete(cards)
           .where(
             and(
               eq(cards.user_id, userId),
               eq(cards.page_id, pageId),
-              inArray(cards.image_cid, ipfsHashesToDelete as string[]),
+              inArray(cards.image_cid, r2KeysToDelete as string[]),
             ),
           );
-        deletedCount = ipfsHashesToDelete.length;
+        deletedCount = r2KeysToDelete.length;
       }
 
       // Update page with new snapshot
@@ -199,37 +208,37 @@ export async function saveCanvasData(
         .where(eq(pages.id, pageId));
     });
 
-    // 10. Delete images from Pinata and update storage quota
-    if (ipfsHashesToDelete.length > 0) {
-      // Find the image records for these IPFS hashes
+    // 10. Delete images from R2 and update storage quota
+    if (r2KeysToDelete.length > 0) {
+      // Find the image records for these R2 keys
       const imagesToDelete = await db.query.images.findMany({
-        where: inArray(images.url, ipfsHashesToDelete as string[]),
+        where: inArray(images.url, r2KeysToDelete as string[]),
       });
 
-      // Parallel deletion of images from Pinata
+      // Parallel deletion of images from R2
       if (imagesToDelete.length > 0) {
         const deletionPromises = imagesToDelete.map(async (image) => {
           try {
-            // Delete from Pinata
-            const pinataRes = await fetch(
-              `https://api.pinata.cloud/pinning/unpin/${image.url}`,
-              {
-                method: "DELETE",
-                headers: {
-                  Authorization: `Bearer ${process.env.PINATA_JWT}`,
-                },
-              },
-            );
+            // Delete from Cloudflare R2
+            const deleteCommand = new DeleteObjectCommand({
+              Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+              Key: image.url, // The R2 key is stored in the url field
+            });
 
-            if (pinataRes.ok || pinataRes.status === 404) {
-              // Update user's storage quota and delete image record
-              await updateStorageUsed(userId, -image.size);
-              await db.delete(images).where(eq(images.id, image.id));
-              return true;
-            }
-            return false;
+            await r2Client.send(deleteCommand);
+
+            // Update user's storage quota and delete image record
+            await updateStorageUsed(userId, -image.size);
+            await db.delete(images).where(eq(images.id, image.id));
+            return true;
           } catch (error) {
             console.error(`Error deleting image ${image.id}:`, error);
+            Sentry.captureException(error, {
+              extra: {
+                imageId: image.id,
+                r2Key: image.url,
+              },
+            });
             return false;
           }
         });
@@ -248,21 +257,24 @@ export async function saveCanvasData(
         });
 
         if (oldImage) {
-          // Delete from Pinata
-          const pinataRes = await fetch(
-            `https://api.pinata.cloud/pinning/unpin/${oldCanvasImageCid}`,
-            {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${process.env.PINATA_JWT}`,
-              },
-            },
-          );
+          // Delete from Cloudflare R2
+          const deleteCommand = new DeleteObjectCommand({
+            Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!,
+            Key: oldCanvasImageCid,
+          });
 
-          if (!pinataRes.ok && pinataRes.status !== 404) {
-            Sentry.captureException(
-              `Failed to delete old canvas image ${oldCanvasImageCid} from Pinata`,
+          try {
+            await r2Client.send(deleteCommand);
+          } catch (r2Error) {
+            console.error(
+              "Failed to delete old canvas image from R2:",
+              r2Error,
             );
+            Sentry.captureException(r2Error, {
+              extra: {
+                r2Key: oldCanvasImageCid,
+              },
+            });
           }
 
           // Update user's storage quota
@@ -289,7 +301,12 @@ export async function saveCanvasData(
       deleted: deletedCount,
     };
   } catch (error) {
-    Sentry.captureException(error);
+    Sentry.captureException(error, {
+      tags: {
+        feature: "canvas",
+        source: "save_canvas_data",
+      },
+    });
     return {
       success: false,
       error: "Failed to save canvas data",

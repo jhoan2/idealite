@@ -44,24 +44,34 @@ export async function createResource(input: CreateResourceInput) {
     });
 
     if (existingResource) {
-      // Create relations if they don't exist
-      await db
-        .insert(usersResources)
-        .values({
-          user_id: userId,
-          resource_id: existingResource.id,
-        })
-        .onConflictDoNothing();
+      try {
+        // Create relations if they don't exist
+        await db
+          .insert(usersResources)
+          .values({
+            user_id: userId,
+            resource_id: existingResource.id,
+          })
+          .onConflictDoNothing();
 
-      await db
-        .insert(resourcesPages)
-        .values({
-          page_id: validatedInput.page_id,
-          resource_id: existingResource.id,
-        })
-        .onConflictDoNothing();
+        await db
+          .insert(resourcesPages)
+          .values({
+            page_id: validatedInput.page_id,
+            resource_id: existingResource.id,
+          })
+          .onConflictDoNothing();
 
-      return existingResource;
+        return existingResource;
+      } catch (relationError) {
+        console.error(
+          "Error creating relations for existing resource:",
+          relationError,
+        );
+        throw new Error(
+          `Failed to create relations: ${relationError instanceof Error ? relationError.message : String(relationError)}`,
+        );
+      }
     }
 
     // Create new resource if it doesn't exist
@@ -72,21 +82,61 @@ export async function createResource(input: CreateResourceInput) {
       })
       .returning();
 
-    await db.insert(usersResources).values({
-      user_id: userId,
-      resource_id: resource?.id || "",
-    });
+    if (!resource?.id) {
+      throw new Error("Failed to create resource - no ID returned");
+    }
 
-    await db.insert(resourcesPages).values({
-      page_id: validatedInput.page_id,
-      resource_id: resource?.id || "",
-    });
+    try {
+      await db.insert(usersResources).values({
+        user_id: userId,
+        resource_id: resource.id,
+      });
+    } catch (userResourceError) {
+      console.error(
+        "Error creating user-resource relation:",
+        userResourceError,
+      );
+      throw new Error(
+        `Failed to create user-resource relation: ${userResourceError instanceof Error ? userResourceError.message : String(userResourceError)}`,
+      );
+    }
+
+    try {
+      await db.insert(resourcesPages).values({
+        page_id: validatedInput.page_id,
+        resource_id: resource.id,
+      });
+    } catch (resourcePageError) {
+      console.error(
+        "Error creating resource-page relation:",
+        resourcePageError,
+      );
+      throw new Error(
+        `Failed to create resource-page relation: ${resourcePageError instanceof Error ? resourcePageError.message : String(resourcePageError)}`,
+      );
+    }
 
     revalidatePath(`/workspace/${validatedInput.page_id}`);
     return resource;
   } catch (error) {
-    console.error("Error creating resource:", error);
-    throw new Error("Failed to create resource");
+    // Check if it's a Zod validation error
+    if (error instanceof z.ZodError) {
+      console.error("Zod validation errors:", error.errors);
+      throw new Error(
+        `Validation failed: ${error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")}`,
+      );
+    }
+
+    // Check if it's a database error
+    if (error && typeof error === "object" && "code" in error) {
+      console.error("Database error code:", (error as any).code);
+      console.error("Database error detail:", (error as any).detail);
+    }
+
+    // Re-throw with more context
+    throw new Error(
+      `Failed to create resource: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 

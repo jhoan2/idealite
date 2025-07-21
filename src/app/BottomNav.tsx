@@ -3,13 +3,18 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Folder, UserRound, Inbox } from "lucide-react";
+import { Home, Folder, UserRound, Inbox, Bell } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { NotificationBadge } from "~/app/NotificationBadge";
 
 export default function BottomNav() {
   const pathname = usePathname();
 
-  if (pathname.includes("/channelFrame") || pathname === "/") {
+  if (
+    pathname.includes("/channelFrame") ||
+    pathname === "/" ||
+    pathname.includes("/mobile")
+  ) {
     return null;
   }
 
@@ -18,6 +23,7 @@ export default function BottomNav() {
     { icon: Folder, label: "Workspace", href: "/workspace" },
     { icon: Inbox, label: "Review", href: "/review" },
     { icon: UserRound, label: "Profile", href: "/profile" },
+    { icon: Bell, label: "Notifications", href: "/notifications" },
   ];
 
   return (
@@ -33,8 +39,12 @@ export default function BottomNav() {
                   : "hover:bg-accent/50"
               }`}
             >
-              <item.icon className="h-5 w-5" />
-              <span className="text-xs">{item.label}</span>
+              {item.href === "/notifications" ? (
+                <NotificationBadge className="h-5 w-5" />
+              ) : (
+                <item.icon className="h-5 w-5" />
+              )}
+              <span className="text-[10px]">{item.label}</span>
             </Button>
           </Link>
         ))}

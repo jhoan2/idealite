@@ -134,6 +134,10 @@ const updateCardSchema = z.object({
   question: z.string().optional(),
   answer: z.string().optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
+  // Add SRS fields
+  next_review: z.string().datetime().nullable().optional(),
+  last_reviewed: z.string().datetime().optional(),
+  mastered_at: z.string().datetime().nullable().optional(),
   sourceLocator: z
     .object({
       type: z.enum(["page", "canvas"]),
@@ -151,12 +155,32 @@ export async function updateCard(input: z.infer<typeof updateCardSchema>) {
 
   const validatedInput = updateCardSchema.parse(input);
 
+  // Prepare the update data with proper type conversion for dates
+  const updateData: any = {
+    ...validatedInput,
+    updated_at: new Date(),
+  };
+
+  // Convert string dates to Date objects
+  if (validatedInput.next_review !== undefined) {
+    updateData.next_review = validatedInput.next_review
+      ? new Date(validatedInput.next_review)
+      : null;
+  }
+
+  if (validatedInput.last_reviewed) {
+    updateData.last_reviewed = new Date(validatedInput.last_reviewed);
+  }
+
+  if (validatedInput.mastered_at !== undefined) {
+    updateData.mastered_at = validatedInput.mastered_at
+      ? new Date(validatedInput.mastered_at)
+      : null;
+  }
+
   const [updatedCard] = await db
     .update(cards)
-    .set({
-      ...validatedInput,
-      updated_at: new Date(),
-    })
+    .set(updateData)
     .where(and(eq(cards.id, validatedInput.id), eq(cards.user_id, userId)))
     .returning();
 
