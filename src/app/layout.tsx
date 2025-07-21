@@ -11,7 +11,7 @@ export const metadata = {
   title: "idealite",
   description: "Learning management system for autodidacts",
   icons: {
-    icon: "/icon48.png",
+    icon: "/icon48-dark.png",
   },
 };
 

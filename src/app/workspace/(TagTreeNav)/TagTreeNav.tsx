@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -56,6 +56,31 @@ import Link from "next/link";
 import { FeatureTooltip } from "../(FeatureDiscover)/FeatureTooltip";
 import { FeatureKey } from "../(FeatureDiscover)/FeatureDiscoveryContext";
 
+// Add filtering helper functions
+function filterPages(pages: TreePage[], showArchived: boolean): TreePage[] {
+  return pages.filter((page) => page.archived === showArchived);
+}
+
+function filterFolders(
+  folders: TreeFolder[],
+  showArchived: boolean,
+): TreeFolder[] {
+  return folders.map((folder) => ({
+    ...folder,
+    pages: filterPages(folder.pages, showArchived),
+    subFolders: filterFolders(folder.subFolders, showArchived),
+  }));
+}
+
+function filterTagTree(tags: TreeTag[], showArchived: boolean): TreeTag[] {
+  return tags.map((tag) => ({
+    ...tag,
+    pages: filterPages(tag.pages, showArchived),
+    folders: filterFolders(tag.folders, showArchived),
+    children: filterTagTree(tag.children, showArchived),
+  }));
+}
+
 interface DrawerState {
   isOpen: boolean;
   type: "tag" | "folder" | "page" | null;
@@ -96,7 +121,6 @@ const TreeNode: React.FC<{
   const [isExpanded, setIsExpanded] = useState(!node.is_collapsed);
   const router = useRouter();
 
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPageId = searchParams.get("pageId");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
@@ -433,159 +457,273 @@ const TreeNode: React.FC<{
             </DialogFooter>
           </form>
         </DialogContent>
-        <ContextMenu>
-          <ContextMenuTrigger>
-            <div
-              className={isMobile ? "touch-action-none select-none" : ""}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              onTouchMove={handleTouchMove}
-            >
+        {!isMobile ? (
+          <ContextMenu>
+            <ContextMenuTrigger>
               <div
-                className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
-                style={{ paddingLeft: `${level * 16}px` }}
-                onClick={handleToggleExpand}
+                className="touch-action-none select-none"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                onTouchMove={handleTouchMove}
               >
-                {
-                  <button
-                    className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
-                    aria-expanded={isExpanded}
-                    aria-label={isExpanded ? "Collapse" : "Expand"}
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                    )}
-                  </button>
-                }
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {node.name}
-                </span>
-              </div>
+                <div
+                  className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
+                  style={{ paddingLeft: `${level * 16}px` }}
+                  onClick={handleToggleExpand}
+                >
+                  {
+                    <button
+                      className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? "Collapse" : "Expand"}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      )}
+                    </button>
+                  }
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {node.name}
+                  </span>
+                </div>
 
-              {/* Expanded content */}
-              {isExpanded && (
-                <div className="ml-2">
-                  {hasPages &&
-                    node.pages.map((page) => (
-                      <PageComponent
-                        key={page.id}
-                        page={{
-                          id: page.id,
-                          title: page.title || "",
-                          folder_id: page.folder_id,
-                          primary_tag_id: page.primary_tag_id,
-                          content_type: page.content_type || "page",
-                        }}
-                        level={level}
-                        currentPageId={currentPageId ?? undefined}
-                        onMovePageClick={(pageId, title) => {
-                          setSelectedPage({
-                            id: pageId,
-                            title,
+                {/* Expanded content */}
+                {isExpanded && (
+                  <div className="ml-2">
+                    {hasPages &&
+                      node.pages.map((page) => (
+                        <PageComponent
+                          key={page.id}
+                          page={{
+                            id: page.id,
+                            title: page.title || "",
                             folder_id: page.folder_id,
                             primary_tag_id: page.primary_tag_id,
-                          });
-                          setShowMoveDialog(true);
-                        }}
-                        handleItemClick={handleItemClick}
-                        onOpenDrawer={onOpenDrawer}
-                      />
-                    ))}
-                  {/* First render folders */}
-                  {hasFolders &&
-                    node.folders.map((folder) => (
-                      <FolderComponent
-                        key={folder.id}
-                        folder={folder}
-                        level={level}
-                        parentTagId={node.id}
-                        expandedFolders={expandedFolders}
-                        handleFolderToggle={handleFolderToggle}
-                        handleItemClick={handleItemClick}
-                        currentPageId={currentPageId ?? undefined}
-                        onMovePageClick={(pageId, title) => {
-                          setSelectedPage({
-                            id: pageId,
-                            title,
-                            folder_id: folder.id,
-                            primary_tag_id: node.id,
-                          });
-                          setShowMoveDialog(true);
-                        }}
-                        onCreatePageInFolder={handleCreatePageInFolder}
-                        onCreateSubfolder={handleCreateSubfolder}
-                        isLoading={isLoading}
-                        onOpenDrawer={onOpenDrawer}
-                      />
-                    ))}
+                            content_type: page.content_type || "page",
+                            archived: page.archived,
+                          }}
+                          level={level}
+                          currentPageId={currentPageId ?? undefined}
+                          onMovePageClick={(pageId, title) => {
+                            setSelectedPage({
+                              id: pageId,
+                              title,
+                              folder_id: page.folder_id,
+                              primary_tag_id: page.primary_tag_id,
+                            });
+                            setShowMoveDialog(true);
+                          }}
+                          handleItemClick={handleItemClick}
+                          onOpenDrawer={onOpenDrawer}
+                          isMobile={isMobile}
+                        />
+                      ))}
+                    {/* First render folders */}
+                    {hasFolders &&
+                      node.folders.map((folder) => (
+                        <FolderComponent
+                          key={folder.id}
+                          folder={folder}
+                          level={level}
+                          parentTagId={node.id}
+                          expandedFolders={expandedFolders}
+                          handleFolderToggle={handleFolderToggle}
+                          handleItemClick={handleItemClick}
+                          currentPageId={currentPageId ?? undefined}
+                          onMovePageClick={(pageId, title) => {
+                            setSelectedPage({
+                              id: pageId,
+                              title,
+                              folder_id: folder.id,
+                              primary_tag_id: node.id,
+                            });
+                            setShowMoveDialog(true);
+                          }}
+                          onCreatePageInFolder={handleCreatePageInFolder}
+                          onCreateSubfolder={handleCreateSubfolder}
+                          isLoading={isLoading}
+                          onOpenDrawer={onOpenDrawer}
+                          isMobile={isMobile}
+                        />
+                      ))}
 
-                  {/* Finally render child tags */}
-                  {hasChildren &&
-                    node.children.map((child) => (
-                      <TreeNode
-                        key={child.id}
-                        node={child}
-                        level={level + 1}
-                        allTags={allTags}
-                        userId={userId}
-                        onOpenDrawer={onOpenDrawer}
-                        isMobile={isMobile}
-                      />
-                    ))}
-                </div>
-              )}
+                    {/* Finally render child tags */}
+                    {hasChildren &&
+                      node.children.map((child) => (
+                        <TreeNode
+                          key={child.id}
+                          node={child}
+                          level={level + 1}
+                          allTags={allTags}
+                          userId={userId}
+                          onOpenDrawer={onOpenDrawer}
+                          isMobile={isMobile}
+                        />
+                      ))}
+                  </div>
+                )}
+              </div>
+            </ContextMenuTrigger>
+            {/* Context menu for tags */}
+            <ContextMenuContent className="w-64">
+              <ContextMenuItem
+                onSelect={() => handleCreatePage("page")}
+                disabled={isLoading}
+                className={isLoading ? "cursor-not-allowed opacity-50" : ""}
+              >
+                <StickyNote className="mr-2 h-4 w-4" />
+                <span>{isLoading ? "Creating..." : "Create  page"}</span>
+              </ContextMenuItem>
+              <ContextMenuItem
+                onSelect={() => handleCreatePage("canvas")}
+                disabled={isLoading}
+                className={isLoading ? "cursor-not-allowed opacity-50" : ""}
+              >
+                <PanelTop className="mr-2 h-4 w-4" />
+                <span>{isLoading ? "Creating..." : "Create canvas"}</span>
+              </ContextMenuItem>
+              <ContextMenuItem
+                onSelect={() => handleCreateFolder()}
+                disabled={isLoading}
+              >
+                <FolderPlus className="mr-2 h-4 w-4" />
+                <span>Create folder</span>
+              </ContextMenuItem>
+              <ContextMenuItem
+                onSelect={(e) => {
+                  setShowDialog(true);
+                }}
+              >
+                <Tag className="mr-2 h-4 w-4" />
+                <span>Create tag</span>
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={handleArchiveTag}>
+                <Archive className="mr-2 h-4 w-4" />
+                <span>Archive tag</span>
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+        ) : (
+          <div
+            className="touch-action-none select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+          >
+            <div
+              className={`flex cursor-pointer items-center py-1 transition-colors duration-150 ease-in-out hover:bg-gray-50 dark:hover:bg-gray-700`}
+              style={{ paddingLeft: `${level * 16}px` }}
+              onClick={handleToggleExpand}
+            >
+              {
+                <button
+                  className="mr-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
+                  aria-expanded={isExpanded}
+                  aria-label={isExpanded ? "Collapse" : "Expand"}
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  )}
+                </button>
+              }
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {node.name}
+              </span>
             </div>
-          </ContextMenuTrigger>
-          {/* Context menu for tags */}
-          <ContextMenuContent className="w-64">
-            <ContextMenuItem
-              onSelect={() => handleCreatePage("page")}
-              disabled={isLoading}
-              className={isLoading ? "cursor-not-allowed opacity-50" : ""}
-            >
-              <StickyNote className="mr-2 h-4 w-4" />
-              <span>{isLoading ? "Creating..." : "Create  page"}</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onSelect={() => handleCreatePage("canvas")}
-              disabled={isLoading}
-              className={isLoading ? "cursor-not-allowed opacity-50" : ""}
-            >
-              <PanelTop className="mr-2 h-4 w-4" />
-              <span>{isLoading ? "Creating..." : "Create canvas"}</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onSelect={() => handleCreateFolder()}
-              disabled={isLoading}
-            >
-              <FolderPlus className="mr-2 h-4 w-4" />
-              <span>Create folder</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onSelect={(e) => {
-                setShowDialog(true);
-              }}
-            >
-              <Tag className="mr-2 h-4 w-4" />
-              <span>Create tag</span>
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={handleArchiveTag}>
-              <Archive className="mr-2 h-4 w-4" />
-              <span>Archive tag</span>
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
+
+            {/* Expanded content */}
+            {isExpanded && (
+              <div className="ml-2">
+                {hasPages &&
+                  node.pages.map((page) => (
+                    <PageComponent
+                      key={page.id}
+                      page={{
+                        id: page.id,
+                        title: page.title || "",
+                        folder_id: page.folder_id,
+                        primary_tag_id: page.primary_tag_id,
+                        content_type: page.content_type || "page",
+                        archived: page.archived,
+                      }}
+                      level={level}
+                      currentPageId={currentPageId ?? undefined}
+                      onMovePageClick={(pageId, title) => {
+                        setSelectedPage({
+                          id: pageId,
+                          title,
+                          folder_id: page.folder_id,
+                          primary_tag_id: page.primary_tag_id,
+                        });
+                        setShowMoveDialog(true);
+                      }}
+                      handleItemClick={handleItemClick}
+                      onOpenDrawer={onOpenDrawer}
+                      isMobile={isMobile}
+                    />
+                  ))}
+                {/* First render folders */}
+                {hasFolders &&
+                  node.folders.map((folder) => (
+                    <FolderComponent
+                      key={folder.id}
+                      folder={folder}
+                      level={level}
+                      parentTagId={node.id}
+                      expandedFolders={expandedFolders}
+                      handleFolderToggle={handleFolderToggle}
+                      handleItemClick={handleItemClick}
+                      currentPageId={currentPageId ?? undefined}
+                      onMovePageClick={(pageId, title) => {
+                        setSelectedPage({
+                          id: pageId,
+                          title,
+                          folder_id: folder.id,
+                          primary_tag_id: node.id,
+                        });
+                        setShowMoveDialog(true);
+                      }}
+                      onCreatePageInFolder={handleCreatePageInFolder}
+                      onCreateSubfolder={handleCreateSubfolder}
+                      isLoading={isLoading}
+                      onOpenDrawer={onOpenDrawer}
+                      isMobile={isMobile}
+                    />
+                  ))}
+
+                {/* Finally render child tags */}
+                {hasChildren &&
+                  node.children.map((child) => (
+                    <TreeNode
+                      key={child.id}
+                      node={child}
+                      level={level + 1}
+                      allTags={allTags}
+                      userId={userId}
+                      onOpenDrawer={onOpenDrawer}
+                      isMobile={isMobile}
+                    />
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
       </Dialog>
     </>
   );
 };
 
+// Update MinimalistTree component
 const MinimalistTree: React.FC<
   TreeProps & {
     userId: string;
     isMobile: boolean;
+    showArchived: boolean;
+    onToggleArchived: () => void;
     onLongPress?: (
       type: "tag" | "folder" | "page",
       data: TreeTag | TreeFolder | TreePage,
@@ -595,7 +733,20 @@ const MinimalistTree: React.FC<
       data: TreeTag | TreeFolder | TreePage,
     ) => void;
   }
-> = ({ data, userId, isMobile, onLongPress, onOpenDrawer }) => {
+> = ({
+  data,
+  userId,
+  isMobile,
+  showArchived,
+  onToggleArchived,
+  onLongPress,
+  onOpenDrawer,
+}) => {
+  // Filter the data based on archive status
+  const filteredData = useMemo(() => {
+    return filterTagTree(data, showArchived);
+  }, [data, showArchived]);
+
   return (
     <div className="w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex justify-center pt-2">
@@ -611,23 +762,38 @@ const MinimalistTree: React.FC<
               <Compass className="h-4 w-4" />
             </Link>
           </Button>
+          <Button
+            variant={showArchived ? "default" : "ghost"}
+            size="icon"
+            title={showArchived ? "Show Active Pages" : "Show Archived Pages"}
+            onClick={onToggleArchived}
+          >
+            <Archive className="h-4 w-4" />
+          </Button>
         </FeatureTooltip>
       </div>
       <div
         className={`custom-scrollbar ${isMobile ? "pb-36" : ""} h-screen overflow-y-auto pb-48 pl-4`}
       >
-        {data.map((node) => (
-          <TreeNode
-            key={node.id}
-            node={node}
-            level={0}
-            allTags={data}
-            userId={userId}
-            onOpenDrawer={onOpenDrawer}
-            isMobile={isMobile}
-          />
-        ))}
+        {filteredData.length === 0 ? (
+          <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+            {showArchived ? "No archived pages found" : "No active pages found"}
+          </div>
+        ) : (
+          filteredData.map((node) => (
+            <TreeNode
+              key={node.id}
+              node={node}
+              level={0}
+              allTags={data} // Pass original data for context
+              userId={userId}
+              onOpenDrawer={onOpenDrawer}
+              isMobile={isMobile}
+            />
+          ))
+        )}
       </div>
+
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
@@ -673,6 +839,7 @@ export default function TagTreeNav({
   isMobile: boolean;
 }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const handleCreateRootPage = async (type: "page" | "canvas") => {
     try {
@@ -716,6 +883,11 @@ export default function TagTreeNav({
     data: TreeTag | TreeFolder | TreePage,
   ) => {
     setDrawerState({ isOpen: true, type, data });
+  };
+
+  // Function to toggle archive state
+  const handleToggleArchived = () => {
+    setShowArchived(!showArchived);
   };
 
   return (
@@ -762,14 +934,19 @@ export default function TagTreeNav({
             )}
           </DrawerContent>
         </Drawer>
+
         <MinimalistTree
           data={userTagTree}
           userId={userId}
-          isMobile={isMobile ? true : false}
+          isMobile={isMobile}
+          showArchived={showArchived}
+          onToggleArchived={handleToggleArchived}
           onOpenDrawer={handleOpenDrawer}
         />
       </div>
-      {isMobile && (
+
+      {/* Hide create buttons when viewing archived pages */}
+      {isMobile && !showArchived && (
         <div className="mb-4 bg-background px-4 py-3 md:hidden">
           <div className="flex w-full justify-between space-x-1">
             <Button
@@ -795,9 +972,6 @@ export default function TagTreeNav({
               disabled={isLoading}
             >
               <FolderPlus className="h-6 w-6" />
-            </Button>
-            <Button variant="ghost" className="flex-1">
-              {/* <Archive className="h-6 w-6" /> */}
             </Button>
           </div>
         </div>

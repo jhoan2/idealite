@@ -38,6 +38,9 @@ export const env = createEnv({
     CLERK_SECRET_KEY: z.string(),
     CLERK_WEBHOOK_SECRET: z.string(),
     INTEGRATION_SECRET_KEY: z.string(),
+    CLOUDFLARE_ACCOUNT_ID: z.string(),
+    CLOUDFLARE_R2_ACCESS_KEY_ID: z.string(),
+    CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string(),
   },
 
   /**
@@ -101,6 +104,10 @@ export const env = createEnv({
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     INTEGRATION_SECRET_KEY: process.env.INTEGRATION_SECRET_KEY,
+    CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
+    CLOUDFLARE_R2_ACCESS_KEY_ID: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+    CLOUDFLARE_R2_SECRET_ACCESS_KEY:
+      process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
   },
   /**
 

@@ -39,6 +39,7 @@ export const users = createTable("user", {
   avatar_url: varchar("avatar_url", { length: 256 }),
   bio: text("bio"),
   role: varchar("role", { length: 50 }).default("user").notNull(),
+  is_onboarded: boolean("is_onboarded").default(false).notNull(),
   created_at: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -138,10 +139,12 @@ export const pages = createTable(
       () => new Date(),
     ),
     deleted: boolean("deleted").default(false),
+    archived: boolean("archived").default(false),
   },
   (table) => [
     index("page_created_at_idx").on(table.created_at),
     index("page_deleted_idx").on(table.deleted),
+    index("page_archived_idx").on(table.archived),
     index("page_primary_tag_id_idx").on(table.primary_tag_id),
     index("page_title_search_idx").using(
       "gin",
@@ -680,13 +683,10 @@ export const integrationCredentials = createTable(
       sql`now()`,
     ),
   },
-  (table) => {
-    return {
-      token_prefix_idx: index("integration_credentials_token_prefix_idx").on(
-        table.hashed_token,
-      ),
-    };
-  },
+  (table) => [
+    // the index formerly returned inside an object
+    index("integration_credentials_token_prefix_idx").on(table.hashed_token),
+  ],
 );
 
 export const integrationCredentialsRelations = relations(
@@ -697,4 +697,79 @@ export const integrationCredentialsRelations = relations(
       references: [users.id],
     }),
   }),
+);
+
+// ----------------------------------------------------------------
+// Notifications
+// ----------------------------------------------------------------
+
+export const notificationStatusEnum = pgEnum("notification_status", [
+  "unread", // user hasn’t seen it
+  "read", // user opened it
+  "reversed", // user clicked “undo”
+  "expired", // system‐driven expiration
+]);
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "info",
+  "creation",
+  "deletion",
+  "update",
+  "suggestion",
+]);
+
+export const entityTypeEnum = pgEnum("entity_type", [
+  "page",
+  "tag",
+  "card",
+  "resource",
+  "folder",
+  "user",
+]);
+
+export const notifications = createTable(
+  "notification",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    // classification
+    event_type: varchar("event_type", { length: 50 }).notNull(),
+    notification_type: notificationTypeEnum("notification_type").notNull(),
+
+    // what the notification is about
+    entity_type: entityTypeEnum("entity_type").notNull(),
+    entity_id: uuid("entity_id").notNull(),
+
+    // display content
+    title: varchar("title", { length: 255 }).notNull(),
+    message: text("message"),
+
+    // a single status field + timestamp
+    status: notificationStatusEnum("status").notNull().default("unread"),
+    status_changed_at: timestamp("status_changed_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+
+    // free‐form context for reversals, etc.
+    context_data: jsonb("context_data")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    // audit
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (table) => [
+    index("notification_user_id_idx").on(table.user_id),
+    index("notification_event_type_idx").on(table.event_type),
+    index("notification_entity_idx").on(table.entity_type, table.entity_id),
+    index("notification_status_changed_idx").on(table.status_changed_at),
+  ],
 );

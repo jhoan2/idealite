@@ -38,6 +38,10 @@ import { HeadingWithId } from "./HeadingWithId";
 import { ListItemWithId } from "./ListItemWithId";
 import { BlockquoteWithId } from "./BlockquoteWithId";
 import { CodeBlockWithId } from "./CodeBlockWithId";
+import { TaskListWithId } from "./TaskListWithId";
+import { TaskItemWithId } from "./TaskItemWithId";
+import { BulletListWithId } from "./BulletListWithId";
+import { OrderedListWithId } from "./OrderedListWithId";
 
 const BodyEditor = ({
   content,
@@ -96,7 +100,8 @@ const BodyEditor = ({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/image", {
+      // Changed from "/api/image" to "/api/image/cloudflare"
+      const response = await fetch("/api/image/cloudflare", {
         method: "POST",
         body: formData,
       });
@@ -107,14 +112,12 @@ const BodyEditor = ({
       }
 
       const data = await response.json();
-      const privateGateway = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
 
-      // Insert image at cursor position
       editor
         .chain()
         .focus()
         .setImage({
-          src: privateGateway + "/ipfs/" + data.image.url,
+          src: data.cloudflareData.url,
           alt: data.image.filename,
           title: data.image.filename,
         })
@@ -456,6 +459,8 @@ const BodyEditor = ({
         listItem: false,
         blockquote: false,
         codeBlock: false,
+        bulletList: false,
+        orderedList: false,
       }),
       ParagraphWithId,
       CustomTypography,
@@ -465,10 +470,10 @@ const BodyEditor = ({
       ListItemWithId,
       BlockquoteWithId,
       CodeBlockWithId,
-      TaskList,
-      TaskItem.configure({
-        nested: true, // Enable nested task lists
-      }),
+      TaskListWithId,
+      TaskItemWithId.configure({ nested: true }),
+      BulletListWithId,
+      OrderedListWithId,
       Focus.configure({
         className: "has-focus",
         mode: "all",
