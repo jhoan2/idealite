@@ -1,11 +1,9 @@
 import "~/styles/globals.css";
 import { inter } from "~/app/ui/fonts";
 import { PHProvider } from "~/app/providers";
-import SideNav from "~/app/SideNav";
 import { ThemeProvider } from "~/app/ThemeProvider";
 import { Toaster } from "~/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
-import BottomNav from "./BottomNav";
 import SideBar from "./SideBar";
 import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 
