@@ -6,6 +6,8 @@ import { ThemeProvider } from "~/app/ThemeProvider";
 import { Toaster } from "~/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
 import BottomNav from "./BottomNav";
+import SideBar from "./SideBar";
+import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 
 export const metadata = {
   title: "idealite",
@@ -35,14 +37,20 @@ export default async function RootLayout({
             {/* <NeynarProvider>
             <SessionProvider> */}
             <PHProvider>
-              <div className="flex h-screen">
-                <div className="hidden md:block">
-                  <SideNav />
+              <SidebarProvider>
+                <div className="flex h-screen w-full">
+                  <div className="">
+                    <SideBar />
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="p-2 md:hidden">
+                      <SidebarTrigger />
+                    </div>
+                    {children}
+                  </div>
+                  <Toaster />
                 </div>
-                <div className="flex-1 overflow-y-auto">{children}</div>
-                <BottomNav />
-                <Toaster />
-              </div>
+              </SidebarProvider>
             </PHProvider>
             {/* </SessionProvider>
           </NeynarProvider> */}
