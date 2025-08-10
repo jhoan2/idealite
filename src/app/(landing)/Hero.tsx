@@ -56,15 +56,15 @@ export default function Hero() {
               </div>
             </Link>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4">
             <SignedOut>
               <SignInButton>
-                <button className="rounded-lg bg-gray-800 px-6 py-3 font-semibold text-white transition-colors hover:bg-gray-700">
+                <button className="rounded-lg bg-gray-800 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-700 sm:px-6 sm:py-3 sm:text-base">
                   Sign In
                 </button>
               </SignInButton>
               <SignUpButton>
-                <button className="rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-orange-700">
+                <button className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-700 sm:px-6 sm:py-3 sm:text-base">
                   Sign Up
                 </button>
               </SignUpButton>
