@@ -2,16 +2,13 @@ import { getUserTagTree } from "~/server/queries/usersTags";
 import { SidebarProvider } from "~/components/ui/sidebar";
 import { RightSideBar } from "./(Page)/(RightSidebar)/RightSideBar";
 import { headers } from "next/headers";
-import { TagTreeContainer } from "./(TagTreeNav)/TagTreeContainer";
 import { trackEvent } from "~/lib/posthog/server";
 import { getUserDiscoveredFeatures } from "~/server/queries/featureDiscovery";
 import { FeatureDiscoveryProvider } from "./(FeatureDiscover)/FeatureDiscoveryContext";
 import { currentUser } from "@clerk/nextjs/server";
-import { SidebarTrigger } from "~/components/ui/sidebar";
 export default async function WorkspaceLayout({
   children,
   editor,
-  tabs,
   page,
 }: {
   children: React.ReactNode;
@@ -49,16 +46,8 @@ export default async function WorkspaceLayout({
         defaultOpen={false}
       >
         <div className="flex h-screen w-full overflow-hidden">
-          <TagTreeContainer
-            userTagTree={userTagTree}
-            userId={userId ?? ""}
-            isMobile={isMobile ?? false}
-          />
           <div className="custom-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto">
-            {tabs}
-            <div className="fixed right-8 top-4 z-50">
-              <SidebarTrigger />
-            </div>
+            <div className="fixed right-8 top-4 z-50"></div>
             <div className="w-full">
               {page}
               {children}

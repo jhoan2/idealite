@@ -114,7 +114,7 @@ export default function PagesTablePage() {
         onPageChange={handlePageChange}
         onSortChange={handleSortChange}
         onSearchChange={handleSearchChange}
-        onPageSizeChange={handlePageSizeChange} // Add page size change handler
+        onPageSizeChange={handlePageSizeChange}
         loading={loading}
       />
     </div>
