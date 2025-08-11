@@ -61,7 +61,7 @@ const workspaceItems = [
       },
       {
         title: "Resources",
-        url: "/workspace/projects/active",
+        url: "/resources",
         icon: LibraryBig,
       },
       {
