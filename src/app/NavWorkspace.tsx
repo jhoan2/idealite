@@ -8,8 +8,6 @@ import {
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
 import {
-  SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuButton,
@@ -30,6 +28,7 @@ export function Navworkspace({
     items?: {
       title: string;
       url: string;
+      icon?: LucideIcon;
     }[];
   }[];
 }) {
@@ -65,6 +64,7 @@ export function Navworkspace({
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild>
                           <a href={subItem.url}>
+                            {subItem.icon && <subItem.icon />}
                             <span>{subItem.title}</span>
                           </a>
                         </SidebarMenuSubButton>

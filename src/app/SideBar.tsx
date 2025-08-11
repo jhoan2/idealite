@@ -8,7 +8,17 @@ import {
   SidebarGroup,
   SidebarHeader,
 } from "~/components/ui/sidebar";
-import { Home, UserRound, Inbox, Bell, Folder } from "lucide-react";
+import {
+  Home,
+  UserRound,
+  Inbox,
+  Bell,
+  Folder,
+  ChartNetwork,
+  LibraryBig,
+  Tag,
+  Layers,
+} from "lucide-react";
 import { NavUser } from "./NavUser";
 import { useUser } from "@clerk/nextjs";
 import { NavPinned } from "./NavPinned";
@@ -40,21 +50,25 @@ const workspaceItems = [
     isActive: false,
     items: [
       {
-        title: "All Notes",
-        url: "/workspace/projects/active",
+        title: "All Pages",
+        url: "/pages",
+        icon: Layers,
       },
       {
         title: "Tags",
         url: "/workspace/global-tags",
+        icon: Tag,
       },
-      //   {
-      //     title: "Resources",
-      //     url: "/workspace/projects/active",
-      //   },
-      //   {
-      //     title: "Graph",
-      //     url: "/workspace/projects/archived",
-      //   },
+      {
+        title: "Resources",
+        url: "/workspace/projects/active",
+        icon: LibraryBig,
+      },
+      {
+        title: "Graph",
+        url: "/workspace/projects/archived",
+        icon: ChartNetwork,
+      },
     ],
   },
 ];
