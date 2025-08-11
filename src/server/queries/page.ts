@@ -1,84 +1,10 @@
 "use server";
 
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, asc, count, like, or, ne } from "drizzle-orm";
 import { db } from "~/server/db";
-import {
-  pages,
-  users_tags,
-  pages_tags,
-  resourcesPages,
-  tags,
-  Tag,
-  users_pages,
-} from "~/server/db/schema";
+import { pages, users_pages, pages_tags, tags } from "~/server/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
-
-export async function getPageForUser(pageId: string) {
-  const user = await currentUser();
-  const userId = user?.externalId;
-
-  if (!userId) {
-    throw new Error("User not authenticated");
-  }
-
-  const result = await db.query.pages.findFirst({
-    where: and(eq(pages.id, pageId), eq(pages.deleted, false)),
-    with: {
-      // Get tags through the pages_tags relation
-      tags: {
-        with: {
-          tag: true,
-        },
-        // Only get tags that the user has access to
-        where: (pagesTags, { exists, and, eq }) =>
-          exists(
-            db
-              .select()
-              .from(users_tags)
-              .where(
-                and(
-                  eq(users_tags.tag_id, pagesTags.tag_id),
-                  eq(users_tags.user_id, userId),
-                ),
-              ),
-          ),
-      },
-      // Get resources through the resourcesPages relation
-      resources: {
-        with: {
-          resource: true,
-        },
-      },
-    },
-  });
-
-  if (!result || result.tags.length === 0) {
-    return null;
-  }
-
-  // Transform the result into the expected format
-  return {
-    id: result.id,
-    title: result.title,
-    content: result.content,
-    created_at: result.created_at,
-    updated_at: result.updated_at,
-    tags: result.tags.map(({ tag }) => ({
-      id: tag.id,
-      name: tag.name,
-    })),
-    resources: result.resources.map(({ resource }) => ({
-      id: resource.id,
-      title: resource.title,
-      url: resource.url,
-      description: resource.description,
-      author: resource.author,
-      date_published: resource.date_published,
-      image: resource.image,
-      type: resource.type,
-    })),
-  };
-}
+import { Tag } from "~/server/db/schema";
 
 export async function getPageTagHierarchy(pageId: string) {
   try {
@@ -269,4 +195,154 @@ export async function getPageById(pageId: string) {
   });
 
   return page;
+}
+
+export type PageTableData = {
+  id: string;
+  title: string;
+  created_at: Date;
+  updated_at: Date | null;
+  tags: Array<{
+    id: string;
+    name: string;
+  }>;
+};
+
+export type PaginatedPagesResult = {
+  data: PageTableData[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+};
+
+export async function getPagesForUser(
+  params: {
+    page?: number;
+    pageSize?: number;
+    sortBy?: "title" | "created_at" | "updated_at";
+    sortOrder?: "asc" | "desc";
+    search?: string;
+  } = {},
+): Promise<PaginatedPagesResult> {
+  const user = await currentUser();
+  const userId = user?.externalId;
+
+  if (!userId) {
+    throw new Error("User not authenticated");
+  }
+
+  const {
+    page = 1,
+    pageSize = 10,
+    sortBy = "updated_at",
+    sortOrder = "desc",
+    search = "",
+  } = params;
+
+  const offset = (page - 1) * pageSize;
+
+  // Build the where conditions
+  const whereConditions = [eq(pages.deleted, false)];
+
+  // Add search condition if provided
+  if (search.trim()) {
+    whereConditions.push(like(pages.title, `%${search.trim()}%`));
+  }
+
+  // Build sort condition
+  const getSortColumn = () => {
+    switch (sortBy) {
+      case "title":
+        return pages.title;
+      case "created_at":
+        return pages.created_at;
+      case "updated_at":
+        return pages.updated_at;
+      default:
+        return pages.updated_at;
+    }
+  };
+
+  const sortColumn = getSortColumn();
+  const orderBy = sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+  // Get total count for pagination
+  const totalCountResult = await db
+    .select({ count: count() })
+    .from(pages)
+    .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
+    .where(and(eq(users_pages.user_id, userId), ...whereConditions));
+
+  const totalCount = totalCountResult[0]?.count ?? 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  // Get paginated pages with basic info
+  const pagesResult = await db
+    .select({
+      id: pages.id,
+      title: pages.title,
+      created_at: pages.created_at,
+      updated_at: pages.updated_at,
+    })
+    .from(pages)
+    .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
+    .where(and(eq(users_pages.user_id, userId), ...whereConditions))
+    .orderBy(orderBy)
+    .limit(pageSize)
+    .offset(offset);
+
+  // Get tags for all pages in one query, excluding the root tag
+  const pageIds = pagesResult.map((p) => p.id);
+  const rootTagId = process.env.ROOT_TAG_ID;
+
+  // Build tag where conditions
+  const tagWhereConditions = [
+    eq(tags.deleted, false),
+    or(...pageIds.map((id) => eq(pages_tags.page_id, id))),
+  ];
+
+  // Add condition to exclude root tag if environment variable is set
+  if (rootTagId) {
+    tagWhereConditions.push(ne(tags.id, rootTagId));
+  }
+
+  const pageTagsResult = await db
+    .select({
+      pageId: pages_tags.page_id,
+      tagId: tags.id,
+      tagName: tags.name,
+    })
+    .from(pages_tags)
+    .innerJoin(tags, eq(tags.id, pages_tags.tag_id))
+    .where(and(...tagWhereConditions));
+
+  // Group tags by page
+  const tagsByPage = pageTagsResult.reduce(
+    (acc, item) => {
+      if (!acc[item.pageId]) {
+        acc[item.pageId] = [];
+      }
+      acc[item.pageId]!.push({
+        id: item.tagId,
+        name: item.tagName,
+      });
+      return acc;
+    },
+    {} as Record<string, Array<{ id: string; name: string }>>,
+  );
+
+  // Combine pages with their tags
+  const data: PageTableData[] = pagesResult.map((page) => ({
+    ...page,
+    tags: tagsByPage[page.id] || [],
+  }));
+
+  return {
+    data,
+    totalCount,
+    totalPages,
+    currentPage: page,
+    pageSize,
+  };
 }
