@@ -19,6 +19,7 @@ export default function PagesTablePage() {
 
   // State for table controls
   const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
   const [sortBy, setSortBy] = React.useState<
     "title" | "created_at" | "updated_at"
   >("updated_at");
@@ -33,7 +34,7 @@ export default function PagesTablePage() {
 
       const result = await getPagesForUser({
         page: currentPage,
-        pageSize: 10,
+        pageSize,
         sortBy,
         sortOrder,
         search: search.trim(),
@@ -46,21 +47,21 @@ export default function PagesTablePage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, sortBy, sortOrder, search]);
+  }, [currentPage, pageSize, sortBy, sortOrder, search]);
 
   // Fetch data on mount and when dependencies change
   React.useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Reset to page 1 when search or sort changes
+  // Reset to page 1 when search, sort, or page size changes
   React.useEffect(() => {
     if (currentPage !== 1) {
       setCurrentPage(1);
     } else {
       fetchData();
     }
-  }, [sortBy, sortOrder, search]);
+  }, [sortBy, sortOrder, search, pageSize]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -76,6 +77,11 @@ export default function PagesTablePage() {
 
   const handleSearchChange = (newSearch: string) => {
     setSearch(newSearch);
+  };
+
+  // Add page size change handler
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
   };
 
   if (error) {
@@ -108,6 +114,7 @@ export default function PagesTablePage() {
         onPageChange={handlePageChange}
         onSortChange={handleSortChange}
         onSearchChange={handleSearchChange}
+        onPageSizeChange={handlePageSizeChange} // Add page size change handler
         loading={loading}
       />
     </div>

@@ -1,4 +1,4 @@
-// src/app/pages/columns.tsx
+// src/app/pages/data-table.tsx
 "use client";
 
 import * as React from "react";
@@ -12,6 +12,13 @@ import {
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -19,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { PageTableData, PaginatedPagesResult } from "~/server/queries/page"; // Adjust import path
+import { PageTableData, PaginatedPagesResult } from "~/server/queries/page";
 import { Search } from "lucide-react";
 
 interface DataTableProps {
@@ -28,6 +35,7 @@ interface DataTableProps {
   onPageChange: (page: number) => void;
   onSortChange: (sortBy: string, sortOrder: "asc" | "desc") => void;
   onSearchChange: (search: string) => void;
+  onPageSizeChange: (pageSize: number) => void;
   loading?: boolean;
 }
 
@@ -37,6 +45,7 @@ export function PagesDataTable({
   onPageChange,
   onSortChange,
   onSearchChange,
+  onPageSizeChange,
   loading = false,
 }: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -75,8 +84,8 @@ export function PagesDataTable({
 
   return (
     <div className="space-y-4">
-      {/* Search Input */}
-      <div className="flex items-center space-x-2">
+      {/* Search Input and Page Size Selector */}
+      <div className="flex items-center justify-between space-x-2">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -85,6 +94,26 @@ export function PagesDataTable({
             onChange={(e) => setSearchValue(e.target.value)}
             className="pl-9"
           />
+        </div>
+
+        {/* Page Size Selector */}
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-muted-foreground">Show:</span>
+          <Select
+            value={data.pageSize.toString()}
+            onValueChange={(value) => onPageSizeChange(Number(value))}
+          >
+            <SelectTrigger className="w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">per page</span>
         </div>
       </div>
 
@@ -151,7 +180,9 @@ export function PagesDataTable({
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Showing {data.data.length} of {data.totalCount} pages
+          Showing {(data.currentPage - 1) * data.pageSize + 1} to{" "}
+          {Math.min(data.currentPage * data.pageSize, data.totalCount)} of{" "}
+          {data.totalCount} pages
         </div>
         <div className="flex items-center space-x-2">
           <Button
