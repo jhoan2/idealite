@@ -51,7 +51,7 @@ const workspaceItems = [
     items: [
       {
         title: "All Pages",
-        url: "/pages",
+        url: "/workspace/pages",
         icon: Layers,
       },
       {
