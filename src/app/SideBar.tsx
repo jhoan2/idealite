@@ -18,14 +18,16 @@ import {
   LibraryBig,
   Tag,
   Layers,
+  LogIn,
 } from "lucide-react";
 import { NavUser } from "./NavUser";
-import { useUser } from "@clerk/nextjs";
+import { useUser, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { NavPinned } from "./NavPinned";
 import { NavMain } from "./NavMain";
 import { Navworkspace } from "./NavWorkspace"; // Make sure to import your NavWorkspace component
 import { getNotificationCounts } from "~/server/queries/notification";
 import { usePathname } from "next/navigation";
+import { Button } from "~/components/ui/button";
 
 const mockFavorites = [
   {
@@ -166,25 +168,47 @@ export default function SideBar() {
     <Sidebar>
       <SidebarContent>
         <SidebarHeader className="h-16 border-b border-sidebar-border">
-          {isLoaded && isSignedIn && user ? (
-            <NavUser
-              user={{
-                name:
-                  user.fullName ||
-                  `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-                  "User",
-                email: user.emailAddresses[0]?.emailAddress || "",
-                avatar: user.imageUrl || "",
-              }}
-            />
-          ) : (
+          {/* Show loading state while Clerk is loading */}
+          {!isLoaded && (
             <div className="flex items-center space-x-2 p-2">
-              <UserRound className="h-4 w-4" />
-              <span className="text-sm text-muted-foreground">
-                Not signed in
-              </span>
+              <UserRound className="h-4 w-4 animate-pulse" />
+              <span className="text-sm text-muted-foreground">Loading...</span>
             </div>
           )}
+
+          {/* Show user info when signed in */}
+          <SignedIn>
+            {user && (
+              <NavUser
+                user={{
+                  name:
+                    user.fullName ||
+                    `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+                    "User",
+                  email: user.emailAddresses[0]?.emailAddress || "",
+                  avatar: user.imageUrl || "",
+                }}
+              />
+            )}
+          </SignedIn>
+
+          {/* Show sign-in button when signed out */}
+          <SignedOut>
+            <div className="flex items-center justify-between p-2">
+              <div className="flex items-center space-x-2">
+                <UserRound className="h-4 w-4" />
+                <span className="text-sm text-muted-foreground">
+                  Not signed in
+                </span>
+              </div>
+              <SignInButton mode="modal">
+                <Button variant="ghost" size="sm" className="ml-2">
+                  <LogIn className="mr-1 h-4 w-4" />
+                  Sign In
+                </Button>
+              </SignInButton>
+            </div>
+          </SignedOut>
         </SidebarHeader>
         <SidebarGroup>
           {/* Home navigation */}
