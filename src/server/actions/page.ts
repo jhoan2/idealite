@@ -163,12 +163,18 @@ async function parseAndUpdateMetadataOptimized(
       where: eq(pages.id, pageId),
       columns: {
         content: true,
+        content_type: true,
         description: true,
         image_previews: true,
       },
     });
 
     if (!currentPage) {
+      return;
+    }
+
+    // Skip metadata parsing for canvas pages - only parse for regular pages
+    if (currentPage.content_type !== "page") {
       return;
     }
 
