@@ -132,6 +132,11 @@ export const pages = createTable(
       .default("page"),
     primary_tag_id: uuid("primary_tag_id"),
     folder_id: uuid("folder_id").references(() => folders.id),
+    description: text("description"),
+    image_previews: jsonb("image_previews")
+      .$type<string[]>()
+      .default(sql`'[]'::jsonb`)
+      .notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

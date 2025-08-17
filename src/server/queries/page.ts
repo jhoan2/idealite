@@ -202,6 +202,7 @@ export type PageTableData = {
   title: string;
   created_at: Date;
   updated_at: Date | null;
+  description: string | null;
   tags: Array<{
     id: string;
     name: string;
@@ -284,6 +285,7 @@ export async function getPagesForUser(
       title: pages.title,
       created_at: pages.created_at,
       updated_at: pages.updated_at,
+      description: pages.description,
     })
     .from(pages)
     .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
