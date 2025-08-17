@@ -30,7 +30,7 @@ export const columns: ColumnDef<PageTableData>[] = [
       const workspaceUrl = `/workspace?pageId=${pageId}`;
 
       return (
-        <div className="font-medium">
+        <div className="w-32 min-w-[8rem] max-w-[12rem] font-medium">
           <a
             href={workspaceUrl}
             className="transition-colors hover:text-blue-600 hover:underline"
@@ -40,6 +40,40 @@ export const columns: ColumnDef<PageTableData>[] = [
         </div>
       );
     },
+  },
+  {
+    accessorKey: "description",
+    header: "Description",
+    cell: ({ row }) => {
+      const description = row.getValue("description") as string | null;
+
+      if (!description) {
+        return (
+          <span className="text-sm italic text-muted-foreground">
+            No description
+          </span>
+        );
+      }
+
+      // Truncate long descriptions for table display
+      const maxLength = 100;
+      const truncatedDescription =
+        description.length > maxLength
+          ? description.slice(0, maxLength) + "..."
+          : description;
+
+      return (
+        <div className="max-w-[300px]">
+          <p
+            className="line-clamp-2 text-sm text-muted-foreground"
+            title={description} // Full description on hover
+          >
+            {truncatedDescription}
+          </p>
+        </div>
+      );
+    },
+    enableSorting: false,
   },
   {
     accessorKey: "tags",
@@ -56,15 +90,24 @@ export const columns: ColumnDef<PageTableData>[] = [
       const remainingCount = tags.length - 3;
 
       return (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex w-28 min-w-[7rem] max-w-[8rem] flex-wrap gap-1">
+          {" "}
+          {/* Much smaller width */}
           {visibleTags.map((tag) => (
-            <Badge key={tag.id} variant="secondary" className="text-xs">
+            <Badge
+              key={tag.id}
+              variant="secondary"
+              className="max-w-full truncate px-1 py-0 text-xs"
+            >
               {tag.name}
             </Badge>
           ))}
           {remainingCount > 0 && (
-            <Badge variant="outline" className="text-xs text-muted-foreground">
-              +{remainingCount} more
+            <Badge
+              variant="outline"
+              className="px-1 py-0 text-xs text-muted-foreground"
+            >
+              +{remainingCount}
             </Badge>
           )}
         </div>

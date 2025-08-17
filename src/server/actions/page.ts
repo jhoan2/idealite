@@ -16,6 +16,11 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { movePagesBetweenTags } from "./usersTags";
 import { currentUser } from "@clerk/nextjs/server";
+import {
+  extractPageMetadata,
+  hasContentChangedSignificantly,
+} from "~/lib/editor/content-parse";
+import * as Sentry from "@sentry/nextjs";
 
 type Page = typeof pages.$inferSelect;
 type PageInsert = typeof pages.$inferInsert;
@@ -138,46 +143,136 @@ export async function removeTagFromPage(pageId: string, tagId: string) {
   }
 }
 
-export async function savePageContent(pageId: string, content: string) {
+// Keep track of running parsing jobs to avoid duplicates
+const runningJobs = new Set<string>();
+
+async function parseAndUpdateMetadataOptimized(
+  pageId: string,
+  newContent: string,
+): Promise<void> {
+  // Prevent duplicate processing for the same page
+  if (runningJobs.has(pageId)) {
+    return;
+  }
+
+  runningJobs.add(pageId);
+
   try {
-    const user = await currentUser();
-
-    if (!user?.externalId) {
-      throw new Error("Unauthorized");
-    }
-
-    // Check if the user has access to the page
-    const userPage = await db.query.users_pages.findFirst({
-      where: and(
-        eq(users_pages.user_id, user.externalId),
-        eq(users_pages.page_id, pageId),
-      ),
+    // Get the current page data to compare content
+    const currentPage = await db.query.pages.findFirst({
+      where: eq(pages.id, pageId),
+      columns: {
+        content: true,
+        description: true,
+        image_previews: true,
+      },
     });
 
-    if (!userPage) {
-      throw new Error("Page not found or user doesn't have access");
+    if (!currentPage) {
+      return;
     }
 
-    const updatedPage = await db
+    // FORCE parsing if metadata is missing, regardless of content changes
+    const isMissingMetadata =
+      !currentPage.description ||
+      !currentPage.image_previews ||
+      currentPage.image_previews.length === 0;
+
+    if (isMissingMetadata) {
+    } else {
+      // Only check content changes if we already have metadata
+      const oldContent = currentPage.content || "";
+      if (!hasContentChangedSignificantly(oldContent, newContent)) {
+        return;
+      }
+    }
+
+    // Extract metadata from the new content
+    const metadata = extractPageMetadata(newContent);
+
+    // Only update if metadata actually changed (unless it was missing)
+    const hasDescriptionChanged =
+      metadata.description !== currentPage.description;
+    const hasImagesChanged =
+      JSON.stringify(metadata.imagePreviews) !==
+      JSON.stringify(currentPage.image_previews);
+
+    if (!isMissingMetadata && !hasDescriptionChanged && !hasImagesChanged) {
+      return;
+    }
+
+    // Update the database with the parsed metadata
+    await db
       .update(pages)
       .set({
-        content,
-        updated_at: new Date(),
+        description: metadata.description,
+        image_previews: metadata.imagePreviews,
       })
-      .where(eq(pages.id, pageId))
-      .returning();
-
-    if (updatedPage.length === 0 || !updatedPage[0]) {
-      throw new Error("Failed to save page");
-    }
-
-    revalidatePath(`/workspace/${pageId}`);
-
-    return updatedPage[0];
+      .where(eq(pages.id, pageId));
   } catch (error) {
-    console.error("Error saving page:", error);
-    throw error;
+    Sentry.captureException(error, {
+      tags: {
+        operation: "optimized_metadata_parsing",
+        component: "background_processing",
+      },
+      extra: {
+        pageId,
+        contentLength: newContent.length,
+        timestamp: new Date().toISOString(),
+      },
+      level: "error",
+    });
+  } finally {
+    // Always clean up the running job tracker
+    runningJobs.delete(pageId);
   }
+}
+
+// Optimized save function
+export async function savePageContent(pageId: string, content: string) {
+  const user = await currentUser();
+  if (!user?.externalId) {
+    throw new Error("Unauthorized");
+  }
+
+  // Verify user has access to this page
+  const userPage = await db.query.users_pages.findFirst({
+    where: and(
+      eq(users_pages.page_id, pageId),
+      eq(users_pages.user_id, user.externalId),
+    ),
+  });
+
+  if (!userPage) {
+    throw new Error("Page not found or unauthorized");
+  }
+
+  // Save the content first (existing logic)
+  await db
+    .update(pages)
+    .set({
+      content: content,
+      updated_at: new Date(),
+    })
+    .where(eq(pages.id, pageId));
+
+  // 🔥 Fire off optimized background metadata parsing
+  parseAndUpdateMetadataOptimized(pageId, content).catch((error) => {
+    Sentry.captureException(error, {
+      tags: {
+        operation: "optimized_metadata_parsing_outer_catch",
+        component: "save_page_content",
+      },
+      extra: {
+        pageId,
+        userId: user.externalId,
+        message: "Error escaped optimized metadata parsing",
+      },
+      level: "error",
+    });
+  });
+
+  return { success: true };
 }
 
 export type CreatePageInput = {

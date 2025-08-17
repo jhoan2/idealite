@@ -14,17 +14,11 @@ if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
   });
 }
 
-const WagmiProvider = dynamic(() => import("~/app/WagmiProvider"), {
-  ssr: false,
-});
-
 export function PHProvider({ children }: { children: React.ReactNode }) {
   return (
     <PostHogProvider client={posthog}>
       <PostHogAuthWrapper>
-        <TooltipProvider>
-          <WagmiProvider>{children}</WagmiProvider>
-        </TooltipProvider>
+        <TooltipProvider>{children}</TooltipProvider>
       </PostHogAuthWrapper>
     </PostHogProvider>
   );
