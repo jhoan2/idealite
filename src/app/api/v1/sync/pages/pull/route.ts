@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
         content: pages.content,
         content_type: pages.content_type,
         description: pages.description,
+        canvas_image_cid: pages.canvas_image_cid,
         image_previews: pages.image_previews,
         created_at: pages.created_at,
         updated_at: pages.updated_at,
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest) {
       content: page.content,
       content_type: page.content_type,
       description: page.description,
+      canvas_image_cid: page.canvas_image_cid,
       image_previews: page.image_previews || [], // Ensure array even if null
       created_at: page.created_at?.toISOString() || "",
       updated_at: page.updated_at?.toISOString() || "",
