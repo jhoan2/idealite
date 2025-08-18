@@ -10,6 +10,7 @@ import { MobileGlobalTagsTour } from "./MobileGlobalTagsTour";
 import { headers } from "next/headers";
 import { currentUser } from "@clerk/nextjs/server";
 import TagOnlyTreeNav from "../(TagTreeNav)/TagOnlyTreeNav";
+import { MobileTagNavToggle } from "./MobileTagNavToggle";
 
 export default async function GlobalTagsPage() {
   const user = await currentUser();
@@ -32,22 +33,19 @@ export default async function GlobalTagsPage() {
     <>
       {isMobile || isWarpcast ? (
         <MobileGlobalTagsTour>
-          <div className="flex h-screen flex-col">
-            {/* Mobile: Stack vertically */}
-            <div className="flex-1 border-b border-border">
-              <TagOnlyTreeNav
-                userTagTree={userTagTree}
-                userId={userId ?? ""}
-                isMobile={true}
-              />
-            </div>
-            <div className="flex-1">
-              <GlobalTagState
-                tag={tag}
-                userTags={userTags}
-                userId={userId ?? null}
-              />
-            </div>
+          <div className="relative h-screen">
+            {/* Full height for GlobalTagState */}
+            <GlobalTagState
+              tag={tag}
+              userTags={userTags}
+              userId={userId ?? null}
+            />
+
+            {/* Floating toggle button - top right */}
+            <MobileTagNavToggle
+              userTagTree={userTagTree}
+              userId={userId ?? ""}
+            />
           </div>
         </MobileGlobalTagsTour>
       ) : (
