@@ -29,21 +29,6 @@ import { getNotificationCounts } from "~/server/queries/notification";
 import { usePathname } from "next/navigation";
 import { Button } from "~/components/ui/button";
 
-const mockFavorites = [
-  {
-    name: "React Documentation",
-    url: "https://react.dev/learn",
-  },
-  {
-    name: "Project Dashboard",
-    url: "/dashboard/projects",
-  },
-  {
-    name: "Team Notes",
-    url: "/workspace/team-notes",
-  },
-];
-
 const workspaceItems = [
   {
     title: "Workspace",
@@ -221,7 +206,9 @@ export default function SideBar() {
           <NavMain items={bottomNavigationItems} />
         </SidebarGroup>
 
-        <NavPinned favorites={mockFavorites} />
+        <SignedIn>
+          <NavPinned />
+        </SignedIn>
         <SidebarFooter />
       </SidebarContent>
     </Sidebar>
