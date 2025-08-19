@@ -188,6 +188,8 @@ export const users_pages = createTable(
       .notNull()
       .references(() => pages.id, { onDelete: "cascade" }),
     role: varchar("role", { length: 50 }).default("owner").notNull(),
+    is_pinned: boolean("is_pinned").default(false).notNull(),
+    pin_position: integer("pin_position"),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
