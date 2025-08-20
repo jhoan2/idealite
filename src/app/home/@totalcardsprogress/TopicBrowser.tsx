@@ -315,24 +315,6 @@ const HierarchicalTopicBrowser: React.FC<HierarchicalTopicBrowserProps> = ({
             {currentTag && renderSection(currentTag, children)}
           </div>
         )}
-
-        {/* Footer info */}
-        {children.length > 0 && !showPinnedFirst && (
-          <div className="mt-6 text-center">
-            <div className="inline-flex items-center rounded-full bg-card px-4 py-2 shadow-sm">
-              <span className="text-sm text-muted-foreground">
-                <span className="font-medium text-primary">
-                  {children.filter((child) => child.progress >= 80).length}
-                </span>{" "}
-                of {children.length} topics mastered •{" "}
-                <span className="font-medium text-secondary-foreground">
-                  {children.reduce((sum, child) => sum + child.cardCount, 0)}
-                </span>{" "}
-                total cards
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
