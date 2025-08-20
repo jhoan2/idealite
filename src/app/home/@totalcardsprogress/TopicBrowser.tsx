@@ -40,6 +40,18 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ progress, size = 40 }) => {
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
+  // Function to get emerald color based on progress percentage
+  const getProgressColor = (progress: number): string => {
+    if (progress <= 10) return "text-emerald-200";
+    if (progress <= 25) return "text-emerald-300";
+    if (progress <= 40) return "text-emerald-400";
+    if (progress <= 55) return "text-emerald-500";
+    if (progress <= 70) return "text-emerald-600";
+    if (progress <= 85) return "text-emerald-700";
+    if (progress <= 95) return "text-emerald-800";
+    return "text-emerald-900";
+  };
+
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg className="-rotate-90 transform" width={size} height={size}>
@@ -61,7 +73,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ progress, size = 40 }) => {
           fill="transparent"
           strokeDasharray={strokeDasharray}
           strokeDashoffset={strokeDashoffset}
-          className="text-primary transition-all duration-300"
+          className={`${getProgressColor(progress)} transition-all duration-300`}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
