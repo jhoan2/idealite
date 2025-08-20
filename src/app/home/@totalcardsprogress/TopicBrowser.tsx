@@ -161,7 +161,11 @@ const HierarchicalTopicBrowser: React.FC<HierarchicalTopicBrowserProps> = ({
       {/* Section Header */}
       <div className="mb-4 flex items-center gap-2">
         {isPinned && <Star className="h-5 w-5 fill-current text-yellow-500" />}
-        <h2 className="text-xl font-bold text-foreground">{sectionTag.name}</h2>
+        {sectionTag.name === "Topics" && (
+          <h2 className="text-xl font-bold text-foreground">
+            {sectionTag.name}
+          </h2>
+        )}
         {isPinned && (
           <span className="rounded-full bg-accent px-2 py-1 text-sm text-muted-foreground">
             Quick Access
@@ -215,7 +219,11 @@ const HierarchicalTopicBrowser: React.FC<HierarchicalTopicBrowserProps> = ({
                   {/* Progress */}
                   <div className="ml-4 flex items-center space-x-3">
                     <ProgressRing progress={child.progress} />
-                    <ChevronLeft className="h-5 w-5 rotate-180 text-muted-foreground" />
+                    <div className="flex h-5 w-5 items-center justify-center">
+                      {child.children && child.children.length > 0 && (
+                        <ChevronLeft className="h-5 w-5 rotate-180 text-muted-foreground" />
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -302,9 +310,6 @@ const HierarchicalTopicBrowser: React.FC<HierarchicalTopicBrowserProps> = ({
           // Show single section with breadcrumb
           <div>
             <div className="mb-4">
-              <h1 className="text-2xl font-bold text-foreground">
-                {currentTag?.name}
-              </h1>
               {breadcrumbs.length > 0 && (
                 <div className="mt-1 text-sm text-muted-foreground">
                   {breadcrumbs.map((crumb) => crumb.name).join(" > ")} &gt;{" "}
