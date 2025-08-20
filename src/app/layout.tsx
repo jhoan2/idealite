@@ -6,6 +6,7 @@ import { Toaster } from "~/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
 import SideBar from "./SideBar";
 import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
+import ConditionalSidebarTrigger from "./ConditionalSidebarTrigger";
 
 export const metadata = {
   title: "idealite",
@@ -42,7 +43,7 @@ export default async function RootLayout({
                   </div>
                   <div className="flex-1 overflow-y-auto">
                     <div className="p-2 md:hidden">
-                      <SidebarTrigger />
+                      <ConditionalSidebarTrigger />
                     </div>
                     {children}
                   </div>
