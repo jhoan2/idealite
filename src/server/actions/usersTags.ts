@@ -612,8 +612,8 @@ export async function changeTagRelations({
         })
         .where(eq(tags.id, sourceTagId));
 
-      revalidatePath("/workspace");
-      revalidatePath("/explore");
+      revalidatePath("/home");
+      revalidatePath("/workspace/global-tags");
 
       return { success: true };
     });
@@ -626,5 +626,46 @@ export async function changeTagRelations({
           ? error.message
           : "Failed to change tag relations",
     };
+  }
+}
+
+export async function toggleTagPinned({
+  tagId,
+  isPinned,
+}: {
+  tagId: string;
+  isPinned: boolean;
+}) {
+  try {
+    const user = await currentUser();
+    const userId = user?.externalId;
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Verify user has access to this tag
+    const userTagRelation = await db
+      .select()
+      .from(users_tags)
+      .where(and(eq(users_tags.user_id, userId), eq(users_tags.tag_id, tagId)))
+      .limit(1);
+
+    if (!userTagRelation.length) {
+      return { success: false, error: "Tag not found or no access" };
+    }
+
+    // Update the pin status
+    await db
+      .update(users_tags)
+      .set({ is_pinned: isPinned })
+      .where(and(eq(users_tags.user_id, userId), eq(users_tags.tag_id, tagId)));
+
+    // Revalidate the relevant pages
+    revalidatePath("/home");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling tag pin status:", error);
+    return { success: false, error: "Failed to update pin status" };
   }
 }

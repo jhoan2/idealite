@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { ChevronLeft, Book, Star } from "lucide-react";
+import { TagInteractionWrapper } from "./TagInteractionWrapper";
 
 // Types for the component props
 export type TagHierarchyNode = {
@@ -26,6 +27,7 @@ type Breadcrumb = {
 
 interface HierarchicalTopicBrowserProps {
   tagTree: TagHierarchyData;
+  isMobile?: boolean;
 }
 
 // Progress ring component
@@ -85,6 +87,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ progress, size = 40 }) => {
 
 const HierarchicalTopicBrowser: React.FC<HierarchicalTopicBrowserProps> = ({
   tagTree,
+  isMobile = false,
 }) => {
   const [currentTagId, setCurrentTagId] = useState("root");
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
@@ -170,48 +173,53 @@ const HierarchicalTopicBrowser: React.FC<HierarchicalTopicBrowserProps> = ({
       <div className="space-y-3">
         {sectionChildren.length > 0 ? (
           sectionChildren.map((child) => (
-            <div
+            <TagInteractionWrapper
               key={child.id}
-              onClick={() => handleItemClick(child.id)}
-              className={`rounded-xl bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-md ${
-                child.children && child.children.length > 0
-                  ? "cursor-pointer hover:scale-[1.02]"
-                  : "cursor-pointer hover:scale-[1.02]"
-              } ${isPinned ? "border-l-4 border-yellow-400" : ""}`}
+              tagId={child.id}
+              tagName={child.name}
+              isPinned={child.isPinned}
+              isMobile={isMobile}
+              onTagClick={() => handleItemClick(child.id)}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-card-foreground">
-                      {child.name}
-                    </h3>
-                    {child.isPinned && currentTagId !== "pinned" && (
-                      <Star className="h-4 w-4 fill-current text-yellow-500" />
+              <div
+                className={`rounded-xl bg-card p-4 shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
+                  isPinned ? "border-l-4 border-yellow-400" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-card-foreground">
+                        {child.name}
+                      </h3>
+                      {child.isPinned && currentTagId !== "pinned" && (
+                        <Star className="h-4 w-4 fill-current text-yellow-500" />
+                      )}
+                    </div>
+                    {child.description && (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {child.description}
+                      </p>
+                    )}
+                    {child.children && child.children.length > 0 ? (
+                      <p className="mt-1 text-xs text-secondary-foreground">
+                        {child.children.length} subtopics
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-primary">
+                        {child.cardCount} cards
+                      </p>
                     )}
                   </div>
-                  {child.description && (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {child.description}
-                    </p>
-                  )}
-                  {child.children && child.children.length > 0 ? (
-                    <p className="mt-1 text-xs text-secondary-foreground">
-                      {child.children.length} subtopics
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-xs text-primary">
-                      {child.cardCount} cards
-                    </p>
-                  )}
-                </div>
 
-                {/* Progress */}
-                <div className="ml-4 flex items-center space-x-3">
-                  <ProgressRing progress={child.progress} />
-                  <ChevronLeft className="h-5 w-5 rotate-180 text-muted-foreground" />
+                  {/* Progress */}
+                  <div className="ml-4 flex items-center space-x-3">
+                    <ProgressRing progress={child.progress} />
+                    <ChevronLeft className="h-5 w-5 rotate-180 text-muted-foreground" />
+                  </div>
                 </div>
               </div>
-            </div>
+            </TagInteractionWrapper>
           ))
         ) : (
           <div className="rounded-xl bg-card p-8 text-center shadow-sm">
