@@ -7,7 +7,6 @@ export default async function HomeLayout({
   totalcardsprogress,
 }: {
   children: React.ReactNode;
-  tagmastery: React.ReactNode;
   totalcards: React.ReactNode;
   totalcardsprogress: React.ReactNode;
   cardactivity: React.ReactNode;
