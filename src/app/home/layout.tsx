@@ -2,13 +2,14 @@ import { BarChart2 } from "lucide-react";
 import { currentUser } from "@clerk/nextjs/server";
 
 export default async function HomeLayout({
-  tagmastery,
   totalcards,
   cardactivity,
+  totalcardsprogress,
 }: {
   children: React.ReactNode;
   tagmastery: React.ReactNode;
   totalcards: React.ReactNode;
+  totalcardsprogress: React.ReactNode;
   cardactivity: React.ReactNode;
 }) {
   const user = await currentUser();
@@ -30,7 +31,7 @@ export default async function HomeLayout({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Bar Graph - Tag Mastery */}
             <div className="rounded-xl bg-white shadow-sm transition-all hover:shadow-md dark:bg-gray-800">
-              <div className="h-full overflow-auto">{tagmastery}</div>
+              <div className="h-full overflow-auto">{totalcardsprogress}</div>
             </div>
 
             {/* Circle Graph - Card Status Distribution */}

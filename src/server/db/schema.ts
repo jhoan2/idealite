@@ -106,6 +106,7 @@ export const users_tags = createTable(
       .references(() => tags.id),
     is_collapsed: boolean("is_collapsed").default(false).notNull(),
     is_archived: boolean("is_archived").default(false).notNull(),
+    is_pinned: boolean("is_pinned").default(false).notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
