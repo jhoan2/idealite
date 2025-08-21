@@ -23,6 +23,13 @@ export default function PagesTablePage() {
     new Set(),
   );
 
+  const dispatchPinnedPagesChanged = () => {
+    // Only dispatch if we're in the browser environment
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("pinnedPagesChanged"));
+    }
+  };
+
   // Loading states for individual actions
   const [loadingStates, setLoadingStates] = React.useState({
     pinning: new Set<string>(),
@@ -90,6 +97,22 @@ export default function PagesTablePage() {
     });
   };
 
+  React.useEffect(() => {
+    const handlePinnedPagesChanged = () => {
+      // Refetch pinned pages to stay in sync
+      fetchPinnedPages();
+    };
+
+    window.addEventListener("pinnedPagesChanged", handlePinnedPagesChanged);
+
+    return () => {
+      window.removeEventListener(
+        "pinnedPagesChanged",
+        handlePinnedPagesChanged,
+      );
+    };
+  }, [fetchPinnedPages]);
+
   // Action handlers
   const handlePin = async (pageId: string) => {
     updateLoadingState("pinning", pageId, true);
@@ -97,6 +120,8 @@ export default function PagesTablePage() {
       const result = await pinPage({ pageId });
       if (result.success) {
         setPinnedPageIds((prev) => new Set([...prev, pageId]));
+        // Dispatch the custom event to notify NavPinned
+        dispatchPinnedPagesChanged();
       } else {
         console.error("Failed to pin page:", result.error);
       }
@@ -107,6 +132,7 @@ export default function PagesTablePage() {
     }
   };
 
+  // Update your handleUnpin function:
   const handleUnpin = async (pageId: string) => {
     updateLoadingState("unpinning", pageId, true);
     try {
@@ -117,6 +143,8 @@ export default function PagesTablePage() {
           newSet.delete(pageId);
           return newSet;
         });
+        // Dispatch the custom event to notify NavPinned
+        dispatchPinnedPagesChanged();
       } else {
         console.error("Failed to unpin page:", result.error);
       }

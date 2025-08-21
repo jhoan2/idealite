@@ -9,7 +9,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
-import { Skeleton } from "~/components/ui/skeleton";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -155,19 +154,38 @@ export function NavPinned() {
     }),
   );
 
-  // Load pinned pages
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const pages = await getUserPinnedPages();
-        setPinnedPages(pages);
-      } catch (error) {
-        console.error("Failed to load pinned pages:", error);
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchPinnedPages = async () => {
+    try {
+      setIsLoading(true);
+      const pages = await getUserPinnedPages();
+      setPinnedPages(pages);
+    } catch (error) {
+      console.error("Failed to load pinned pages:", error);
+    } finally {
+      setIsLoading(false);
     }
-    loadData();
+  };
+
+  // Load pinned pages on mount
+  useEffect(() => {
+    fetchPinnedPages();
+  }, []);
+
+  // Listen for pinned pages changes from other components
+  useEffect(() => {
+    const handlePinnedPagesChanged = () => {
+      fetchPinnedPages();
+    };
+
+    window.addEventListener("pinnedPagesChanged", handlePinnedPagesChanged);
+
+    // Cleanup event listener on unmount
+    return () => {
+      window.removeEventListener(
+        "pinnedPagesChanged",
+        handlePinnedPagesChanged,
+      );
+    };
   }, []);
 
   // Handle unpinning
@@ -176,6 +194,11 @@ export function NavPinned() {
       const result = await unpinPage({ pageId });
       if (result.success) {
         setPinnedPages((prev) => prev.filter((page) => page.id !== pageId));
+
+        // Dispatch the custom event to notify other components
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("pinnedPagesChanged"));
+        }
       }
     } catch (error) {
       console.error("Error unpinning page:", error);
