@@ -118,7 +118,7 @@ export default function SideBar() {
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
 
-  if (pathname === "/") {
+  if (pathname === "/" || pathname.startsWith("/mobile")) {
     return null;
   }
 
