@@ -1,14 +1,55 @@
-// src/app/pages/columns.tsx
+// src/app/workspace/pages/columns.tsx
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Pin, PinOff, Trash2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Checkbox } from "~/components/ui/checkbox";
 import { formatDistanceToNow } from "date-fns";
 import { PageTableData } from "~/server/queries/page";
 
-export const columns: ColumnDef<PageTableData>[] = [
+interface ColumnsProps {
+  onPin: (pageId: string) => Promise<void>;
+  onUnpin: (pageId: string) => Promise<void>;
+  onDelete: (pageId: string) => Promise<void>;
+  pinnedPageIds: Set<string>;
+  loadingStates: {
+    pinning: Set<string>;
+    unpinning: Set<string>;
+    deleting: Set<string>;
+  };
+}
+
+export const createColumns = ({
+  onPin,
+  onUnpin,
+  onDelete,
+  pinnedPageIds,
+  loadingStates,
+}: ColumnsProps): ColumnDef<PageTableData>[] => [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: "title",
     header: ({ column }) => {
@@ -26,7 +67,6 @@ export const columns: ColumnDef<PageTableData>[] = [
     cell: ({ row }) => {
       const title = row.getValue("title") as string;
       const pageId = row.original.id;
-
       const workspaceUrl = `/workspace?pageId=${pageId}`;
 
       return (
@@ -55,7 +95,6 @@ export const columns: ColumnDef<PageTableData>[] = [
         );
       }
 
-      // Truncate long descriptions for table display
       const maxLength = 100;
       const truncatedDescription =
         description.length > maxLength
@@ -66,7 +105,7 @@ export const columns: ColumnDef<PageTableData>[] = [
         <div className="max-w-[300px]">
           <p
             className="line-clamp-2 text-sm text-muted-foreground"
-            title={description} // Full description on hover
+            title={description}
           >
             {truncatedDescription}
           </p>
@@ -85,14 +124,11 @@ export const columns: ColumnDef<PageTableData>[] = [
         return <span className="text-sm text-muted-foreground">No tags</span>;
       }
 
-      // Show first 3 tags, then "+X more" if there are more
       const visibleTags = tags.slice(0, 3);
       const remainingCount = tags.length - 3;
 
       return (
         <div className="flex w-28 min-w-[7rem] max-w-[8rem] flex-wrap gap-1">
-          {" "}
-          {/* Much smaller width */}
           {visibleTags.map((tag) => (
             <Badge
               key={tag.id}
@@ -175,5 +211,45 @@ export const columns: ColumnDef<PageTableData>[] = [
         </div>
       );
     },
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => {
+      const pageId = row.original.id;
+      const isPinned = pinnedPageIds.has(pageId);
+      const isPinning = loadingStates.pinning.has(pageId);
+      const isUnpinning = loadingStates.unpinning.has(pageId);
+      const isDeleting = loadingStates.deleting.has(pageId);
+
+      return (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => (isPinned ? onUnpin(pageId) : onPin(pageId))}
+            disabled={isPinning || isUnpinning}
+            className="h-8 w-8 p-0"
+          >
+            {isPinned ? (
+              <PinOff className="h-4 w-4" />
+            ) : (
+              <Pin className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(pageId)}
+            disabled={isDeleting}
+            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
   },
 ];

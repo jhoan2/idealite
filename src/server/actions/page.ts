@@ -883,3 +883,57 @@ export async function unarchivePageManually(pageId: string) {
     };
   }
 }
+
+const deleteMultiplePagesSchema = z.object({
+  pageIds: z.array(z.string().uuid()).min(1),
+});
+
+export async function deleteMultiplePages(
+  input: z.infer<typeof deleteMultiplePagesSchema>,
+) {
+  try {
+    const user = await currentUser();
+    if (!user?.externalId) {
+      return { success: false, error: "Unauthorized" };
+    }
+    const userId = user.externalId;
+    const { pageIds } = deleteMultiplePagesSchema.parse(input);
+
+    return await db.transaction(async (tx) => {
+      // Verify user has access to all pages
+      const userPages = await tx
+        .select({ pageId: users_pages.page_id })
+        .from(users_pages)
+        .where(
+          and(
+            eq(users_pages.user_id, userId),
+            sql`${users_pages.page_id} = ANY(${pageIds})`,
+          ),
+        );
+
+      const accessiblePageIds = userPages.map((up) => up.pageId);
+
+      // Check if user has access to all requested pages
+      if (accessiblePageIds.length !== pageIds.length) {
+        throw new Error("Access denied to some pages");
+      }
+
+      // Delete all pages in one query
+      await tx
+        .update(pages)
+        .set({
+          deleted: true,
+          updated_at: new Date(),
+        })
+        .where(sql`${pages.id} = ANY(${pageIds})`);
+
+      return { success: true, deletedCount: pageIds.length };
+    });
+  } catch (error) {
+    console.error("Error deleting multiple pages:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete pages",
+    };
+  }
+}

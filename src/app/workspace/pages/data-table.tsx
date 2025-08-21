@@ -1,16 +1,18 @@
-// src/app/pages/data-table.tsx
+// src/app/workspace/pages/data-table.tsx
 "use client";
 
 import * as React from "react";
 import {
   ColumnDef,
   SortingState,
+  RowSelectionState,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { Trash2, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -27,7 +29,6 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { PageTableData, PaginatedPagesResult } from "~/server/queries/page";
-import { Search } from "lucide-react";
 
 interface DataTableProps {
   columns: ColumnDef<PageTableData>[];
@@ -36,7 +37,9 @@ interface DataTableProps {
   onSortChange: (sortBy: string, sortOrder: "asc" | "desc") => void;
   onSearchChange: (search: string) => void;
   onPageSizeChange: (pageSize: number) => void;
+  onBulkDelete: (pageIds: string[]) => Promise<void>;
   loading?: boolean;
+  bulkDeleteLoading?: boolean;
 }
 
 export function PagesDataTable({
@@ -46,10 +49,13 @@ export function PagesDataTable({
   onSortChange,
   onSearchChange,
   onPageSizeChange,
+  onBulkDelete,
   loading = false,
+  bulkDeleteLoading = false,
 }: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [searchValue, setSearchValue] = React.useState("");
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
   // Handle sorting changes
   React.useEffect(() => {
@@ -69,6 +75,11 @@ export function PagesDataTable({
     return () => clearTimeout(timer);
   }, [searchValue, onSearchChange]);
 
+  // Clear row selection when data changes (after delete, page change, etc.)
+  React.useEffect(() => {
+    setRowSelection({});
+  }, [data.currentPage, data.data]);
+
   const table = useReactTable({
     data: data.data,
     columns,
@@ -78,9 +89,24 @@ export function PagesDataTable({
     pageCount: data.totalPages,
     state: {
       sorting,
+      rowSelection,
     },
     onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
   });
+
+  // Get selected page IDs
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const selectedPageIds = selectedRows.map((row) => row.original.id);
+  const hasSelectedRows = selectedPageIds.length > 0;
+
+  const handleBulkDelete = async () => {
+    if (selectedPageIds.length === 0) return;
+
+    await onBulkDelete(selectedPageIds);
+    setRowSelection({});
+  };
 
   return (
     <div className="space-y-4">
@@ -96,7 +122,6 @@ export function PagesDataTable({
           />
         </div>
 
-        {/* Page Size Selector */}
         <div className="flex items-center space-x-2">
           <span className="text-sm text-muted-foreground">Show:</span>
           <Select
@@ -116,6 +141,38 @@ export function PagesDataTable({
           <span className="text-sm text-muted-foreground">per page</span>
         </div>
       </div>
+
+      {/* Bulk Actions Toolbar */}
+      {hasSelectedRows && (
+        <div className="flex items-center justify-between rounded-md border bg-muted/50 px-4 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {selectedPageIds.length} page
+              {selectedPageIds.length === 1 ? "" : "s"} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRowSelection({})}
+              disabled={bulkDeleteLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleteLoading}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              {bulkDeleteLoading ? "Deleting..." : "Delete Selected"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="rounded-md border">
@@ -150,7 +207,10 @@ export function PagesDataTable({
               ))
             ) : data.data.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
@@ -195,7 +255,6 @@ export function PagesDataTable({
           </Button>
 
           <div className="flex items-center space-x-1">
-            {/* Show page numbers */}
             {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
               let pageNumber;
               if (data.totalPages <= 5) {
