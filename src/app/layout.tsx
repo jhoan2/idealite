@@ -1,10 +1,11 @@
+// src/app/layout.tsx (Updated)
 import "~/styles/globals.css";
 import { inter } from "~/app/ui/fonts";
 import { PHProvider } from "~/app/providers";
 import { ThemeProvider } from "~/app/ThemeProvider";
 import { Toaster } from "~/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
-import SideBar from "./SideBar";
+import SideBarWrapper from "./SideBarWrapper"; // Changed from SideBar to SideBarWrapper
 import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 import ConditionalSidebarTrigger from "./ConditionalSidebarTrigger";
 
@@ -33,13 +34,11 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {/* <NeynarProvider>
-            <SessionProvider> */}
             <PHProvider>
               <SidebarProvider>
                 <div className="flex h-screen w-full">
                   <div className="">
-                    <SideBar />
+                    <SideBarWrapper />
                   </div>
                   <div className="flex-1 overflow-y-auto">
                     <div className="p-2 md:hidden">
@@ -51,8 +50,6 @@ export default async function RootLayout({
                 </div>
               </SidebarProvider>
             </PHProvider>
-            {/* </SessionProvider>
-          </NeynarProvider> */}
           </ThemeProvider>
         </body>
       </html>

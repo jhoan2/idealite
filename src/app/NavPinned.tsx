@@ -1,4 +1,4 @@
-// src/app/NavPinned.tsx
+// src/app/NavPinned.tsx (Updated)
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -23,7 +23,6 @@ import {
 } from "~/server/queries/pinnedPages";
 import { unpinPage, reorderPinnedPages } from "~/server/actions/pinnedPages";
 import { usePathname, useSearchParams } from "next/navigation";
-import { PinnedPageSkeleton } from "./PinnedPageSkeleton";
 
 // dnd-kit imports
 import {
@@ -138,9 +137,13 @@ function PinnedPageItem({
   );
 }
 
-export function NavPinned() {
-  const [pinnedPages, setPinnedPages] = useState<PinnedPage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface NavPinnedProps {
+  initialPinnedPages: PinnedPage[];
+}
+
+export function NavPinned({ initialPinnedPages }: NavPinnedProps) {
+  const [pinnedPages, setPinnedPages] =
+    useState<PinnedPage[]>(initialPinnedPages);
   const [activeId, setActiveId] = useState<string | null>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -156,20 +159,12 @@ export function NavPinned() {
 
   const fetchPinnedPages = async () => {
     try {
-      setIsLoading(true);
       const pages = await getUserPinnedPages();
       setPinnedPages(pages);
     } catch (error) {
       console.error("Failed to load pinned pages:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
-
-  // Load pinned pages on mount
-  useEffect(() => {
-    fetchPinnedPages();
-  }, []);
 
   // Listen for pinned pages changes from other components
   useEffect(() => {
@@ -247,8 +242,8 @@ export function NavPinned() {
     ? pinnedPages.find((page) => page.id === activeId)
     : null;
 
-  // Don't render if no pinned pages and not loading
-  if (!isLoading && pinnedPages.length === 0) {
+  // Don't render if no pinned pages
+  if (pinnedPages.length === 0) {
     return null;
   }
 
@@ -260,51 +255,43 @@ export function NavPinned() {
       </SidebarGroupLabel>
 
       <SidebarMenu>
-        {isLoading ? (
-          <>
-            <PinnedPageSkeleton delay={0} />
-            <PinnedPageSkeleton delay={150} />
-            <PinnedPageSkeleton delay={300} />
-            <PinnedPageSkeleton delay={450} />
-          </>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
+        <DndContext
+          id="pinned-pages-dnd"
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={pinnedPages.map((page) => page.id)}
+            strategy={verticalListSortingStrategy}
           >
-            <SortableContext
-              items={pinnedPages.map((page) => page.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {pinnedPages.map((page) => {
-                const currentPageId = searchParams.get("pageId");
-                const isActive =
-                  pathname === "/workspace" && currentPageId === page.id;
-                return (
-                  <PinnedPageItem
-                    key={page.id}
-                    page={page}
-                    isActive={isActive}
-                    onUnpin={handleUnpin}
-                  />
-                );
-              })}
-            </SortableContext>
-
-            <DragOverlay>
-              {activeItem ? (
+            {pinnedPages.map((page) => {
+              const currentPageId = searchParams.get("pageId");
+              const isActive =
+                pathname === "/workspace" && currentPageId === page.id;
+              return (
                 <PinnedPageItem
-                  page={activeItem}
-                  isActive={false}
-                  onUnpin={() => {}}
-                  isDragOverlay={true}
+                  key={page.id}
+                  page={page}
+                  isActive={isActive}
+                  onUnpin={handleUnpin}
                 />
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        )}
+              );
+            })}
+          </SortableContext>
+
+          <DragOverlay>
+            {activeItem ? (
+              <PinnedPageItem
+                page={activeItem}
+                isActive={false}
+                onUnpin={() => {}}
+                isDragOverlay={true}
+              />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </SidebarMenu>
     </SidebarGroup>
   );

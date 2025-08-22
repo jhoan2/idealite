@@ -1,6 +1,7 @@
+// src/app/SideBarClient.tsx (Renamed from SideBar.tsx)
 "use client";
 
-import React, { useEffect, useState, useTransition } from "react";
+import React from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,15 +20,19 @@ import {
   Tag,
   Layers,
   LogIn,
+  StickyNote,
+  Palette,
 } from "lucide-react";
 import { NavUser } from "./NavUser";
 import { useUser, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { NavPinned } from "./NavPinned";
 import { NavMain } from "./NavMain";
-import { Navworkspace } from "./NavWorkspace"; // Make sure to import your NavWorkspace component
+import { Navworkspace } from "./NavWorkspace";
 import { getNotificationCounts } from "~/server/queries/notification";
 import { usePathname } from "next/navigation";
 import { Button } from "~/components/ui/button";
+import { useState, useEffect, useTransition } from "react";
+import type { PinnedPage } from "~/server/queries/pinnedPages";
 
 const workspaceItems = [
   {
@@ -36,6 +41,16 @@ const workspaceItems = [
     icon: Folder,
     isActive: false,
     items: [
+      {
+        title: "Create Page",
+        icon: StickyNote,
+        url: null,
+      },
+      {
+        title: "Create Memory Map",
+        icon: Palette,
+        url: null,
+      },
       {
         title: "All Pages",
         url: "/workspace/pages",
@@ -114,7 +129,13 @@ function NotificationCount() {
   );
 }
 
-export default function SideBar() {
+interface SideBarClientProps {
+  initialPinnedPages: PinnedPage[];
+}
+
+export default function SideBarClient({
+  initialPinnedPages,
+}: SideBarClientProps) {
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
 
@@ -206,9 +227,7 @@ export default function SideBar() {
           <NavMain items={bottomNavigationItems} />
         </SidebarGroup>
 
-        <SignedIn>
-          <NavPinned />
-        </SignedIn>
+        <NavPinned initialPinnedPages={initialPinnedPages} />
         <SidebarFooter />
       </SidebarContent>
     </Sidebar>
