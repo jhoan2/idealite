@@ -21,7 +21,7 @@ import {
   Layers,
   LogIn,
   StickyNote,
-  Palette,
+  Map,
 } from "lucide-react";
 import { NavUser } from "./NavUser";
 import { useUser, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
@@ -48,7 +48,7 @@ const workspaceItems = [
       },
       {
         title: "Create Memory Map",
-        icon: Palette,
+        icon: Map,
         url: null,
       },
       {

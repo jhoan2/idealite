@@ -15,7 +15,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "~/components/ui/context-menu";
-import { Pin, FileText, Palette, GripVertical } from "lucide-react";
+import { Pin, FileText, Map, GripVertical } from "lucide-react";
 import Link from "next/link";
 import {
   getUserPinnedPages,
@@ -80,7 +80,7 @@ function PinnedPageItem({
         className="flex items-center gap-2"
       >
         {page.content_type === "canvas" ? (
-          <Palette className="h-4 w-4" />
+          <Map className="h-4 w-4" />
         ) : (
           <FileText className="h-4 w-4" />
         )}
