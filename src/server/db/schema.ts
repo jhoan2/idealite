@@ -15,6 +15,7 @@ import {
   primaryKey,
   pgEnum,
   jsonb,
+  json,
   serial,
   vector,
 } from "drizzle-orm/pg-core";
@@ -218,13 +219,12 @@ export const resources = createTable(
     description: text("description"),
     id: uuid("id").defaultRandom().primaryKey(),
     image: text("image"),
-    og_type: text("og_type"),
-    open_library_id: text("open_library_id"),
+    site_icon: text("site_icon"),
     owner_id: uuid("owner_id").references(() => users.id),
     title: text("title").notNull(),
-    type: text("type", {
-      enum: ["url", "crossref", "open_library"],
-    }).notNull(),
+    type: text("type").notNull(),
+    metadata: json("metadata"), // All the unique stuff per type
+    embed_data: text("embed_data"), // HTML embeds, iframe codes, etc.
     updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
@@ -245,7 +245,6 @@ export const resources = createTable(
       "gin",
       sql`to_tsvector('english', ${table.author})`,
     ),
-    index("idx_resource_open_library_id_idx").on(table.open_library_id),
   ],
 );
 
