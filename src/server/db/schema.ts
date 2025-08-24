@@ -220,6 +220,7 @@ export const resources = createTable(
     id: uuid("id").defaultRandom().primaryKey(),
     image: text("image"),
     site_icon: text("site_icon"),
+    open_library_id: text("open_library_id"),
     owner_id: uuid("owner_id").references(() => users.id),
     title: text("title").notNull(),
     type: text("type").notNull(),
