@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   BookIcon,
@@ -25,6 +25,7 @@ export interface InfoCardProps {
   author: string | null;
   resourceId: string;
   pageId: string;
+  metadata?: Record<string, any>;
   onDelete: (resourceId: string, pageId: string) => void;
 }
 
@@ -38,76 +39,85 @@ export function InfoCard({
   author,
   resourceId,
   pageId,
+  metadata,
   onDelete,
 }: InfoCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [twitterHtml, setTwitterHtml] = useState("");
 
   const isTwitterUrl = (url: string) => {
     return url.includes("twitter.com") || url.includes("x.com");
   };
 
-  useEffect(() => {
-    const fetchTwitterEmbed = async () => {
-      if (isTwitterUrl(url)) {
-        setIsLoading(true);
-        try {
-          const response = await fetch(
-            `/api/twitter?url=${encodeURIComponent(url)}`,
-          );
-          const data = await response.json();
-          setTwitterHtml(data.html);
-        } catch (error) {
-          console.error("Error fetching Twitter embed:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchTwitterEmbed();
-  }, [url]);
-
+  // Handle Twitter URLs with stored metadata
   if (isTwitterUrl(url)) {
-    if (isLoading) {
-      return <div>Loading tweet...</div>;
-    }
-    return (
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <div className="flex items-center justify-between space-x-2">
-            <div className="flex min-w-0 items-center space-x-2">
-              {type === "url" ? (
+    if (metadata?.oembed?.html) {
+      // Use stored oembed HTML
+      return (
+        <Card className="w-full max-w-2xl">
+          <CardHeader>
+            <div className="flex items-center justify-between space-x-2">
+              <div className="flex min-w-0 items-center space-x-2">
                 <LinkIcon className="h-5 w-5 flex-shrink-0 text-primary" />
-              ) : type === "book" ? (
-                <BookIcon className="h-5 w-5 flex-shrink-0 text-primary" />
-              ) : type === "research-paper" ? (
-                <MicroscopeIcon className="h-5 w-5 flex-shrink-0 text-primary" />
-              ) : (
-                <LinkIcon className="h-5 w-5 flex-shrink-0 text-primary" />
-              )}
-              <span className="truncate text-sm text-muted-foreground">
-                {type}
-              </span>
+                <span className="truncate text-sm text-muted-foreground">
+                  {type}
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(resourceId, pageId)}
+                className="h-6 w-6 flex-shrink-0 rounded-full hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(resourceId, pageId)}
-              className="h-6 w-6 flex-shrink-0 rounded-full hover:bg-muted"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="overflow-hidden">
-          <TwitterEmbed html={twitterHtml || ""} />
-        </CardContent>
-      </Card>
-    );
+          </CardHeader>
+          <CardContent className="overflow-hidden">
+            <TwitterEmbed html={metadata.oembed.html} />
+          </CardContent>
+        </Card>
+      );
+    } else {
+      // Twitter URL without stored metadata - show error or basic card
+      return (
+        <Card className="w-full max-w-2xl">
+          <CardHeader>
+            <div className="flex items-center justify-between space-x-2">
+              <div className="flex min-w-0 items-center space-x-2">
+                <LinkIcon className="h-5 w-5 flex-shrink-0 text-primary" />
+                <span className="truncate text-sm text-muted-foreground">
+                  Twitter
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(resourceId, pageId)}
+                className="h-6 w-6 flex-shrink-0 rounded-full hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Twitter embed data not available.
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-1 text-primary hover:underline"
+              >
+                View on Twitter →
+              </a>
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
   }
 
+  // Handle regular (non-Twitter) URLs
   return (
     <Card className="w-full max-w-2xl overflow-hidden">
       <CardHeader>

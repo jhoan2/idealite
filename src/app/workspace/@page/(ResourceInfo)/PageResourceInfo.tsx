@@ -62,6 +62,7 @@ export default function PageResourceInfo({
           author={resource.author || ""}
           resourceId={resource.id}
           pageId={currentPageId}
+          metadata={resource.metadata as Record<string, any> | undefined}
           onDelete={handleDeleteResource}
         />
       ))}

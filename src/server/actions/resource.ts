@@ -19,6 +19,7 @@ const createResourceSchema = z.object({
   url: z.string().url("Invalid URL"),
   date_published: z.date().optional(),
   page_id: z.string(),
+  metadata: z.record(z.any()).optional(),
 });
 
 export type CreateResourceInput = z.infer<typeof createResourceSchema>;
@@ -228,7 +229,6 @@ export async function createResourceFromWebhook(payload: {
         title: payload.title,
         url: payload.url,
         type: "url",
-        og_type: payload.og_type,
         description: payload.description,
         author: payload.author,
         image: payload.image,
