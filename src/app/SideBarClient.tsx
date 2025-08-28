@@ -66,11 +66,11 @@ const workspaceItems = [
         url: "/workspace/resources",
         icon: LibraryBig,
       },
-      {
-        title: "Graph",
-        url: "/workspace/projects/archived",
-        icon: ChartNetwork,
-      },
+      // {
+      //   title: "Graph",
+      //   url: "/workspace/projects/archived",
+      //   icon: ChartNetwork,
+      // },
     ],
   },
 ];
