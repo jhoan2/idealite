@@ -21,7 +21,7 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider waitlistUrl="/waitlist">
       <html
         lang="en"
         suppressHydrationWarning={true}

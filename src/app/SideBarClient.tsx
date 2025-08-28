@@ -141,7 +141,11 @@ export default function SideBarClient({
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname.startsWith("/mobile")) {
+  if (
+    pathname === "/" ||
+    pathname.startsWith("/mobile") ||
+    pathname === "/waitlist"
+  ) {
     return null;
   }
 
@@ -210,10 +214,10 @@ export default function SideBarClient({
                 </span>
               </div>
               <SignInButton mode="modal">
-                <Button variant="ghost" size="sm" className="ml-2">
-                  <LogIn className="mr-1 h-4 w-4" />
+                <span className="ml-2 cursor-pointer rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                  <LogIn className="mr-1 inline h-4 w-4" />
                   Sign In
-                </Button>
+                </span>
               </SignInButton>
             </div>
           </SignedOut>

@@ -1,5 +1,4 @@
-import { Button } from "~/components/ui/button";
-import { SignUpButton } from "@clerk/nextjs";
+import Link from "next/link";
 
 export default function GetStarted() {
   return (
@@ -13,9 +12,16 @@ export default function GetStarted() {
               </h2>
             </div>
             <div className="flex flex-col gap-2 pt-8 min-[400px]:flex-row">
-              <Button className="bg-white px-8 py-6 text-lg text-black hover:bg-gray-300">
+              {/* <span className="cursor-pointer bg-white px-8 py-6 text-lg text-black hover:bg-gray-300">
                 <SignUpButton />
-              </Button>
+              </span> */}
+              <Link
+                href="/waitlist"
+                className="inline-flex transform items-center rounded-md bg-white px-8 py-6 text-lg font-semibold text-black shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-gray-100 hover:shadow-xl"
+              >
+                Join the Waitlist
+                <span className="ml-2">→</span>
+              </Link>
             </div>
           </div>
         </div>

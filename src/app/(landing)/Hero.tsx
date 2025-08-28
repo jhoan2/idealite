@@ -56,23 +56,23 @@ export default function Hero() {
               </div>
             </Link>
           </div>
-          <div className="flex gap-2 sm:gap-4">
+          {/* <div className="flex gap-2 sm:gap-4">
             <SignedOut>
               <SignInButton>
-                <button className="rounded-lg bg-gray-800 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-700 sm:px-6 sm:py-3 sm:text-base">
+                <span className="cursor-pointer rounded-lg bg-gray-800 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-700 sm:px-6 sm:py-3 sm:text-base">
                   Sign In
-                </button>
+                </span>
               </SignInButton>
               <SignUpButton>
-                <button className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-700 sm:px-6 sm:py-3 sm:text-base">
+                <span className="cursor-pointer rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-700 sm:px-6 sm:py-3 sm:text-base">
                   Sign Up
-                </button>
+                </span>
               </SignUpButton>
             </SignedOut>
             <SignedIn>
               <UserButton />
             </SignedIn>
-          </div>
+          </div> */}
         </nav>
 
         {/* Main Hero Content */}
@@ -96,14 +96,23 @@ export default function Hero() {
             you harvest the insights.
           </p>
 
-          <div className="mb-12 mt-8">
+          <div className="mb-12 mt-8 flex flex-col items-center gap-4">
             <Link
-              href="/workspace"
-              className="inline-flex transform items-center rounded-md bg-orange-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all transition-colors duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-xl"
+              href="/waitlist"
+              className="inline-flex transform items-center rounded-md bg-orange-500 px-8 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-xl"
             >
-              Get Started for free
+              Join the Waitlist
               <span className="ml-2">→</span>
             </Link>
+
+            <SignedIn>
+              <Link
+                href="/workspace"
+                className="text-sm font-medium text-orange-600 hover:text-orange-700"
+              >
+                Already approved? Continue to workspace →
+              </Link>
+            </SignedIn>
           </div>
         </div>
       </div>
