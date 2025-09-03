@@ -283,8 +283,8 @@ export async function savePageContent(pageId: string, content: string) {
 
 export type CreatePageInput = {
   title: string;
-  tag_id: string;
-  hierarchy: string[];
+  tag_id?: string;        // Make optional
+  hierarchy?: string[];   // Make optional  
   folder_id: string | null;
 };
 
@@ -313,7 +313,7 @@ export async function createPage(
           title: input.title,
           content: "",
           content_type: type,
-          primary_tag_id: input.tag_id,
+          primary_tag_id: input.tag_id || null, // Handle optional tag
           folder_id: input.folder_id,
         })
         .returning();
@@ -322,13 +322,15 @@ export async function createPage(
         throw new Error("Failed to create page");
       }
 
-      // 2. Create the page-tag relationship
-      await tx.insert(pages_tags).values(
-        input.hierarchy.map((tagId) => ({
-          page_id: newPage.id,
-          tag_id: tagId,
-        })),
-      );
+      // 2. Create page-tag relationships only if hierarchy exists
+      if (input.hierarchy && input.hierarchy.length > 0) {
+        await tx.insert(pages_tags).values(
+          input.hierarchy.map((tagId) => ({
+            page_id: newPage.id,
+            tag_id: tagId,
+          })),
+        );
+      }
 
       // 3. Create the user-page relationship (as owner)
       await tx.insert(users_pages).values({

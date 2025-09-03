@@ -1,7 +1,10 @@
 "use client";
 
 import { ChevronRight, type LucideIcon } from "lucide-react";
-
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 import {
   Collapsible,
   CollapsibleContent,
@@ -16,6 +19,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "~/components/ui/sidebar";
+import { Button } from "~/components/ui/button";
 
 export function Navworkspace({
   items,
@@ -27,11 +31,32 @@ export function Navworkspace({
     isActive?: boolean;
     items?: {
       title: string;
-      url: string;
+      url: string | null;
       icon?: LucideIcon;
     }[];
   }[];
 }) {
+  const router = useRouter();
+
+  const handleCreateAction = async (
+    itemTitle: string,
+    type: "page" | "canvas",
+  ) => {
+    // Generate temporary ID for optimistic page creation
+    const tempId = `temp-${uuidv4()}`;
+    
+    // Navigate immediately to optimistic page
+    router.push(`/workspace?pageId=${tempId}&isOptimistic=true&tempId=${tempId}&type=${type}`);
+  };
+
+  const isCreateButton = (title: string) => {
+    return title === "Create Page" || title === "Create Memory Map";
+  };
+
+  const getCreateType = (title: string): "page" | "canvas" => {
+    return title === "Create Page" ? "page" : "canvas";
+  };
+
   return (
     <SidebarMenu>
       {items.map((item) => (
@@ -62,12 +87,30 @@ export function Navworkspace({
                   <SidebarMenuSub>
                     {item.items?.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton asChild>
-                          <a href={subItem.url}>
-                            {subItem.icon && <subItem.icon />}
+                        {isCreateButton(subItem.title) ? (
+                          <Button
+                            variant="ghost"
+                            className="h-8 w-full justify-start gap-2 px-2 text-sm font-normal"
+                            onClick={() =>
+                              handleCreateAction(
+                                subItem.title,
+                                getCreateType(subItem.title),
+                              )
+                            }
+                          >
+                            {subItem.icon && (
+                              <subItem.icon className="h-4 w-4" />
+                            )}
                             <span>{subItem.title}</span>
-                          </a>
-                        </SidebarMenuSubButton>
+                          </Button>
+                        ) : (
+                          <SidebarMenuSubButton asChild>
+                            <a href={subItem.url!}>
+                              {subItem.icon && <subItem.icon />}
+                              <span>{subItem.title}</span>
+                            </a>
+                          </SidebarMenuSubButton>
+                        )}
                       </SidebarMenuSubItem>
                     ))}
                   </SidebarMenuSub>

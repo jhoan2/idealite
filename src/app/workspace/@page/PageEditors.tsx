@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, FileCheck } from "lucide-react";
 import HeadingEditor from "./HeadingEditor";
 import BodyEditor from "./(BodyEditor)/BodyEditor";
@@ -9,6 +9,7 @@ import { TreeTag } from "~/server/queries/usersTags";
 import { Tag } from "~/server/db/schema";
 import { PageTour } from "./PageTour";
 import { MobilePageTour } from "./MobilePageTour";
+import { createPage } from "~/server/actions/page";
 
 export default function PageEditors({
   title,
@@ -17,6 +18,8 @@ export default function PageEditors({
   tags,
   isMobile,
   isWarpcast,
+  isOptimistic = false,
+  tempId,
 }: {
   title: string;
   content: {
@@ -27,11 +30,52 @@ export default function PageEditors({
   tags: Tag[];
   isMobile: boolean;
   isWarpcast: boolean;
+  isOptimistic?: boolean;
+  tempId?: string;
 }) {
   const searchParams = useSearchParams();
   const pageId = searchParams.get("pageId") as string;
   const [isSavingTitle, setIsSavingTitle] = useState(false);
   const [isSavingContent, setIsSavingContent] = useState(false);
+
+  const [realPageId, setRealPageId] = useState<string | null>(null);
+  const [isCreatingPage, setIsCreatingPage] = useState(false);
+
+  useEffect(() => {
+    if (isOptimistic && tempId && !isCreatingPage && !realPageId) {
+      setIsCreatingPage(true);
+      createRealPageInBackground(tempId);
+    }
+  }, [isOptimistic, tempId, isCreatingPage, realPageId]);
+
+  const createRealPageInBackground = async (tempId: string) => {
+    try {
+      const result = await createPage(
+        {
+          title: "Untitled",
+          // No tag_id or hierarchy - let it be tag-less for now
+          folder_id: null,
+        },
+        "page",
+      );
+
+      if (result.success && "data" in result && result.data) {
+        const realId = result.data.id;
+
+        // Update URL seamlessly
+        const newUrl = `/workspace?pageId=${realId}`;
+        window.history.replaceState({}, "", newUrl);
+
+        // Set the real page ID
+        setRealPageId(realId);
+      }
+    } catch (error) {
+      console.error("Failed to create page:", error);
+      // Silently continue - user can keep working with temp page
+    } finally {
+      setIsCreatingPage(false);
+    }
+  };
 
   const isSaving = isSavingTitle || isSavingContent;
 

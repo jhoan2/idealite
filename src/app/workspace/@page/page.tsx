@@ -33,6 +33,42 @@ export default async function PageContent({
     return null;
   }
 
+  // Check if this is a temp page
+  const isOptimistic = pageId.startsWith('temp-');
+  
+  if (isOptimistic) {
+    // Return default data for temp pages
+    const userTagTree = userId ? await getUserTagTree(userId) : [];
+    
+    return (
+      <div className="h-full w-full">
+        <Suspense fallback={<HeaderSkeleton />}>
+          <PageHeader
+            tags={[]} // Empty tags for now
+            userTagTree={userTagTree}
+            resources={[]} // Empty resources for now
+            isMobile={isMobile ?? false}
+            isWarpcast={isWarpcast ?? false}
+          />
+        </Suspense>
+        <Suspense fallback={<EditorSkeleton />}>
+          <PageEditors
+            key={pageId}
+            title="Untitled"
+            content={{ content: "", content_type: "page" }}
+            userTagTree={userTagTree}
+            tags={[]}
+            isMobile={isMobile ?? false}
+            isWarpcast={isWarpcast ?? false}
+            // Pass temp page info
+            isOptimistic={true}
+            tempId={pageId}
+          />
+        </Suspense>
+      </div>
+    );
+  }
+
   const [title, content, tags, resources, userTagTree] = await Promise.all([
     getPageTitle(pageId) ?? "",
     getPageContent(pageId) ?? "",

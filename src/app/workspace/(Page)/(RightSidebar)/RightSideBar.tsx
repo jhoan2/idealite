@@ -32,6 +32,12 @@ export function RightSideBar({
 
   useEffect(() => {
     if (pageId) {
+      // Skip query for temporary/optimistic page IDs
+      if (pageId.startsWith("temp-")) {
+        setPageType("page"); // Default to "page" for new optimistic pages
+        return;
+      }
+      
       getPageType(pageId).then((type) => {
         setPageType(type);
       });
