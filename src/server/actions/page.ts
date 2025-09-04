@@ -60,6 +60,35 @@ export async function updatePage(
       throw new Error("Page not found or user doesn't have access");
     }
 
+    // If updating title, ensure uniqueness across user's pages
+    if (validatedUpdateData.title) {
+      // Get all existing page titles for this user
+      const existingPages = await db
+        .select({ title: pages.title })
+        .from(pages)
+        .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
+        .where(
+          and(
+            eq(users_pages.user_id, user.externalId),
+            eq(pages.deleted, false),
+            sql`${pages.id} != ${validatedPageId}` // Exclude current page
+          ),
+        );
+
+      let newTitle = validatedUpdateData.title;
+      let counter = 2;
+      const baseTitle = validatedUpdateData.title;
+
+      // Check if title already exists and auto-rename if needed
+      while (existingPages.some((page) => page.title?.toLowerCase() === newTitle.toLowerCase())) {
+        newTitle = `${baseTitle} (${counter})`;
+        counter++;
+      }
+
+      // Update the validated data with the unique title
+      validatedUpdateData.title = newTitle;
+    }
+
     const updatedPage = await db
       .update(pages)
       .set({

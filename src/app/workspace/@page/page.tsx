@@ -13,6 +13,7 @@ import { getResourcesForPage } from "~/server/queries/resource";
 import HeaderSkeleton from "./HeaderSkeleton";
 import EditorSkeleton from "./EditorSkeleton";
 import { headers } from "next/headers";
+import { OptimisticPageWrapper } from "./OptimisticPageWrapper";
 
 export default async function PageContent({
   searchParams,
@@ -23,6 +24,9 @@ export default async function PageContent({
   const userId = user?.externalId;
   const pageIdParam = searchParams.pageId;
   const pageId = typeof pageIdParam === "string" ? pageIdParam : undefined;
+  const typeParam = searchParams.type;
+  const requestedType = typeof typeParam === "string" ? typeParam as "page" | "canvas" : "page";
+  
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
 
@@ -40,6 +44,11 @@ export default async function PageContent({
     // Return default data for temp pages
     const userTagTree = userId ? await getUserTagTree(userId) : [];
     
+    // Determine default content based on type
+    const defaultContent = requestedType === "canvas" 
+      ? { content: JSON.stringify({ document: "" }), content_type: "canvas" as const }
+      : { content: "", content_type: "page" as const };
+    
     return (
       <div className="h-full w-full">
         <Suspense fallback={<HeaderSkeleton />}>
@@ -52,18 +61,33 @@ export default async function PageContent({
           />
         </Suspense>
         <Suspense fallback={<EditorSkeleton />}>
-          <PageEditors
-            key={pageId}
-            title="Untitled"
-            content={{ content: "", content_type: "page" }}
-            userTagTree={userTagTree}
-            tags={[]}
-            isMobile={isMobile ?? false}
-            isWarpcast={isWarpcast ?? false}
-            // Pass temp page info
+          <OptimisticPageWrapper
             isOptimistic={true}
             tempId={pageId}
-          />
+            tempType={requestedType}
+          >
+            {requestedType === "canvas" ? (
+              <CanvasEditor
+                title="Untitled"
+                content={{ document: "" }} // Empty canvas snapshot
+                pageId={pageId}
+                tags={[]}
+                userTagTree={userTagTree}
+                isMobile={isMobile ?? false}
+                isWarpcast={isWarpcast ?? false}
+              />
+            ) : (
+              <PageEditors
+                key={pageId}
+                title="Untitled"
+                content={defaultContent}
+                userTagTree={userTagTree}
+                tags={[]}
+                isMobile={isMobile ?? false}
+                isWarpcast={isWarpcast ?? false}
+              />
+            )}
+          </OptimisticPageWrapper>
         </Suspense>
       </div>
     );

@@ -45,8 +45,8 @@ export function Navworkspace({
     // Generate temporary ID for optimistic page creation
     const tempId = `temp-${uuidv4()}`;
     
-    // Navigate immediately to optimistic page
-    router.push(`/workspace?pageId=${tempId}&isOptimistic=true&tempId=${tempId}&type=${type}`);
+    // Navigate immediately to optimistic page with type parameter
+    router.push(`/workspace?pageId=${tempId}&type=${type}`);
   };
 
   const isCreateButton = (title: string) => {
@@ -91,12 +91,14 @@ export function Navworkspace({
                           <Button
                             variant="ghost"
                             className="h-8 w-full justify-start gap-2 px-2 text-sm font-normal"
-                            onClick={() =>
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               handleCreateAction(
                                 subItem.title,
                                 getCreateType(subItem.title),
-                              )
-                            }
+                              );
+                            }}
                           >
                             {subItem.icon && (
                               <subItem.icon className="h-4 w-4" />
