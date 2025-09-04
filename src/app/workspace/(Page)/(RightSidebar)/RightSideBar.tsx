@@ -34,7 +34,9 @@ export function RightSideBar({
     if (pageId) {
       // Skip query for temporary/optimistic page IDs
       if (pageId.startsWith("temp-")) {
-        setPageType("page"); // Default to "page" for new optimistic pages
+        // Read the type from URL params for temp pages
+        const typeParam = searchParams.get("type");
+        setPageType(typeParam === "canvas" ? "canvas" : "page");
         return;
       }
       
@@ -42,7 +44,7 @@ export function RightSideBar({
         setPageType(type);
       });
     }
-  }, [pageId]);
+  }, [pageId, searchParams]);
 
   const toggleView = () => {
     setActiveView(activeView === "cards" ? "image-generator" : "cards");

@@ -21,6 +21,12 @@ export function CardList({ pageId, userTagTree, isMobile }: CardListProps) {
   useEffect(() => {
     const loadCards = async () => {
       try {
+        // Don't try to load cards for temporary pages or null pageId
+        if (!pageId || pageId.startsWith('temp-')) {
+          setCards([]);
+          return;
+        }
+        
         const pageCards = await getPageCards(pageId);
         setCards(pageCards);
       } catch (error) {
