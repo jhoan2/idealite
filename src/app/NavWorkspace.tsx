@@ -3,7 +3,6 @@
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import {
   Collapsible,
@@ -42,10 +41,10 @@ export function Navworkspace({
     itemTitle: string,
     type: "page" | "canvas",
   ) => {
-    // Generate temporary ID for optimistic page creation
+    // Generate temporary ID for optimistic navigation
     const tempId = `temp-${uuidv4()}`;
     
-    // Navigate immediately to optimistic page with type parameter
+    // Navigate immediately to optimistic page
     router.push(`/workspace?pageId=${tempId}&type=${type}`);
   };
 
