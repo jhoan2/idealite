@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\actions/**)",
-      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\actions/**)"
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\actions/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\actions/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\queries/**)",
+      "Bash(npm run lint)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app/**)"
     ],
     "deny": [],
     "ask": []
