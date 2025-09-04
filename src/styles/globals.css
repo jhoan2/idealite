@@ -271,3 +271,22 @@
 .dark .mention:hover {
   background-color: rgb(59 130 246);
 }
+
+/* Regular link styles */
+.regular-link {
+  color: rgb(59 130 246);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.regular-link:hover {
+  color: rgb(37 99 235);
+}
+
+.dark .regular-link {
+  color: rgb(96 165 250);
+}
+
+.dark .regular-link:hover {
+  color: rgb(59 130 246);
+}

@@ -486,8 +486,13 @@ const BodyEditor = ({
       }),
       CustomLink.configure({
         openOnClick: false,
+        autolink: true,
+        protocols: ["http", "https"],
+        validate: (url: string) => {
+          return url.startsWith("http://") || url.startsWith("https://");
+        },
         HTMLAttributes: {
-          class: "page-mention",
+          class: "regular-link",
         },
       }),
       PageMention,
