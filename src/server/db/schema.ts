@@ -453,6 +453,28 @@ export const cards_tags = createTable(
   ],
 );
 
+export type PageEdge = typeof pages_edges.$inferSelect;
+export const pages_edges = createTable(
+  "pages_edges",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    source_page_id: uuid("source_page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    target_page_id: uuid("target_page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    index("unique_edge_idx").on(table.source_page_id, table.target_page_id),
+    index("target_page_idx").on(table.target_page_id),
+    index("source_page_idx").on(table.source_page_id),
+  ],
+);
+
 export const pagesRelations = relations(pages, ({ many, one }) => ({
   tags: many(pages_tags),
   users: many(users_pages),
@@ -461,6 +483,8 @@ export const pagesRelations = relations(pages, ({ many, one }) => ({
     fields: [pages.folder_id],
     references: [folders.id],
   }),
+  outgoingLinks: many(pages_edges, { relationName: "source" }),
+  incomingLinks: many(pages_edges, { relationName: "target" }),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({
@@ -603,6 +627,19 @@ export const cardsTagsRelations = relations(cards_tags, ({ one }) => ({
   tag: one(tags, {
     fields: [cards_tags.tag_id],
     references: [tags.id],
+  }),
+}));
+
+export const pagesEdgesRelations = relations(pages_edges, ({ one }) => ({
+  sourcePage: one(pages, {
+    fields: [pages_edges.source_page_id],
+    references: [pages.id],
+    relationName: "source",
+  }),
+  targetPage: one(pages, {
+    fields: [pages_edges.target_page_id], 
+    references: [pages.id],
+    relationName: "target",
   }),
 }));
 
