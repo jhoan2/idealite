@@ -13,6 +13,7 @@ interface PageSuggestion {
 interface MentionListProps {
   items: PageSuggestion[];
   command: (item: PageSuggestion) => void;
+  isLoading?: boolean;
 }
 
 export const MentionList = forwardRef<
@@ -72,7 +73,11 @@ export const MentionList = forwardRef<
 
   return (
     <div className="max-h-64 overflow-y-auto rounded-md border border-border bg-background shadow-lg">
-      {props.items.length ? (
+      {props.isLoading ? (
+        <div className="px-3 py-2 text-sm text-muted-foreground">
+          Loading...
+        </div>
+      ) : props.items.length ? (
         props.items.map((item, index) => (
           <button
             key={item.id}

@@ -20,30 +20,80 @@ export const PageMention = Mention.extend({
     allowSpaces: true,
     startOfLine: false,
 
-    items: async ({ query }: { query: string }): Promise<PageSuggestion[]> => {
-      try {
-        const response = await fetch(
-          `/api/v1/pages/search?q=${encodeURIComponent(query)}`,
-        );
-        if (!response.ok) return [];
-        return await response.json();
-      } catch (error) {
-        console.error("Failed to fetch page suggestions:", error);
-        return [];
-      }
+    items: ({ query }: { query: string }): PageSuggestion[] => {
+      // Return empty array immediately to show menu instantly
+      return [];
     },
 
     render: () => {
       let component: ReactRenderer<any, any> | null = null;
       let popup: TippyInstance | null = null;
       let isDestroyed = false;
+      let currentQuery = '';
+      let searchTimeout: NodeJS.Timeout | null = null;
+
+      const fetchSuggestions = async (query: string) => {
+        try {
+          const response = await fetch(
+            `/api/v1/pages/search?q=${encodeURIComponent(query)}`,
+          );
+          if (!response.ok) return [];
+          return await response.json();
+        } catch (error) {
+          console.error("Failed to fetch page suggestions:", error);
+          return [];
+        }
+      };
+
+      const updateSuggestions = async (query: string) => {
+        if (isDestroyed || !component) return;
+        
+        // Clear any existing timeout
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+        }
+
+        // Store current query to handle race conditions
+        const queryAtSearchTime = query;
+        currentQuery = query;
+
+        // Set loading state immediately
+        component.updateProps({
+          ...component.props,
+          items: [],
+          isLoading: true,
+        });
+
+        // Debounce the search
+        searchTimeout = setTimeout(async () => {
+          if (isDestroyed || !component || currentQuery !== queryAtSearchTime) {
+            return;
+          }
+
+          const items = await fetchSuggestions(query);
+          
+          // Check again if we're still the current query
+          if (isDestroyed || !component || currentQuery !== queryAtSearchTime) {
+            return;
+          }
+
+          component.updateProps({
+            ...component.props,
+            items,
+            isLoading: false,
+          });
+        }, 300); // 300ms debounce
+      };
 
       return {
         onStart: (props: SuggestionProps<PageSuggestion>) => {
           isDestroyed = false;
 
           component = new ReactRenderer(MentionList, {
-            props,
+            props: {
+              ...props,
+              isLoading: true,
+            },
             editor: props.editor,
           });
 
@@ -62,17 +112,21 @@ export const PageMention = Mention.extend({
               isDestroyed = true;
             },
           }) as TippyInstance;
+
+          // Start fetching suggestions
+          updateSuggestions(props.query || '');
         },
 
         onUpdate(props: SuggestionProps<PageSuggestion>) {
-          if (!isDestroyed && component) {
-            component.updateProps(props);
-          }
-
           if (!isDestroyed && popup) {
             popup.setProps({
               getReferenceClientRect: props.clientRect as () => DOMRect,
             });
+          }
+
+          // Update suggestions when query changes
+          if (props.query !== currentQuery) {
+            updateSuggestions(props.query || '');
           }
         },
 
@@ -92,7 +146,15 @@ export const PageMention = Mention.extend({
         },
 
         onExit() {
-          if (!isDestroyed && popup) {
+          isDestroyed = true;
+
+          // Clear any pending search timeout
+          if (searchTimeout) {
+            clearTimeout(searchTimeout);
+            searchTimeout = null;
+          }
+
+          if (popup) {
             try {
               popup.destroy();
             } catch (e) {
@@ -110,7 +172,6 @@ export const PageMention = Mention.extend({
 
           popup = null;
           component = null;
-          isDestroyed = true;
         },
       };
     },
