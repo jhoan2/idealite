@@ -71,7 +71,7 @@ export async function updatePage(
           and(
             eq(users_pages.user_id, user.externalId),
             eq(pages.deleted, false),
-            sql`${pages.id} != ${validatedPageId}` // Exclude current page
+            sql`${pages.id} != ${validatedPageId}`, // Exclude current page
           ),
         );
 
@@ -80,7 +80,11 @@ export async function updatePage(
       const baseTitle = validatedUpdateData.title;
 
       // Check if title already exists and auto-rename if needed
-      while (existingPages.some((page) => page.title?.toLowerCase() === newTitle.toLowerCase())) {
+      while (
+        existingPages.some(
+          (page) => page.title?.toLowerCase() === newTitle.toLowerCase(),
+        )
+      ) {
         newTitle = `${baseTitle} (${counter})`;
         counter++;
       }
@@ -312,8 +316,8 @@ export async function savePageContent(pageId: string, content: string) {
 
 export type CreatePageInput = {
   title: string;
-  tag_id?: string;        // Make optional
-  hierarchy?: string[];   // Make optional  
+  tag_id?: string; // Make optional
+  hierarchy?: string[]; // Make optional
   folder_id: string | null;
 };
 
@@ -376,7 +380,7 @@ export async function createPage(
         },
       });
 
-      revalidatePath("/tags");
+      revalidatePath("/workspace");
 
       return {
         success: true,
