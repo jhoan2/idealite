@@ -42,6 +42,8 @@ import { TaskListWithId } from "./TaskListWithId";
 import { TaskItemWithId } from "./TaskItemWithId";
 import { BulletListWithId } from "./BulletListWithId";
 import { OrderedListWithId } from "./OrderedListWithId";
+import { PageMention } from "./PageMention";
+import { Link } from "@tiptap/extension-link";
 
 const BodyEditor = ({
   content,
@@ -451,6 +453,10 @@ const BodyEditor = ({
     }, 0);
   };
 
+  const CustomLink = Link.extend({
+    inclusive: false, // Set this at the mark level
+  });
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -478,6 +484,13 @@ const BodyEditor = ({
         className: "has-focus",
         mode: "all",
       }),
+      CustomLink.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: "page-mention",
+        },
+      }),
+      PageMention,
     ],
     content: content,
     immediatelyRender: immediatelyRender,
