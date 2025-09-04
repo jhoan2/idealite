@@ -20,6 +20,8 @@ import {
   extractPageMetadata,
   hasContentChangedSignificantly,
 } from "~/lib/editor/content-parse";
+import { extractLinksFromTipTapJSON } from "~/lib/editor/link-extraction";
+import { updatePageLinks } from "~/server/actions/page-links";
 import * as Sentry from "@sentry/nextjs";
 
 type Page = typeof pages.$inferSelect;
@@ -179,6 +181,52 @@ export async function removeTagFromPage(pageId: string, tagId: string) {
 // Keep track of running parsing jobs to avoid duplicates
 const runningJobs = new Set<string>();
 
+// Keep track of running link processing jobs to avoid duplicates
+const runningLinkJobs = new Set<string>();
+
+async function processPageLinks(
+  pageId: string,
+  jsonContent: any,
+): Promise<void> {
+  // Prevent duplicate processing for the same page
+  if (runningLinkJobs.has(pageId)) {
+    return;
+  }
+
+  runningLinkJobs.add(pageId);
+
+  try {
+    // Extract linked page IDs from the TipTap JSON
+    const linkedPageIds = extractLinksFromTipTapJSON(jsonContent);
+
+    // Update the page links in the database
+    const result = await updatePageLinks(pageId, linkedPageIds);
+
+    if (!result.success) {
+      throw new Error(result.error || "Failed to update page links");
+    }
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: {
+        operation: "process_page_links",
+        component: "background_processing",
+      },
+      extra: {
+        pageId,
+        jsonContentSize: JSON.stringify(jsonContent).length,
+        timestamp: new Date().toISOString(),
+      },
+      level: "error",
+    });
+    
+    // Re-throw to be caught by outer handler
+    throw error;
+  } finally {
+    // Always clean up the running job tracker
+    runningLinkJobs.delete(pageId);
+  }
+}
+
 async function parseAndUpdateMetadataOptimized(
   pageId: string,
   newContent: string,
@@ -268,7 +316,7 @@ async function parseAndUpdateMetadataOptimized(
 }
 
 // Optimized save function
-export async function savePageContent(pageId: string, content: string) {
+export async function savePageContent(pageId: string, content: string, jsonContent?: any) {
   const user = await currentUser();
   if (!user?.externalId) {
     throw new Error("Unauthorized");
@@ -310,6 +358,24 @@ export async function savePageContent(pageId: string, content: string) {
       level: "error",
     });
   });
+
+  // 🔥 Fire off background link processing if JSON content is provided
+  if (jsonContent) {
+    processPageLinks(pageId, jsonContent).catch((error) => {
+      Sentry.captureException(error, {
+        tags: {
+          operation: "page_links_processing_outer_catch",
+          component: "save_page_content",
+        },
+        extra: {
+          pageId,
+          userId: user.externalId,
+          message: "Error escaped page links processing",
+        },
+        level: "error",
+      });
+    });
+  }
 
   return { success: true };
 }

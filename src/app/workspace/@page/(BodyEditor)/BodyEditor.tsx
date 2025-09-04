@@ -71,10 +71,10 @@ const BodyEditor = ({
   const [isGeneratingQA, setIsGeneratingQA] = useState(false);
   const [isGeneratingCloze, setIsGeneratingCloze] = useState(false);
 
-  const debouncedSave = useDebouncedCallback(async (content: string) => {
+  const debouncedSave = useDebouncedCallback(async (content: string, jsonContent: any) => {
     try {
       onSavingStateChange(true);
-      await savePageContent(pageId, content);
+      await savePageContent(pageId, content, jsonContent);
     } catch (error) {
       toast.error("Failed to save changes");
     } finally {
@@ -501,8 +501,9 @@ const BodyEditor = ({
     immediatelyRender: immediatelyRender,
     onUpdate: ({ editor }) => {
       const newContent = editor.getHTML();
+      const jsonContent = editor.getJSON();
       setEditorContent(newContent);
-      debouncedSave(newContent);
+      debouncedSave(newContent, jsonContent);
     },
     editorProps: {
       attributes: {
