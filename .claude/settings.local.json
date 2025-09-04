@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\actions/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\actions/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
