@@ -4,10 +4,12 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
+import { Plus } from "lucide-react";
 
 interface PageSuggestion {
   id: string;
   title: string;
+  isCreateOption?: boolean;
 }
 
 interface MentionListProps {
@@ -86,7 +88,14 @@ export const MentionList = forwardRef<
             }`}
             onClick={() => selectItem(index)}
           >
-            {item.title}
+            {item.isCreateOption ? (
+              <div className="flex items-center gap-2 text-blue-600">
+                <Plus className="h-4 w-4" />
+                <span>Create page: "{item.title}"</span>
+              </div>
+            ) : (
+              item.title
+            )}
           </button>
         ))
       ) : (
