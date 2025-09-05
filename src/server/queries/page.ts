@@ -2,7 +2,13 @@
 
 import { eq, and, desc, asc, count, like, or, ne } from "drizzle-orm";
 import { db } from "~/server/db";
-import { pages, users_pages, pages_tags, tags } from "~/server/db/schema";
+import {
+  pages,
+  users_pages,
+  pages_tags,
+  tags,
+  pages_edges,
+} from "~/server/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { Tag } from "~/server/db/schema";
 
@@ -347,4 +353,58 @@ export async function getPagesForUser(
     currentPage: page,
     pageSize,
   };
+}
+
+export async function getPageIncomingLinks(pageId: string): Promise<{
+  success: boolean;
+  links?: Array<{ id: string; title: string }>;
+  error?: string;
+}> {
+  try {
+    const user = await currentUser();
+    if (!user?.externalId) {
+      throw new Error("Unauthorized");
+    }
+
+    // Verify user has access to the page
+    const userPage = await db.query.users_pages.findFirst({
+      where: and(
+        eq(users_pages.page_id, pageId),
+        eq(users_pages.user_id, user.externalId),
+      ),
+    });
+
+    if (!userPage) {
+      throw new Error("Page not found or unauthorized");
+    }
+
+    const links = await db.query.pages_edges.findMany({
+      where: eq(pages_edges.target_page_id, pageId),
+      with: {
+        sourcePage: {
+          columns: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    const processedLinks = links.map((link) => ({
+      id: link.sourcePage.id,
+      title: link.sourcePage.title,
+    }));
+
+    return {
+      success: true,
+      links: processedLinks,
+    };
+  } catch (error) {
+    console.error("Error getting page incoming links:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to get page backlinks",
+    };
+  }
 }

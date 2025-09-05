@@ -3,6 +3,7 @@ import {
   getPageContent,
   getPageTitle,
   getPageTags,
+  getPageIncomingLinks,
 } from "~/server/queries/page";
 import { currentUser } from "@clerk/nextjs/server";
 import { getUserTagTree } from "~/server/queries/usersTags";
@@ -25,8 +26,9 @@ export default async function PageContent({
   const pageIdParam = searchParams.pageId;
   const pageId = typeof pageIdParam === "string" ? pageIdParam : undefined;
   const typeParam = searchParams.type;
-  const requestedType = typeof typeParam === "string" ? typeParam as "page" | "canvas" : "page";
-  
+  const requestedType =
+    typeof typeParam === "string" ? (typeParam as "page" | "canvas") : "page";
+
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
 
@@ -38,17 +40,21 @@ export default async function PageContent({
   }
 
   // Check if this is a temp page
-  const isOptimistic = pageId.startsWith('temp-');
-  
+  const isOptimistic = pageId.startsWith("temp-");
+
   if (isOptimistic) {
     // Return default data for temp pages
     const userTagTree = userId ? await getUserTagTree(userId) : [];
-    
+
     // Determine default content based on type
-    const defaultContent = requestedType === "canvas" 
-      ? { content: JSON.stringify({ document: "" }), content_type: "canvas" as const }
-      : { content: "", content_type: "page" as const };
-    
+    const defaultContent =
+      requestedType === "canvas"
+        ? {
+            content: JSON.stringify({ document: "" }),
+            content_type: "canvas" as const,
+          }
+        : { content: "", content_type: "page" as const };
+
     return (
       <div className="h-full w-full">
         <Suspense fallback={<HeaderSkeleton />}>
@@ -56,6 +62,7 @@ export default async function PageContent({
             tags={[]} // Empty tags for now
             userTagTree={userTagTree}
             resources={[]} // Empty resources for now
+            backlinks={[]} // Empty backlinks for temp pages
             isMobile={isMobile ?? false}
             isWarpcast={isWarpcast ?? false}
           />
@@ -93,13 +100,19 @@ export default async function PageContent({
     );
   }
 
-  const [title, content, tags, resources, userTagTree] = await Promise.all([
-    getPageTitle(pageId) ?? "",
-    getPageContent(pageId) ?? "",
-    getPageTags(pageId) ?? [],
-    getResourcesForPage(pageId) ?? [],
-    userId ? getUserTagTree(userId) : [],
-  ]);
+  const [title, content, tags, resources, userTagTree, backlinksResult] =
+    await Promise.all([
+      getPageTitle(pageId) ?? "",
+      getPageContent(pageId) ?? "",
+      getPageTags(pageId) ?? [],
+      getResourcesForPage(pageId) ?? [],
+      userId ? getUserTagTree(userId) : [],
+      getPageIncomingLinks(pageId),
+    ]);
+
+  const backlinks = backlinksResult.success
+    ? (backlinksResult.links ?? [])
+    : [];
 
   let canvasSnapshot: any = null;
   if (content.content_type === "canvas") {
@@ -119,6 +132,7 @@ export default async function PageContent({
           tags={tags}
           userTagTree={userTagTree}
           resources={resources}
+          backlinks={backlinks}
           isMobile={isMobile ?? false}
           isWarpcast={isWarpcast ?? false}
         />

@@ -17,6 +17,7 @@ interface PageHeaderProps {
   tags: Tag[];
   userTagTree: TreeTag[];
   resources: Resource[];
+  backlinks: Array<{ id: string; title: string }>;
   isMobile: boolean;
   isWarpcast: boolean;
 }
@@ -25,6 +26,7 @@ export function PageHeader({
   tags,
   userTagTree,
   resources,
+  backlinks,
   isMobile,
   isWarpcast,
 }: PageHeaderProps) {
@@ -75,6 +77,7 @@ export function PageHeader({
             userTagTree={userTagTree}
             currentPageId={currentPageId}
             isMobile={isMobile}
+            backlinks={backlinks}
           />
         )}
       </div>
