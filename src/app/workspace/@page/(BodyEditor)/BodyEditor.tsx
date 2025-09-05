@@ -498,13 +498,42 @@ const BodyEditor = ({
 
   const CustomLink = Link.extend({
     inclusive: false, // Set this at the mark level
+    addAttributes() {
+      return {
+        ...this.parent?.(),
+        isInternal: {
+          default: false,
+          parseHTML: element => element.getAttribute('data-internal') === 'true',
+          renderHTML: attributes => {
+            return attributes.isInternal ? { 'data-internal': 'true' } : {};
+          },
+        },
+        pageId: {
+          default: null,
+          parseHTML: element => element.getAttribute('data-page-id'),
+          renderHTML: attributes => {
+            return attributes.pageId ? { 'data-page-id': attributes.pageId } : {};
+          },
+        },
+        displayName: {
+          default: null,
+          parseHTML: element => element.getAttribute('data-display-name'),
+          renderHTML: attributes => {
+            return attributes.displayName ? { 'data-display-name': attributes.displayName } : {};
+          },
+        },
+      };
+    },
     renderHTML({ HTMLAttributes }) {
-      const { isInternal, ...otherAttrs } = HTMLAttributes;
+      const { isInternal, pageId, displayName, ...otherAttrs } = HTMLAttributes;
       return [
         'a',
         {
           ...otherAttrs,
           class: isInternal ? 'mention' : 'regular-link',
+          'data-internal': isInternal ? 'true' : 'false',
+          'data-page-id': pageId || null,
+          'data-display-name': displayName || null,
         },
         0,
       ];
