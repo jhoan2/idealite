@@ -498,6 +498,17 @@ const BodyEditor = ({
 
   const CustomLink = Link.extend({
     inclusive: false, // Set this at the mark level
+    renderHTML({ HTMLAttributes }) {
+      const { isInternal, ...otherAttrs } = HTMLAttributes;
+      return [
+        'a',
+        {
+          ...otherAttrs,
+          class: isInternal ? 'mention' : 'regular-link',
+        },
+        0,
+      ];
+    },
   });
 
   const editor = useEditor({
@@ -533,9 +544,6 @@ const BodyEditor = ({
         protocols: ["http", "https"],
         validate: (url: string) => {
           return url.startsWith("http://") || url.startsWith("https://");
-        },
-        HTMLAttributes: {
-          class: "regular-link",
         },
       }),
       PageMention,
