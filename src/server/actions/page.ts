@@ -423,11 +423,32 @@ export async function createPage(
 
     // Start a transaction since we need to insert into multiple tables
     return await db.transaction(async (tx) => {
-      // 1. Create the page
+      // 1. Check for duplicate titles and auto-rename if needed
+      const existingPages = await tx
+        .select({ title: pages.title })
+        .from(pages)
+        .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
+        .where(
+          and(
+            eq(users_pages.user_id, userId),
+            eq(pages.deleted, false),
+          ),
+        );
+
+      let newTitle = input.title;
+      let counter = 2;
+      const baseTitle = input.title;
+
+      while (existingPages.some((page) => page.title === newTitle)) {
+        newTitle = `${baseTitle} (${counter})`;
+        counter++;
+      }
+
+      // 2. Create the page
       const [newPage] = await tx
         .insert(pages)
         .values({
-          title: input.title,
+          title: newTitle,
           content: "",
           content_type: type,
           primary_tag_id: input.tag_id || null, // Handle optional tag
@@ -439,7 +460,7 @@ export async function createPage(
         throw new Error("Failed to create page");
       }
 
-      // 2. Create page-tag relationships only if hierarchy exists
+      // 3. Create page-tag relationships only if hierarchy exists
       if (input.hierarchy && input.hierarchy.length > 0) {
         await tx.insert(pages_tags).values(
           input.hierarchy.map((tagId) => ({
@@ -449,14 +470,14 @@ export async function createPage(
         );
       }
 
-      // 3. Create the user-page relationship (as owner)
+      // 4. Create the user-page relationship (as owner)
       await tx.insert(users_pages).values({
         user_id: userId,
         page_id: newPage.id,
         role: "owner",
       });
 
-      // 4. Fetch the complete page data with its relationships
+      // 5. Fetch the complete page data with its relationships
       const pageWithRelations = await tx.query.pages.findFirst({
         where: eq(pages.id, newPage.id),
         with: {
