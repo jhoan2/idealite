@@ -335,13 +335,31 @@ export async function savePageContent(pageId: string, content: string, jsonConte
   }
 
   // Save the content first (existing logic)
-  await db
-    .update(pages)
-    .set({
-      content: content,
-      updated_at: new Date(),
-    })
-    .where(eq(pages.id, pageId));
+  try {
+    await db
+      .update(pages)
+      .set({
+        content: content,
+        updated_at: new Date(),
+      })
+      .where(eq(pages.id, pageId));
+  } catch (dbError) {
+    // Log database save errors to Sentry for future debugging
+    Sentry.captureException(dbError, {
+      tags: {
+        operation: "database_save_content",
+        component: "save_page_content",
+      },
+      extra: {
+        pageId,
+        userId: user.externalId,
+        contentLength: content.length,
+        hasJsonContent: !!jsonContent,
+      },
+      level: "error",
+    });
+    throw dbError;
+  }
 
   // 🔥 Fire off optimized background metadata parsing
   parseAndUpdateMetadataOptimized(pageId, content).catch((error) => {

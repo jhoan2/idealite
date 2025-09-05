@@ -7,6 +7,7 @@ import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Focus from "@tiptap/extension-focus";
 import { savePageContent } from "~/server/actions/page";
+import * as Sentry from "@sentry/nextjs";
 import { BubbleMenu } from "@tiptap/react";
 import { CustomTypography } from "./CustomTypograph";
 import { CustomKeymap } from "./CustomKeymap";
@@ -72,10 +73,52 @@ const BodyEditor = ({
   const [isGeneratingCloze, setIsGeneratingCloze] = useState(false);
 
   const debouncedSave = useDebouncedCallback(async (content: string, jsonContent: any) => {
+    // Convert TipTap JSON to plain object for Server Action serialization
+    let serializedJsonContent = null;
+    
     try {
       onSavingStateChange(true);
-      await savePageContent(pageId, content, jsonContent);
+      
+      if (jsonContent) {
+        try {
+          // Strip prototypes and classes by serializing and parsing
+          serializedJsonContent = JSON.parse(JSON.stringify(jsonContent));
+        } catch (serializationError) {
+          // Log serialization errors to Sentry for future debugging
+          Sentry.captureException(serializationError, {
+            tags: {
+              operation: "tiptap_json_serialization",
+              component: "body_editor",
+            },
+            extra: {
+              pageId,
+              contentLength: content.length,
+              hasJsonContent: !!jsonContent,
+            },
+            level: "warning",
+          });
+          console.error('Failed to serialize TipTap JSON content:', serializationError);
+          // Continue without jsonContent if serialization fails
+          serializedJsonContent = null;
+        }
+      }
+      
+      await savePageContent(pageId, content, serializedJsonContent);
     } catch (error) {
+      // Log save errors to Sentry for future debugging
+      Sentry.captureException(error, {
+        tags: {
+          operation: "save_page_content",
+          component: "body_editor",
+        },
+        extra: {
+          pageId,
+          contentLength: content.length,
+          hasSerializedJsonContent: !!serializedJsonContent,
+        },
+        level: "error",
+      });
+      console.error('Failed to save page content:', error);
       toast.error("Failed to save changes");
     } finally {
       onSavingStateChange(false);
