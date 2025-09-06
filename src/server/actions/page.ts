@@ -460,15 +460,6 @@ export async function createPage(
         throw new Error("Failed to create page");
       }
 
-      // 3. Create page-tag relationships only if hierarchy exists
-      if (input.hierarchy && input.hierarchy.length > 0) {
-        await tx.insert(pages_tags).values(
-          input.hierarchy.map((tagId) => ({
-            page_id: newPage.id,
-            tag_id: tagId,
-          })),
-        );
-      }
 
       // 4. Create the user-page relationship (as owner)
       await tx.insert(users_pages).values({
@@ -595,11 +586,6 @@ export async function createPageWithRelationsFromWebhook(
         });
       }
 
-      // 4. Create page-tag relation
-      await tx.insert(pages_tags).values({
-        page_id: newPage.id,
-        tag_id: input.primary_tag_id || "",
-      });
 
       return {
         success: true,
