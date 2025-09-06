@@ -9,7 +9,8 @@ declare module "react" {
     directory?: string;
   }
 }
-import { Upload, FolderOpen, ChevronDown } from "lucide-react";
+import { Upload, FolderOpen, ChevronDown, Bell } from "lucide-react";
+import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -41,7 +42,7 @@ export default function FileUploadDropdown() {
     setIsProcessing(true);
     
     try {
-      // Convert FileList to array and filter for markdown files
+      // Convert FileList to array and filter for supported files
       const fileArray = Array.from(files);
       const markdownFiles = fileArray.filter(file => 
         file.name.toLowerCase().endsWith('.md') || 
@@ -64,13 +65,62 @@ export default function FileUploadDropdown() {
         return;
       }
 
-      toast.success(`Found ${markdownFiles.length} markdown files and ${imageFiles.length} images`);
+      // Check total size (50MB limit)
+      const totalSize = fileArray.reduce((sum, file) => sum + file.size, 0);
+      const maxSizeBytes = 50 * 1024 * 1024; // 50MB
       
-      // TODO: Implement actual upload and processing logic here
+      if (totalSize > maxSizeBytes) {
+        toast.error("Total file size exceeds 50MB limit");
+        return;
+      }
+
+      toast.success(`Found ${markdownFiles.length} markdown files and ${imageFiles.length} images. Processing started!`);
+
+      // Create FormData and upload files
+      const formData = new FormData();
+      const supportedFiles = [...markdownFiles, ...imageFiles];
+      
+      supportedFiles.forEach((file, index) => {
+        formData.append(`file-${index}`, file);
+      });
+
+      const response = await fetch('/api/upload/markdown-folder', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      toast.success(
+        <div className="flex items-start justify-between w-full">
+          <div>
+            <p>Processing started successfully!</p>
+            <p className="text-sm text-muted-foreground">
+              {result.stats.markdownFiles} markdown files and {result.stats.imageFiles} images are being processed. You'll get a notification when it's done.
+            </p>
+          </div>
+          <Link href="/notifications" className="ml-2">
+            <Button variant="ghost" size="sm">
+              <Bell className="h-4 w-4" />
+              Notifications
+            </Button>
+          </Link>
+        </div>,
+        {
+          duration: 10000,
+        }
+      );
+
+      console.log("Upload result:", result);
       
     } catch (error) {
       console.error("Error processing folder:", error);
-      toast.error("Failed to process folder");
+      const errorMessage = error instanceof Error ? error.message : "Failed to process folder";
+      toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
       // Reset the input
@@ -120,7 +170,7 @@ export default function FileUploadDropdown() {
           </DropdownMenu>
 
           <p className="text-sm text-muted-foreground">
-            Select a folder containing markdown files to upload and process them into your workspace.
+            Select a folder containing markdown files and images. Markdown files will be converted to pages, images will be uploaded to Cloudflare, and wikilinks will create automatic backlink relationships between pages.
           </p>
         </div>
 
