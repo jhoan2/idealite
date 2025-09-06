@@ -17,7 +17,7 @@ import {
 } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { toast } from "sonner";
-import ObsidianIntegration from "./ObsidianIntegration";
+import FileUploadDropdown from "./FileUploadDropdown";
 
 // Define a proper type for the user data
 type UserData = {
@@ -47,9 +47,9 @@ export function Settings({ user }: { user: UserData }) {
             <User size={16} />
             <span>Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="integrations" className="flex items-center gap-2">
+          <TabsTrigger value="upload" className="flex items-center gap-2">
             <ExternalLink size={16} />
-            <span>Integrations</span>
+            <span>Upload Notes</span>
           </TabsTrigger>
         </TabsList>
 
@@ -150,8 +150,10 @@ export function Settings({ user }: { user: UserData }) {
         </TabsContent>
 
         {/* Integrations Tab */}
-        <TabsContent value="integrations">
-          <ObsidianIntegration />
+        <TabsContent value="upload">
+          <div className="space-y-6">
+            <FileUploadDropdown />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
