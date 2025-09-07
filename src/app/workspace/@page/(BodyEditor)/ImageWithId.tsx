@@ -10,7 +10,7 @@ export const ImageWithId = Image.extend({
   addOptions() {
     return {
       ...this.parent?.(),
-      inline: false,
+      inline: true,
       allowBase64: true,
       HTMLAttributes: {},
     };
