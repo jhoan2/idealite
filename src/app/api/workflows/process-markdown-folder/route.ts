@@ -10,8 +10,8 @@ import {
 } from "~/server/actions/notifications";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "~/server/db";
-import { images, users } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
+import { images, users, pages, users_pages } from "~/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import { updateStorageUsedWorkflow } from "~/server/actions/storage";
 import { processMarkdownForTiptap } from "~/lib/markdown/markdownToTiptapHTML";
 
@@ -185,10 +185,11 @@ async function uploadImageToR2(
   }
 }
 
-// Template replacement strategy: Replace image URLs in markdown before HTML conversion
-function replaceImageUrlsInMarkdown(
+// Template replacement strategy: Replace image URLs AND page links in markdown before HTML conversion
+function replaceImageUrlsAndPageLinksInMarkdown(
   markdown: string,
   imageUrlMapping: Record<string, string>,
+  pageUrlMapping: Record<string, { id: string; title: string }>,
 ): string {
   let processedMarkdown = markdown;
 
@@ -242,6 +243,27 @@ function replaceImageUrlsInMarkdown(
     }
   });
 
+  // Step 3: Replace page links [[Page Name]] with proper HTML
+  const pageLinkRegex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
+  const pageLinkMatches = [...processedMarkdown.matchAll(pageLinkRegex)];
+
+  pageLinkMatches.forEach((match) => {
+    const fullMatch = match[0];
+    const pageName = match[1]?.trim();
+    const displayText = match[2]?.trim();
+
+    if (!pageName) return;
+
+    const pageData = pageUrlMapping[pageName];
+    if (pageData) {
+      const displayName = displayText || pageName;
+      // Include data-page-id so we can identify internal links for previews
+      const htmlLink = `<a href="/workspace?pageId=${pageData.id}" data-page-id="${pageData.id}">${displayName}</a>`;
+
+      processedMarkdown = processedMarkdown.replace(fullMatch, htmlLink);
+    }
+  });
+
   return processedMarkdown;
 }
 
@@ -265,19 +287,14 @@ async function processMarkdownFiles(
 ): Promise<ProcessedFile[]> {
   const processedFiles: ProcessedFile[] = [];
 
-  // Build simple filename -> URL mapping
+  // Build image URL mapping
   const imageUrlMapping: Record<string, string> = {};
   for (const imgMeta of imagesMeta) {
-    // Map all possible variations to the same URL
     imageUrlMapping[imgMeta.name] = imgMeta.publicUrl;
     imageUrlMapping[imgMeta.relativePath] = imgMeta.publicUrl;
-
-    // Handle encoded versions
     imageUrlMapping[encodeURIComponent(imgMeta.name)] = imgMeta.publicUrl;
     imageUrlMapping[encodeURIComponent(imgMeta.relativePath)] =
       imgMeta.publicUrl;
-
-    // Handle just the filename without path
     const basename = imgMeta.relativePath.split("/").pop();
     if (basename && basename !== imgMeta.relativePath) {
       imageUrlMapping[basename] = imgMeta.publicUrl;
@@ -285,18 +302,36 @@ async function processMarkdownFiles(
     }
   }
 
+  // Get all user's existing pages for link resolution
+  const userPages = await db
+    .select({
+      id: pages.id,
+      title: pages.title,
+    })
+    .from(pages)
+    .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
+    .where(
+      and(eq(users_pages.user_id, internalUserId), eq(pages.deleted, false)),
+    );
+
+  const pageUrlMapping: Record<string, { id: string; title: string }> = {};
+  userPages.forEach((page) => {
+    pageUrlMapping[page.title] = { id: page.id, title: page.title };
+  });
+
   for (const file of markdownFiles) {
     try {
       console.log(`Processing file: ${file.name}`);
 
-      // Step 1: Replace image URLs in markdown using template replacement
-      const markdownWithUrls = replaceImageUrlsInMarkdown(
+      // Step 1: Replace BOTH image URLs AND page links using the combined function
+      const markdownWithReplacements = replaceImageUrlsAndPageLinksInMarkdown(
         file.content,
         imageUrlMapping,
+        pageUrlMapping,
       );
 
       // Step 2: Convert to HTML
-      const finalHtml = await convertMarkdownToHTML(markdownWithUrls);
+      const finalHtml = await convertMarkdownToHTML(markdownWithReplacements);
 
       // Create page
       const fileName = file.name.split("/").pop() || file.name;
@@ -316,6 +351,9 @@ async function processMarkdownFiles(
           name: file.name,
           pageId: page.page.id,
         });
+
+        // Update the page mapping for subsequent files
+        pageUrlMapping[title] = { id: page.page.id, title: title };
         console.log(`✓ Successfully created page for ${file.name}`);
       } else {
         const errorMsg = (pageResult as any).error || "Failed to create page";

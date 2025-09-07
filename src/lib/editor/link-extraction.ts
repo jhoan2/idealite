@@ -28,10 +28,9 @@ export function extractLinksFromTipTapJSON(editorJSON: any): string[] {
     // Check if this node has marks with page links
     if (node.marks) {
       for (const mark of node.marks) {
-        // First try the proper way with isInternal and pageId
+        // First try to get pageId directly from the link attributes
         if (
           mark.type === "link" &&
-          mark.attrs?.isInternal === true &&
           mark.attrs?.pageId &&
           typeof mark.attrs.pageId === "string"
         ) {

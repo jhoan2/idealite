@@ -221,8 +221,6 @@ export const PageMention = Mention.extend({
                       attrs: {
                         href: `/workspace?pageId=${successResult.data.id}`,
                         pageId: successResult.data.id,
-                        displayName: pageData.title,
-                        isInternal: true,
                       },
                     },
                   ],
@@ -263,8 +261,6 @@ export const PageMention = Mention.extend({
                 attrs: {
                   href: `/workspace?pageId=${pageData.id}`,
                   pageId: pageData.id,
-                  displayName: pageData.title,
-                  isInternal: true,
                 },
               },
             ],

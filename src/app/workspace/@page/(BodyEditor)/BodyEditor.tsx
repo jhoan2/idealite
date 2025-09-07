@@ -501,13 +501,7 @@ const BodyEditor = ({
     addAttributes() {
       return {
         ...this.parent?.(),
-        isInternal: {
-          default: false,
-          parseHTML: element => element.getAttribute('data-internal') === 'true',
-          renderHTML: attributes => {
-            return attributes.isInternal ? { 'data-internal': 'true' } : {};
-          },
-        },
+        // Just add a simple pageId attribute for internal links
         pageId: {
           default: null,
           parseHTML: element => element.getAttribute('data-page-id'),
@@ -515,25 +509,24 @@ const BodyEditor = ({
             return attributes.pageId ? { 'data-page-id': attributes.pageId } : {};
           },
         },
-        displayName: {
-          default: null,
-          parseHTML: element => element.getAttribute('data-display-name'),
-          renderHTML: attributes => {
-            return attributes.displayName ? { 'data-display-name': attributes.displayName } : {};
-          },
-        },
       };
     },
     renderHTML({ HTMLAttributes }) {
-      const { isInternal, pageId, displayName, ...otherAttrs } = HTMLAttributes;
+      const { pageId, ...otherAttrs } = HTMLAttributes;
+      
+      // Internal links have pageId, external links don't
+      const isInternal = !!pageId;
+      
       return [
         'a',
         {
           ...otherAttrs,
-          class: isInternal ? 'mention' : 'regular-link',
-          'data-internal': isInternal ? 'true' : 'false',
+          class: isInternal 
+            ? 'bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-sm font-medium cursor-pointer hover:bg-blue-200 transition-colors duration-150 no-underline dark:bg-blue-800 dark:text-blue-100 dark:hover:bg-blue-700'
+            : 'text-blue-600 hover:text-blue-800 underline cursor-pointer dark:text-blue-400 dark:hover:text-blue-300',
           'data-page-id': pageId || null,
-          'data-display-name': displayName || null,
+          // Add target="_blank" only for external links (no pageId)
+          ...(isInternal ? {} : { target: '_blank', rel: 'noopener noreferrer' }),
         },
         0,
       ];
