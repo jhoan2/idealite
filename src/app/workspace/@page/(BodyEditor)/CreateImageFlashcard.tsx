@@ -113,11 +113,10 @@ export function ImageFlashcardCreator({
         return;
       }
 
-      // Get image CID from the source
-      const src = selection.node.attrs.src;
-      const imageId = src.split("/").pop();
+      // Get the full Cloudflare URL from the source
+      const imageUrl = selection.node.attrs.src;
 
-      if (!imageId) {
+      if (!imageUrl) {
         toast.error("Invalid image source");
         return;
       }
@@ -129,7 +128,7 @@ export function ImageFlashcardCreator({
 
       const cardData = {
         pageId,
-        imageCid: imageId,
+        imageCid: imageUrl,
         description: description.trim(),
         nextReview: twoWeeksFromNow.toISOString(),
         tagIds: tags.map((tag) => tag.id),
