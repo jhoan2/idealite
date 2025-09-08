@@ -475,6 +475,61 @@ export const pages_edges = createTable(
   ],
 );
 
+export type PageNodeHash = typeof page_node_hashes.$inferSelect;
+export const page_node_hashes = createTable(
+  "page_node_hashes",
+  {
+    page_id: uuid("page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    node_id: text("node_id").notNull(), // TipTap node ID
+    kind: text("kind").notNull().default("text"), // Future extensibility
+    hash: text("hash").notNull(), // SHA1 of node content
+    updated_at: timestamp("updated_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    // Composite primary key
+    primaryKey({ columns: [table.page_id, table.node_id] }),
+    // Index for efficient page lookups
+    index("page_node_hashes_page_id_idx").on(table.page_id),
+  ],
+);
+
+export type PageChunk = typeof page_chunks.$inferSelect;
+export const page_chunks = createTable(
+  "page_chunks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    page_id: uuid("page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    seq: integer("seq").notNull(),
+    text: text("text").notNull(), // Chunk content for embedding
+    node_ids: jsonb("node_ids").$type<string[]>().notNull(), // For citations
+    embedding: vector("embedding", { dimensions: 1024 }), // Voyage AI voyage-context-3 (supports 256, 512, 1024, 2048)
+    hash: text("hash").notNull(), // SHA1 of chunk text (for reuse detection)
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (table) => [
+    // Index for efficient page lookups
+    index("page_chunks_page_id_idx").on(table.page_id),
+    // Index for vector similarity search
+    index("page_chunks_embedding_idx").using(
+      "ivfflat",
+      sql`embedding vector_cosine_ops`,
+    ),
+    // Index for chunk reuse detection
+    index("page_chunks_hash_idx").on(table.hash),
+  ],
+);
+
 export const pagesRelations = relations(pages, ({ many, one }) => ({
   tags: many(pages_tags),
   users: many(users_pages),
@@ -485,6 +540,25 @@ export const pagesRelations = relations(pages, ({ many, one }) => ({
   }),
   outgoingLinks: many(pages_edges, { relationName: "source" }),
   incomingLinks: many(pages_edges, { relationName: "target" }),
+  nodeHashes: many(page_node_hashes),
+  chunks: many(page_chunks),
+}));
+
+export const pageNodeHashesRelations = relations(
+  page_node_hashes,
+  ({ one }) => ({
+    page: one(pages, {
+      fields: [page_node_hashes.page_id],
+      references: [pages.id],
+    }),
+  }),
+);
+
+export const pageChunksRelations = relations(page_chunks, ({ one }) => ({
+  page: one(pages, {
+    fields: [page_chunks.page_id],
+    references: [pages.id],
+  }),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({
@@ -637,7 +711,7 @@ export const pagesEdgesRelations = relations(pages_edges, ({ one }) => ({
     relationName: "source",
   }),
   targetPage: one(pages, {
-    fields: [pages_edges.target_page_id], 
+    fields: [pages_edges.target_page_id],
     references: [pages.id],
     relationName: "target",
   }),
