@@ -23,6 +23,8 @@ import {
 import { extractLinksFromTipTapJSON } from "~/lib/editor/link-extraction";
 import { updatePageLinks } from "~/server/actions/page-links";
 import * as Sentry from "@sentry/nextjs";
+import { updatePageNodeHashes, hasSignificantNodeChanges } from "./node-hashes";
+import { generatePageEmbeddingsWithContext } from "./embeddings";
 
 type Page = typeof pages.$inferSelect;
 type PageInsert = typeof pages.$inferInsert;
@@ -218,7 +220,7 @@ async function processPageLinks(
       },
       level: "error",
     });
-    
+
     // Re-throw to be caught by outer handler
     throw error;
   } finally {
@@ -316,7 +318,11 @@ async function parseAndUpdateMetadataOptimized(
 }
 
 // Optimized save function
-export async function savePageContent(pageId: string, content: string, jsonContent?: any) {
+export async function savePageContent(
+  pageId: string,
+  content: string,
+  jsonContent?: any,
+) {
   const user = await currentUser();
   if (!user?.externalId) {
     throw new Error("Unauthorized");
@@ -344,7 +350,6 @@ export async function savePageContent(pageId: string, content: string, jsonConte
       })
       .where(eq(pages.id, pageId));
   } catch (dbError) {
-    // Log database save errors to Sentry for future debugging
     Sentry.captureException(dbError, {
       tags: {
         operation: "database_save_content",
@@ -360,6 +365,24 @@ export async function savePageContent(pageId: string, content: string, jsonConte
     });
     throw dbError;
   }
+
+  // 🔥 Fire off background node hash generation and incremental embedding
+  processNodeHashesAndEmbeddings(pageId, content, user.externalId).catch(
+    (error) => {
+      Sentry.captureException(error, {
+        tags: {
+          operation: "node_hashes_and_embeddings_outer_catch",
+          component: "save_page_content",
+        },
+        extra: {
+          pageId,
+          userId: user.externalId,
+          message: "Error escaped node hash and embedding processing",
+        },
+        level: "error",
+      });
+    },
+  );
 
   // 🔥 Fire off optimized background metadata parsing
   parseAndUpdateMetadataOptimized(pageId, content).catch((error) => {
@@ -398,6 +421,91 @@ export async function savePageContent(pageId: string, content: string, jsonConte
   return { success: true };
 }
 
+// New background process for node hashes and incremental embeddings
+const runningNodeJobs = new Set<string>();
+
+async function processNodeHashesAndEmbeddings(
+  pageId: string,
+  content: string,
+  userId: string,
+): Promise<void> {
+  // Prevent duplicate processing for the same page
+  if (runningNodeJobs.has(pageId)) {
+    return;
+  }
+
+  runningNodeJobs.add(pageId);
+
+  try {
+    // Update node hashes and detect changes
+    const nodeHashResult = await updatePageNodeHashes(pageId, content, userId);
+
+    if (!nodeHashResult.success) {
+      throw new Error(`Failed to update node hashes: ${nodeHashResult.error}`);
+    }
+
+    const changedNodes = nodeHashResult.changedNodes || [];
+
+    // Only regenerate embeddings if there are significant changes
+    if (changedNodes.length > 0) {
+      const hasSignificantChanges = await hasSignificantNodeChanges(
+        pageId,
+        changedNodes,
+      );
+
+      if (hasSignificantChanges) {
+        console.log(
+          `Detected ${changedNodes.length} node changes for page ${pageId}, triggering incremental embedding update`,
+        );
+
+        // Generate embeddings incrementally
+        const embeddingResult = await generatePageEmbeddingsWithContext(
+          pageId,
+          userId,
+          false,
+        );
+
+        if (embeddingResult.success) {
+          console.log(
+            `✓ Incremental embedding update complete for page ${pageId}:`,
+            {
+              created: embeddingResult.chunksCreated,
+              updated: embeddingResult.chunksUpdated,
+              unchanged: embeddingResult.chunksUnchanged,
+            },
+          );
+        } else {
+          throw new Error(
+            `Incremental embedding update failed: ${embeddingResult.error}`,
+          );
+        }
+      } else {
+        console.log(
+          `Node changes for page ${pageId} don't require embedding updates`,
+        );
+      }
+    }
+  } catch (error) {
+    Sentry.captureException(error, {
+      tags: {
+        operation: "process_node_hashes_and_embeddings",
+        component: "background_processing",
+      },
+      extra: {
+        pageId,
+        userId,
+        contentLength: content.length,
+        timestamp: new Date().toISOString(),
+      },
+      level: "error",
+    });
+
+    throw error;
+  } finally {
+    runningNodeJobs.delete(pageId);
+  }
+}
+
 export type CreatePageInput = {
   title: string;
   tag_id?: string; // Make optional
@@ -428,12 +536,7 @@ export async function createPage(
         .select({ title: pages.title })
         .from(pages)
         .innerJoin(users_pages, eq(users_pages.page_id, pages.id))
-        .where(
-          and(
-            eq(users_pages.user_id, userId),
-            eq(pages.deleted, false),
-          ),
-        );
+        .where(and(eq(users_pages.user_id, userId), eq(pages.deleted, false)));
 
       let newTitle = input.title;
       let counter = 2;
@@ -459,7 +562,6 @@ export async function createPage(
       if (!newPage) {
         throw new Error("Failed to create page");
       }
-
 
       // 4. Create the user-page relationship (as owner)
       await tx.insert(users_pages).values({
@@ -585,7 +687,6 @@ export async function createPageWithRelationsFromWebhook(
           page_id: newPage.id,
         });
       }
-
 
       return {
         success: true,
@@ -771,7 +872,6 @@ export async function searchPages(query: string) {
     };
   }
 }
-
 
 export async function updatePageTitle(pageId: string, title: string) {
   const user = await currentUser();
