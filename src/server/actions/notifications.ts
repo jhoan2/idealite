@@ -10,6 +10,8 @@ export interface WorkflowCompleteData {
   pagesFailed: number;
   imagesUploaded: number;
   backlinksCreated: number;
+  embeddingsGenerated?: number;
+  embeddingsFailed?: number;
   errors: string[];
 }
 
@@ -22,7 +24,7 @@ export async function createWorkflowCompleteNotification(
 ) {
   try {
     const hasErrors = data.errors && data.errors.length > 0;
-    
+
     const notification = await db
       .insert(notifications)
       .values({
@@ -33,8 +35,8 @@ export async function createWorkflowCompleteNotification(
         entity_id: data.workflowId,
         title: "Folder processing completed",
         message: hasErrors
-          ? `Created ${data.pagesCreated} pages${data.imagesUploaded > 0 ? ` and uploaded ${data.imagesUploaded} images` : ''}, but ${data.pagesFailed} pages failed.`
-          : `Successfully created ${data.pagesCreated} pages${data.imagesUploaded > 0 ? `, uploaded ${data.imagesUploaded} images` : ''}${data.backlinksCreated > 0 ? `, and generated ${data.backlinksCreated} backlinks` : ''}.`,
+          ? `Created ${data.pagesCreated} pages${data.imagesUploaded > 0 ? ` and uploaded ${data.imagesUploaded} images` : ""}, but ${data.pagesFailed} pages failed.`
+          : `Successfully created ${data.pagesCreated} pages${data.imagesUploaded > 0 ? `, uploaded ${data.imagesUploaded} images` : ""}${data.backlinksCreated > 0 ? `, and generated ${data.backlinksCreated} backlinks` : ""}.`,
         context_data: {
           workflowId: data.workflowId,
           pagesCreated: data.pagesCreated,
@@ -83,7 +85,10 @@ export async function createWorkflowErrorNotification(
 
     return notification[0];
   } catch (notificationError) {
-    console.error("Error creating workflow error notification:", notificationError);
+    console.error(
+      "Error creating workflow error notification:",
+      notificationError,
+    );
     throw notificationError;
   }
 }

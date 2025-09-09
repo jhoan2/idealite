@@ -14,6 +14,8 @@ import { images, users, pages, users_pages } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { updateStorageUsedWorkflow } from "~/server/actions/storage";
 import { processMarkdownForTiptap } from "~/lib/markdown/markdownToTiptapHTML";
+import { generateEmbeddingsForPages } from "~/server/actions/embeddings";
+import { updatePageNodeHashes } from "~/server/actions/node-hashes";
 
 // Configure Cloudflare R2 client
 const r2Client = new S3Client({
@@ -497,14 +499,137 @@ export const POST = async (req: NextRequest) => {
       const successfulPages = processedFiles.filter((f) => f.pageId).length;
       const failedPages = processedFiles.filter((f) => f.error).length;
 
+      let embeddingsProcessed = 0;
+      let embeddingsFailed: string[] = [];
+      let embeddingStats = {
+        chunksCreated: 0,
+        chunksUpdated: 0,
+        chunksUnchanged: 0,
+      };
+
+      if (successfulPages > 0) {
+        console.log(
+          `Starting embedding generation for ${successfulPages} pages`,
+        );
+
+        const createdPageIds = processedFiles
+          .filter((f) => f.pageId)
+          .map((f) => f.pageId!)
+          .filter((id): id is string => Boolean(id));
+
+        // First, generate node hashes for all pages
+        const nodeHashResults = await context.run(
+          "generate-node-hashes",
+          async () => {
+            const results = [];
+            for (const pageId of createdPageIds) {
+              try {
+                // Get the page content for hash generation
+                const page = await db.query.pages.findFirst({
+                  where: eq(pages.id, pageId),
+                  columns: { content: true },
+                });
+
+                if (page?.content) {
+                  const result = await updatePageNodeHashes(
+                    pageId,
+                    page.content,
+                    internalUserId,
+                  );
+                  results.push({
+                    pageId,
+                    success: result.success,
+                    error: result.error,
+                  });
+                }
+              } catch (error) {
+                console.error(
+                  `Error generating node hashes for page ${pageId}:`,
+                  error,
+                );
+                results.push({
+                  pageId,
+                  success: false,
+                  error:
+                    error instanceof Error ? error.message : "Unknown error",
+                });
+              }
+            }
+            return results;
+          },
+        );
+
+        console.log(
+          `Node hash generation complete: ${nodeHashResults.filter((r) => r.success).length} success, ${nodeHashResults.filter((r) => !r.success).length} failed`,
+        );
+
+        const embeddingResult = await context.run(
+          "generate-embeddings",
+          async () => {
+            try {
+              return await generateEmbeddingsForPages(
+                createdPageIds,
+                internalUserId,
+                true,
+              ); // Force regenerate for new pages
+            } catch (error) {
+              console.error("Error in embedding generation step:", error);
+              Sentry.captureException(error, {
+                tags: { action: "generateEmbeddings", userId },
+                extra: {
+                  pageCount: createdPageIds.length,
+                  pageIds: createdPageIds,
+                },
+              });
+              return {
+                success: false,
+                processedPages: 0,
+                failedPages: createdPageIds,
+                stats: {
+                  chunksCreated: 0,
+                  chunksUpdated: 0,
+                  chunksUnchanged: 0,
+                },
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Embedding generation failed",
+              };
+            }
+          },
+        );
+
+        if (embeddingResult.success) {
+          embeddingsProcessed = embeddingResult.processedPages || 0;
+          embeddingsFailed = embeddingResult.failedPages || [];
+          embeddingStats = embeddingResult.stats || embeddingStats;
+          console.log(
+            `✓ Embeddings generated for ${embeddingsProcessed} pages:`,
+            embeddingStats,
+          );
+        } else {
+          embeddingsFailed = createdPageIds;
+          console.log(
+            `✗ Embedding generation failed: ${embeddingResult.error}`,
+          );
+        }
+      }
+
       const pageErrors = processedFiles
         .filter((f) => f.error)
         .map((f) => `Page "${f.name}": ${f.error}`);
 
-      const allErrors = [...pageErrors];
+      const embeddingErrors =
+        embeddingsFailed.length > 0
+          ? [
+              `Failed to generate embeddings for ${embeddingsFailed.length} pages`,
+            ]
+          : [];
+
+      const allErrors = [...pageErrors, ...embeddingErrors];
 
       console.log(
-        `Workflow completed: ${successfulPages} pages created, ${failedPages} failed, ${uploadedImagesCount} images uploaded`,
+        `Workflow completed: ${successfulPages} pages created, ${failedPages} failed, ${uploadedImagesCount} images uploaded, ${embeddingsProcessed} embeddings generated`,
       );
 
       await createWorkflowCompleteNotification(userId, {
@@ -513,6 +638,8 @@ export const POST = async (req: NextRequest) => {
         pagesFailed: failedPages,
         imagesUploaded: uploadedImagesCount,
         backlinksCreated: 0,
+        embeddingsGenerated: embeddingsProcessed,
+        embeddingsFailed: embeddingsFailed.length,
         errors: allErrors,
       });
 
@@ -522,6 +649,8 @@ export const POST = async (req: NextRequest) => {
         pagesFailed: failedPages,
         imagesUploaded: uploadedImagesCount,
         backlinksCreated: 0,
+        embeddingsGenerated: embeddingsProcessed,
+        embeddingsFailed: embeddingsFailed.length,
         errors: allErrors,
       };
     },
