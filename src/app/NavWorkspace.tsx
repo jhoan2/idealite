@@ -4,6 +4,8 @@ import { ChevronRight, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
+import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
 import {
   Collapsible,
   CollapsibleContent,
@@ -36,11 +38,22 @@ export function Navworkspace({
   }[];
 }) {
   const router = useRouter();
+  const { isSignedIn, isLoaded } = useUser();
 
   const handleCreateAction = async (
     itemTitle: string,
     type: "page" | "canvas",
   ) => {
+    // Check if user is signed in
+    if (!isLoaded) {
+      return; // Still loading, don't do anything
+    }
+    
+    if (!isSignedIn) {
+      toast.error("Please sign in to create pages");
+      return;
+    }
+
     // Generate temporary ID for optimistic navigation
     const tempId = `temp-${uuidv4()}`;
     
