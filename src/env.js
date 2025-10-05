@@ -43,6 +43,7 @@ export const env = createEnv({
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string(),
     VOYAGER_API_KEY: z.string(),
     DISCORD_WEBHOOK_URL: z.string().url(),
+    EDGE_CONFIG: z.string().url(),
   },
 
   /**
@@ -112,6 +113,7 @@ export const env = createEnv({
       process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
     VOYAGER_API_KEY: process.env.VOYAGER_API_KEY,
     DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL,
+    EDGE_CONFIG: process.env.EDGE_CONFIG,
   },
   /**
 
