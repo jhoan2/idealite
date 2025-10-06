@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { WaitlistButton } from "~/components/WaitlistButton";
 
 export default function GetStarted() {
   return (
@@ -15,13 +15,10 @@ export default function GetStarted() {
               {/* <span className="cursor-pointer bg-white px-8 py-6 text-lg text-black hover:bg-gray-300">
                 <SignUpButton />
               </span> */}
-              <Link
-                href="/waitlist"
-                className="inline-flex transform items-center rounded-md bg-white px-8 py-6 text-lg font-semibold text-black shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-gray-100 hover:shadow-xl"
-              >
+              <WaitlistButton className="inline-flex transform items-center rounded-md bg-white px-8 py-6 text-lg font-semibold text-black shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-gray-100 hover:shadow-xl">
                 Join the Waitlist
                 <span className="ml-2">→</span>
-              </Link>
+              </WaitlistButton>
             </div>
           </div>
         </div>
