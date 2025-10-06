@@ -41,7 +41,7 @@ export default async function RootLayout({
                     <SideBarWrapper />
                   </div>
                   <div className="flex-1 overflow-y-auto">
-                    <div className="p-2 md:hidden">
+                    <div className="md:hidden">
                       <ConditionalSidebarTrigger />
                     </div>
                     {children}
