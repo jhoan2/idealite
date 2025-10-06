@@ -13,7 +13,7 @@ export default function ControlLanding() {
       <main>
         <FeatureSection />
         <Progress />
-        <GetStarted />
+        <GetStarted variant="control" />
       </main>
       <Footer />
     </div>

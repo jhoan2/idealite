@@ -98,7 +98,10 @@ export default function Hero() {
           </p>
 
           <div className="mb-12 mt-8 flex flex-col items-center gap-4">
-            <WaitlistButton className="inline-flex transform items-center rounded-md bg-orange-500 px-8 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-xl">
+            <WaitlistButton
+              variant="control"
+              className="inline-flex transform items-center rounded-md bg-orange-500 px-8 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-xl"
+            >
               Join the Waitlist
               <span className="ml-2">→</span>
             </WaitlistButton>

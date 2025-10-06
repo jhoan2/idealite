@@ -6,13 +6,20 @@ import { trackConversion } from "~/hooks/useExperimentTracking";
 interface WaitlistButtonProps {
   children: React.ReactNode;
   className?: string;
+  variant?: string;
 }
 
-export function WaitlistButton({ children, className }: WaitlistButtonProps) {
+export function WaitlistButton({ children, className, variant }: WaitlistButtonProps) {
+  const handleClick = () => {
+    trackConversion("waitlist_button_clicked", {
+      landing_variant: variant,
+    });
+  };
+
   return (
     <Link
       href="/waitlist"
-      onClick={() => trackConversion("waitlist_button_clicked")}
+      onClick={handleClick}
       className={className}
     >
       {children}
