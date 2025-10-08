@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { get } from "@vercel/edge-config";
 
 const isProtectedRoute = createRouteMatcher([
   "/workspace(.*)",
@@ -48,6 +49,65 @@ function applyCors(res: NextResponse, origin: string | null) {
   return res;
 }
 
+// Simple hash function for consistent variant assignment
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
+// A/B test variant assignment
+async function getVariant(req: NextRequest): Promise<string> {
+  try {
+    // Check if user already has a variant assigned
+    const existingVariant = req.cookies.get("landing_variant")?.value;
+    if (existingVariant) {
+      return existingVariant;
+    }
+
+    // Get experiment config from Edge Config
+    const config = await get<{
+      enabled: boolean;
+      variants: Record<string, number>;
+    }>("landing_test");
+
+    // If experiment is disabled, return control
+    if (!config || !config.enabled) {
+      return "control";
+    }
+
+    // Generate a consistent ID for this user (using IP + User-Agent)
+    const ip = req.ip || req.headers.get("x-forwarded-for") || "anonymous";
+    const userAgent = req.headers.get("user-agent") || "";
+    const userId = `${ip}-${userAgent}`;
+
+    // Hash the userId to get a consistent number
+    const hash = hashString(userId);
+    const percentage = hash % 100;
+
+    // Assign variant based on percentage thresholds
+    const variants = Object.entries(config.variants);
+    let cumulativePercentage = 0;
+
+    for (const [variant, weight] of variants) {
+      cumulativePercentage += weight;
+      if (percentage < cumulativePercentage) {
+        return variant;
+      }
+    }
+
+    // Fallback to control
+    return "control";
+  } catch (error) {
+    console.error("Error getting variant:", error);
+    return "control";
+  }
+}
+
 export default clerkMiddleware(
   async (auth, req: NextRequest) => {
     const { pathname } = req.nextUrl;
@@ -65,13 +125,32 @@ export default clerkMiddleware(
       return applyCors(res, origin);
     }
 
-    /* ---------- 3. Handle protected Clerk routes -------------------------------*/
+    /* ---------- 3. A/B Testing for landing page -------------------------------- */
+    if (pathname === "/") {
+      const variant = await getVariant(req);
+
+      // Create response with rewrite to variant path
+      const url = req.nextUrl.clone();
+      url.pathname = `/landing/${variant}`;
+      const response = NextResponse.rewrite(url);
+
+      // Set cookie to persist variant (30 days)
+      response.cookies.set("landing_variant", variant, {
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: "/",
+        sameSite: "lax",
+      });
+
+      return response;
+    }
+
+    /* ---------- 4. Handle protected Clerk routes ------------------------------- */
     const { userId } = await auth();
     if (isProtectedRoute(req) && !userId) {
       return NextResponse.redirect(new URL("/profile", req.url));
     }
 
-    /* ---------- 4. Default pass-through ------------------------------------ */
+    /* ---------- 5. Default pass-through ---------------------------------------- */
     return NextResponse.next();
   },
   {

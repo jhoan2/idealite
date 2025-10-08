@@ -15,10 +15,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Handle YouTube URLs
     if (query.includes("youtube.com") || query.includes("youtu.be")) {
       let videoId;
+
       if (query.includes("youtube.com")) {
-        // Handle both watch URLs and share URLs
         const urlParams = new URL(query).searchParams;
         videoId = urlParams.get("v");
         if (!videoId) {
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(await youtubeData.json());
     }
 
+    // Handle non-YouTube URLs
     if (!query.includes("youtube.com")) {
       const cleanedUrl = cleanUrl(query);
 
@@ -55,17 +57,64 @@ export async function GET(request: NextRequest) {
         `${process.env.NEXT_PUBLIC_DEPLOYMENT_URL}/api/openGraph?url=${cleanedUrl}`,
       );
       const resourceData = await openGraphData.json();
-      const publishedDate = new Date(resourceData.result.datePublished);
+      const result = resourceData.result;
+
+      const metadata = {
+        openGraph: {
+          siteName: result.ogSiteName,
+          locale: result.ogLocale,
+          images: result.ogImage
+            ? result.ogImage.map((img: any) => ({
+                url: img.url,
+                width: img.width,
+                height: img.height,
+                alt: img.alt,
+                type: img.type,
+              }))
+            : [],
+          videos: result.ogVideo
+            ? result.ogVideo.map((vid: any) => ({
+                url: vid.url,
+                width: vid.width,
+                height: vid.height,
+                type: vid.type,
+              }))
+            : [],
+          audio: result.ogAudio || [],
+          tags: result.articleTag || [],
+          section: result.articleSection,
+          publishedTime: result.articlePublishedTime,
+          modifiedTime: result.articleModifiedTime,
+          author: result.articleAuthor,
+        },
+        twitter: {
+          card: result.twitterCard,
+          site: result.twitterSite,
+          creator: result.twitterCreator,
+          title: result.twitterTitle,
+          description: result.twitterDescription,
+          image: result.twitterImage,
+        },
+        favicon: result.favicon,
+        charset: result.charset,
+        requestUrl: result.requestUrl,
+        success: result.success,
+      };
+
+      const publishedDate = result.datePublished
+        ? new Date(result.datePublished)
+        : undefined;
 
       return NextResponse.json({
-        author: resourceData.result.author,
-        title: resourceData.result.ogTitle,
-        description: resourceData.result.ogDescription,
-        image: resourceData.result.ogImage?.[0]?.url,
-        url: resourceData.result.ogUrl,
+        author: result.author,
+        title: result.ogTitle,
+        description: result.ogDescription,
+        image: result.ogImage?.[0]?.url,
+        url: result.ogUrl || cleanedUrl,
         type: "url",
-        og_type: resourceData.result.ogType,
+        og_type: result.ogType,
         date_published: publishedDate,
+        metadata: metadata,
       });
     }
   }

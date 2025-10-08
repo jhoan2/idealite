@@ -15,6 +15,7 @@ import {
   primaryKey,
   pgEnum,
   jsonb,
+  json,
   serial,
   vector,
 } from "drizzle-orm/pg-core";
@@ -106,6 +107,7 @@ export const users_tags = createTable(
       .references(() => tags.id),
     is_collapsed: boolean("is_collapsed").default(false).notNull(),
     is_archived: boolean("is_archived").default(false).notNull(),
+    is_pinned: boolean("is_pinned").default(false).notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -132,6 +134,11 @@ export const pages = createTable(
       .default("page"),
     primary_tag_id: uuid("primary_tag_id"),
     folder_id: uuid("folder_id").references(() => folders.id),
+    description: text("description"),
+    image_previews: jsonb("image_previews")
+      .$type<string[]>()
+      .default(sql`'[]'::jsonb`)
+      .notNull(),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -183,6 +190,8 @@ export const users_pages = createTable(
       .notNull()
       .references(() => pages.id, { onDelete: "cascade" }),
     role: varchar("role", { length: 50 }).default("owner").notNull(),
+    is_pinned: boolean("is_pinned").default(false).notNull(),
+    pin_position: integer("pin_position"),
     created_at: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
@@ -210,13 +219,13 @@ export const resources = createTable(
     description: text("description"),
     id: uuid("id").defaultRandom().primaryKey(),
     image: text("image"),
-    og_type: text("og_type"),
+    site_icon: text("site_icon"),
     open_library_id: text("open_library_id"),
     owner_id: uuid("owner_id").references(() => users.id),
     title: text("title").notNull(),
-    type: text("type", {
-      enum: ["url", "crossref", "open_library"],
-    }).notNull(),
+    type: text("type").notNull(),
+    metadata: json("metadata"), // All the unique stuff per type
+    embed_data: text("embed_data"), // HTML embeds, iframe codes, etc.
     updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
       () => new Date(),
     ),
@@ -237,7 +246,6 @@ export const resources = createTable(
       "gin",
       sql`to_tsvector('english', ${table.author})`,
     ),
-    index("idx_resource_open_library_id_idx").on(table.open_library_id),
   ],
 );
 
@@ -445,6 +453,83 @@ export const cards_tags = createTable(
   ],
 );
 
+export type PageEdge = typeof pages_edges.$inferSelect;
+export const pages_edges = createTable(
+  "pages_edges",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    source_page_id: uuid("source_page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    target_page_id: uuid("target_page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    index("unique_edge_idx").on(table.source_page_id, table.target_page_id),
+    index("target_page_idx").on(table.target_page_id),
+    index("source_page_idx").on(table.source_page_id),
+  ],
+);
+
+export type PageNodeHash = typeof page_node_hashes.$inferSelect;
+export const page_node_hashes = createTable(
+  "page_node_hashes",
+  {
+    page_id: uuid("page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    node_id: text("node_id").notNull(), // TipTap node ID
+    kind: text("kind").notNull().default("text"), // Future extensibility
+    hash: text("hash").notNull(), // SHA1 of node content
+    updated_at: timestamp("updated_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    // Composite primary key
+    primaryKey({ columns: [table.page_id, table.node_id] }),
+    // Index for efficient page lookups
+    index("page_node_hashes_page_id_idx").on(table.page_id),
+  ],
+);
+
+export type PageChunk = typeof page_chunks.$inferSelect;
+export const page_chunks = createTable(
+  "page_chunks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    page_id: uuid("page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    seq: integer("seq").notNull(),
+    text: text("text").notNull(), // Chunk content for embedding
+    node_ids: jsonb("node_ids").$type<string[]>().notNull(), // For citations
+    embedding: vector("embedding", { dimensions: 1024 }), // Voyage AI voyage-context-3 (supports 256, 512, 1024, 2048)
+    hash: text("hash").notNull(), // SHA1 of chunk text (for reuse detection)
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (table) => [
+    // Index for efficient page lookups
+    index("page_chunks_page_id_idx").on(table.page_id),
+    // Index for vector similarity search
+    index("page_chunks_embedding_idx").using(
+      "ivfflat",
+      sql`embedding vector_cosine_ops`,
+    ),
+    // Index for chunk reuse detection
+    index("page_chunks_hash_idx").on(table.hash),
+  ],
+);
+
 export const pagesRelations = relations(pages, ({ many, one }) => ({
   tags: many(pages_tags),
   users: many(users_pages),
@@ -452,6 +537,27 @@ export const pagesRelations = relations(pages, ({ many, one }) => ({
   folder: one(folders, {
     fields: [pages.folder_id],
     references: [folders.id],
+  }),
+  outgoingLinks: many(pages_edges, { relationName: "source" }),
+  incomingLinks: many(pages_edges, { relationName: "target" }),
+  nodeHashes: many(page_node_hashes),
+  chunks: many(page_chunks),
+}));
+
+export const pageNodeHashesRelations = relations(
+  page_node_hashes,
+  ({ one }) => ({
+    page: one(pages, {
+      fields: [page_node_hashes.page_id],
+      references: [pages.id],
+    }),
+  }),
+);
+
+export const pageChunksRelations = relations(page_chunks, ({ one }) => ({
+  page: one(pages, {
+    fields: [page_chunks.page_id],
+    references: [pages.id],
   }),
 }));
 
@@ -595,6 +701,19 @@ export const cardsTagsRelations = relations(cards_tags, ({ one }) => ({
   tag: one(tags, {
     fields: [cards_tags.tag_id],
     references: [tags.id],
+  }),
+}));
+
+export const pagesEdgesRelations = relations(pages_edges, ({ one }) => ({
+  sourcePage: one(pages, {
+    fields: [pages_edges.source_page_id],
+    references: [pages.id],
+    relationName: "source",
+  }),
+  targetPage: one(pages, {
+    fields: [pages_edges.target_page_id],
+    references: [pages.id],
+    relationName: "target",
   }),
 }));
 

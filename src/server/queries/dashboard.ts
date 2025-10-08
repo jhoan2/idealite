@@ -364,3 +364,153 @@ export async function getCardActivityStats(): Promise<CardActivityStats> {
     completionRateChange,
   };
 }
+
+export type TagHierarchyNode = {
+  id: string;
+  name: string;
+  parent?: string;
+  children: string[];
+  progress: number;
+  description?: string;
+  isPinned: boolean;
+  cardCount: number;
+};
+
+export type TagHierarchyData = {
+  [key: string]: TagHierarchyNode;
+};
+
+export async function getTagHierarchyForUserExcludingRoot(): Promise<TagHierarchyData> {
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+  const { externalId } = user;
+  if (!externalId) throw new Error("Unauthorized");
+
+  // Get all user's tags with their card statistics
+  const tagStatsResult = await db
+    .select({
+      tagId: tags.id,
+      tagName: tags.name,
+      parentId: tags.parent_id,
+      isPinned: users_tags.is_pinned,
+      totalCards: count(cards.id),
+      masteredCards: sql<number>`SUM(CASE WHEN ${cards.status} = 'mastered' THEN 1 ELSE 0 END)`,
+    })
+    .from(tags)
+    .innerJoin(
+      users_tags,
+      and(
+        eq(tags.id, users_tags.tag_id),
+        eq(users_tags.user_id, externalId),
+        eq(users_tags.is_archived, false),
+      ),
+    )
+    .leftJoin(cards_tags, eq(tags.id, cards_tags.tag_id))
+    .leftJoin(
+      cards,
+      and(
+        eq(cards_tags.card_id, cards.id),
+        eq(cards.user_id, externalId),
+        eq(cards.deleted, false),
+      ),
+    )
+    .where(and(eq(tags.deleted, false)))
+    .groupBy(tags.id, tags.name, tags.parent_id, users_tags.is_pinned)
+    .orderBy(tags.name);
+
+  // Build the hierarchy map
+  const tagMap: TagHierarchyData = {};
+  const childrenMap: { [parentId: string]: string[] } = {};
+
+  // First pass: create all tag nodes
+  tagStatsResult.forEach((row) => {
+    const totalCards = Number(row.totalCards) || 0;
+    const masteredCards = Number(row.masteredCards) || 0;
+    const progress =
+      totalCards > 0 ? Math.round((masteredCards / totalCards) * 100) : 0;
+
+    tagMap[row.tagId] = {
+      id: row.tagId,
+      name: row.tagName,
+      parent: row.parentId || undefined,
+      children: [],
+      progress: progress,
+      isPinned: row.isPinned || false,
+      cardCount: totalCards,
+    };
+
+    // Build children mapping
+    if (row.parentId) {
+      if (!childrenMap[row.parentId]) {
+        childrenMap[row.parentId] = [];
+      }
+      childrenMap[row.parentId]!.push(row.tagId);
+    }
+  });
+
+  // Second pass: assign children to parents (only for parents that exist in user's tags)
+  Object.keys(childrenMap).forEach((parentId) => {
+    if (tagMap[parentId]) {
+      tagMap[parentId].children = childrenMap[parentId] || [];
+    }
+  });
+
+  // Handle orphaned tags: promote tags whose parent isn't in user's tag set to top-level
+  const orphanedTags = Object.values(tagMap).filter(
+    (tag) => tag.parent && !tagMap[tag.parent],
+  );
+
+  orphanedTags.forEach((orphan) => {
+    orphan.parent = undefined;
+    // Add orphaned tags as children of root if root exists
+    const rootTagId = process.env.ROOT_TAG_ID;
+    if (rootTagId && tagMap[rootTagId]) {
+      tagMap[rootTagId].children.push(orphan.id);
+      orphan.parent = rootTagId;
+    }
+  });
+
+  // Rename the root tag to "root" for component compatibility
+  const rootTagId = process.env.ROOT_TAG_ID;
+  if (rootTagId && tagMap[rootTagId]) {
+    const rootTag = tagMap[rootTagId];
+    delete tagMap[rootTagId];
+    tagMap["root"] = {
+      ...rootTag,
+      id: "root",
+    };
+
+    // Update any parent references to point to "root"
+    Object.values(tagMap).forEach((tag) => {
+      if (tag.parent === rootTagId) {
+        tag.parent = "root";
+      }
+    });
+  }
+
+  // Create pinned virtual node if there are pinned tags
+  const pinnedTags = Object.values(tagMap).filter((tag) => tag.isPinned);
+  if (pinnedTags.length > 0) {
+    const pinnedProgress = pinnedTags.reduce(
+      (sum, tag) => sum + tag.progress * tag.cardCount,
+      0,
+    );
+    const pinnedCardCount = pinnedTags.reduce(
+      (sum, tag) => sum + tag.cardCount,
+      0,
+    );
+    const avgPinnedProgress =
+      pinnedCardCount > 0 ? Math.round(pinnedProgress / pinnedCardCount) : 0;
+
+    tagMap["pinned"] = {
+      id: "pinned",
+      name: "Pinned",
+      children: pinnedTags.map((tag) => tag.id),
+      progress: avgPinnedProgress,
+      isPinned: true,
+      cardCount: pinnedCardCount,
+    };
+  }
+
+  return tagMap;
+}

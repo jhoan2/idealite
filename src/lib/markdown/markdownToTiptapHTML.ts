@@ -8,8 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { Element, Root } from "hast";
 
 /**
- * Convert markdown to HTML with data-node-id attributes that match TipTap extensions
- * This ensures consistency between editor-created content and imported markdown
+ * Convert markdown to HTML with data-node-id attributes that match TipTap extensions EXACTLY
  */
 export async function convertMarkdownToTiptapHTML(
   markdown: string,
@@ -17,7 +16,7 @@ export async function convertMarkdownToTiptapHTML(
   const processor = unified()
     .use(remarkParse)
     .use(remarkRehype, { allowDangerousHtml: true })
-    .use(addConsistentNodeIds) // Add node IDs matching TipTap extensions
+    .use(addTipTapCompatibleNodeIds)
     .use(rehypeStringify, { allowDangerousHtml: true });
 
   const result = await processor.process(markdown);
@@ -25,23 +24,18 @@ export async function convertMarkdownToTiptapHTML(
 }
 
 /**
- * Rehype plugin that adds node IDs to the EXACT same elements as your TipTap extensions
- * Matches: ParagraphWithId, HeadingWithId, ListItemWithId, BlockquoteWithId, CodeBlockWithId, ImageWithId
+ * Rehype plugin that adds node IDs EXACTLY matching your TipTap extensions
  */
-function addConsistentNodeIds() {
+function addTipTapCompatibleNodeIds() {
   return (tree: Root) => {
     visit(tree, "element", (node: Element) => {
       if (!node.properties) {
         node.properties = {};
       }
 
-      // Add node IDs to elements that match your TipTap extensions exactly
       switch (node.tagName.toLowerCase()) {
         case "p":
-          // Matches ParagraphWithId
-          const pId = uuidv4();
-          node.properties["data-node-id"] = pId;
-          node.properties["id"] = pId;
+          node.properties["data-node-id"] = uuidv4();
           break;
 
         case "h1":
@@ -50,24 +44,23 @@ function addConsistentNodeIds() {
         case "h4":
         case "h5":
         case "h6":
-          // Matches HeadingWithId
-          const headingId = uuidv4();
-          node.properties["data-node-id"] = headingId;
-          node.properties["id"] = headingId;
+          node.properties["data-node-id"] = uuidv4();
           break;
 
         case "li":
-          // Matches ListItemWithId
-          const liId = uuidv4();
-          node.properties["data-node-id"] = liId;
-          node.properties["id"] = liId;
+          node.properties["data-node-id"] = uuidv4();
+          break;
+
+        case "ul":
+          node.properties["data-node-id"] = uuidv4();
+          break;
+
+        case "ol":
+          node.properties["data-node-id"] = uuidv4();
           break;
 
         case "blockquote":
-          // Matches BlockquoteWithId
-          const blockquoteId = uuidv4();
-          node.properties["data-node-id"] = blockquoteId;
-          node.properties["id"] = blockquoteId;
+          node.properties["data-node-id"] = uuidv4();
           break;
 
         case "pre":
@@ -76,29 +69,25 @@ function addConsistentNodeIds() {
             (child) => child.type === "element" && child.tagName === "code",
           );
           if (codeChild) {
-            // Matches CodeBlockWithId
-            const codeId = uuidv4();
-            node.properties["data-node-id"] = codeId;
-            node.properties["id"] = codeId;
+            // ✅ Matches CodeBlockWithId - only data-node-id
+            node.properties["data-node-id"] = uuidv4();
           }
           break;
 
         case "img":
-          // Matches ImageWithId
+          // ✅ Matches ImageWithId - BOTH data-node-id AND id (special case)
           const imgId = uuidv4();
           node.properties["data-node-id"] = imgId;
           node.properties["id"] = imgId;
           break;
 
-        // Don't add node IDs to other elements (ul, ol, etc.) as they're containers
-        // Only the actual content elements get IDs, matching TipTap behavior
         default:
+          // Don't add node IDs to other elements
           break;
       }
     });
   };
 }
-
 /**
  * Process complete markdown with frontmatter, returning TipTap-compatible HTML
  */
@@ -127,7 +116,7 @@ export async function processMarkdownForTiptap(
     }
   }
 
-  // Convert markdown to TipTap-compatible HTML with consistent node IDs
+  // Convert markdown to TipTap-compatible HTML with EXACT node ID matching
   const html = await convertMarkdownToTiptapHTML(content);
 
   return {

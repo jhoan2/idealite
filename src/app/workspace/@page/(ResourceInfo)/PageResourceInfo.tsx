@@ -15,6 +15,7 @@ interface PageResourceInfoProps {
   userTagTree: TreeTag[];
   currentPageId: string;
   isMobile: boolean;
+  backlinks: Array<{ id: string; title: string }>;
 }
 
 interface Tag {
@@ -34,6 +35,7 @@ export default function PageResourceInfo({
   userTagTree,
   currentPageId,
   isMobile,
+  backlinks,
 }: PageResourceInfoProps) {
   const availableTags = flattenTagTree(userTagTree, tags);
 
@@ -50,6 +52,17 @@ export default function PageResourceInfo({
 
   return (
     <div className="flex flex-col items-center justify-center space-y-4">
+      {backlinks.length > 0 && (
+        <div className="mb-4 px-2 py-2 text-sm text-muted-foreground">
+          <span className="font-medium">Backlinks ({backlinks.length}):</span>{" "}
+          {backlinks.map((link, index) => (
+            <span key={link.id}>
+              {link.title}
+              {index < backlinks.length - 1 ? ", " : ""}
+            </span>
+          ))}
+        </div>
+      )}
       {resources.map((resource) => (
         <InfoCard
           key={resource.id}
@@ -62,6 +75,7 @@ export default function PageResourceInfo({
           author={resource.author || ""}
           resourceId={resource.id}
           pageId={currentPageId}
+          metadata={resource.metadata as Record<string, any> | undefined}
           onDelete={handleDeleteResource}
         />
       ))}

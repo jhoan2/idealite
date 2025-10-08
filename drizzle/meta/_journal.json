@@ -8,6 +8,13 @@
       "when": 1747634463132,
       "tag": "0000_mute_madame_hydra",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1755398599890,
+      "tag": "0001_cooing_scourge",
+      "breakpoints": true
     }
   ]
 }

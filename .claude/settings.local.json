@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\actions/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\actions/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\actions/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\queries/**)",
+      "Bash(npm run lint)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\db/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\db/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\styles/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\styles/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\users\\me/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\[id]/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\pinned-pages/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite/**)",
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\search/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
