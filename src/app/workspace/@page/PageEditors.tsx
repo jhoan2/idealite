@@ -33,6 +33,7 @@ export default function PageEditors({
   const [isSavingTitle, setIsSavingTitle] = useState(false);
   const [isSavingContent, setIsSavingContent] = useState(false);
 
+
   const isSaving = isSavingTitle || isSavingContent;
 
   return (
@@ -42,9 +43,7 @@ export default function PageEditors({
           <div className="relative">
             <HeadingEditor
               initialTitle={title}
-              pageId={pageId}
               onSavingStateChange={setIsSavingTitle}
-              userTagTree={userTagTree}
             />
             <BodyEditor
               content={content.content}
@@ -79,9 +78,7 @@ export default function PageEditors({
           <div className="relative">
             <HeadingEditor
               initialTitle={title}
-              pageId={pageId}
               onSavingStateChange={setIsSavingTitle}
-              userTagTree={userTagTree}
             />
             <BodyEditor
               content={content.content}

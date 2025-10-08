@@ -11,11 +11,13 @@ import AddMetadata from "../@page/(AddResource)/AddMetadata";
 import { Resource } from "~/server/queries/resource";
 import PageResourceInfo from "../@page/(ResourceInfo)/PageResourceInfo";
 import TagCrumbs from "./TagCrumbs";
+import { SidebarTrigger } from "~/components/ui/sidebar";
 
 interface PageHeaderProps {
   tags: Tag[];
   userTagTree: TreeTag[];
   resources: Resource[];
+  backlinks: Array<{ id: string; title: string }>;
   isMobile: boolean;
   isWarpcast: boolean;
 }
@@ -24,6 +26,7 @@ export function PageHeader({
   tags,
   userTagTree,
   resources,
+  backlinks,
   isMobile,
   isWarpcast,
 }: PageHeaderProps) {
@@ -63,6 +66,7 @@ export function PageHeader({
           >
             <Info className="h-4 w-4" aria-label="Metadata tab" />
           </Button>
+          <SidebarTrigger />
         </div>
       </div>
       <div>
@@ -73,6 +77,7 @@ export function PageHeader({
             userTagTree={userTagTree}
             currentPageId={currentPageId}
             isMobile={isMobile}
+            backlinks={backlinks}
           />
         )}
       </div>

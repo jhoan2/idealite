@@ -44,7 +44,7 @@ export default function AddMetadata({
           Select the type of resource you want to add and then enter the URL or
           details.
         </DialogDescription>
-        <div className="flex flex-col gap-2">
+        <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
           <RadioGroup
             defaultValue="url"
             onValueChange={setSelectedType}

@@ -271,3 +271,59 @@ export async function getUserTagTree(userId: string): Promise<TreeTag[]> {
   const result = buildTagTree(null);
   return result;
 }
+
+export async function getUserTagTreeTagsOnly(
+  userId: string,
+): Promise<TreeTag[]> {
+  await ensureUserRootTag(userId);
+
+  // Get only tags the user has access to
+  const userTags = await db
+    .select({
+      id: tags.id,
+      name: tags.name,
+      parent_id: tags.parent_id,
+      is_collapsed: users_tags.is_collapsed,
+      is_archived: users_tags.is_archived,
+    })
+    .from(tags)
+    .innerJoin(users_tags, eq(users_tags.tag_id, tags.id))
+    .where(and(eq(users_tags.user_id, userId), eq(tags.deleted, false)));
+
+  function buildTagTree(parentId: string | null): TreeTag[] {
+    const directChildren = userTags.filter((tag) => tag.parent_id === parentId);
+
+    const orphanedGroups =
+      parentId === null ? findOrphanedTagGroups(userTags) : [];
+
+    const allChildren = [...directChildren, ...orphanedGroups];
+
+    return allChildren.map((tag) => {
+      return {
+        id: tag.id,
+        name: tag.name,
+        is_collapsed: tag.is_collapsed,
+        is_archived: tag.is_archived,
+        children: buildTagTree(tag.id),
+        folders: [], // Empty array - no folders
+        pages: [], // Empty array - no pages
+      };
+    });
+  }
+
+  function findOrphanedTagGroups(tags: typeof userTags) {
+    const orphans = tags.filter(
+      (tag) => tag.parent_id && !tags.some((t) => t.id === tag.parent_id),
+    );
+
+    return orphans
+      .filter((tag) => !orphans.some((o) => o.id === tag.parent_id))
+      .map((tag) => ({
+        ...tag,
+        isOrphaned: true,
+      }));
+  }
+
+  const result = buildTagTree(null);
+  return result;
+}

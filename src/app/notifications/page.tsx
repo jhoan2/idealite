@@ -13,11 +13,26 @@ import {
   RefreshCw,
   Loader2,
   Undo,
+  Upload,
+  FileText,
+  Link,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { undoPageArchive } from "~/server/actions/autoArchive";
 import { toast } from "sonner";
 import * as Sentry from "@sentry/nextjs";
+
+// Type definition for workflow completion context data
+interface WorkflowContextData {
+  workflowId: string;
+  pagesCreated: number;
+  pagesFailed: number;
+  imagesUploaded: number;
+  backlinksCreated: number;
+  errors: string[];
+}
 
 // Simple relative time function (no external dependencies)
 function getRelativeTime(date: Date): string {
@@ -37,7 +52,18 @@ function getRelativeTime(date: Date): string {
 }
 
 // Map notification types to their corresponding icons
-const getNotificationIcon = (type: string) => {
+const getNotificationIcon = (type: string, eventType?: string) => {
+  // Handle workflow-specific event types
+  if (eventType?.startsWith('workflow_')) {
+    switch (eventType) {
+      case "workflow_complete":
+        return CheckCircle;
+      case "workflow_error":
+        return AlertCircle;
+    }
+  }
+
+  // Handle standard notification types
   switch (type) {
     case "creation":
       return Plus;
@@ -53,6 +79,41 @@ const getNotificationIcon = (type: string) => {
       return Info; // fallback icon
   }
 };
+
+// Summary component for workflow completion
+function WorkflowSummary({ contextData }: { contextData: WorkflowContextData }) {
+  const { pagesCreated, imagesUploaded, backlinksCreated, errors } = contextData;
+  
+  return (
+    <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+      <div className="flex flex-wrap gap-4">
+        {pagesCreated > 0 && (
+          <span className="flex items-center gap-1">
+            <FileText className="h-3 w-3" />
+            {pagesCreated} pages
+          </span>
+        )}
+        {imagesUploaded > 0 && (
+          <span className="flex items-center gap-1">
+            <Upload className="h-3 w-3" />
+            {imagesUploaded} images
+          </span>
+        )}
+        {backlinksCreated > 0 && (
+          <span className="flex items-center gap-1">
+            <Link className="h-3 w-3" />
+            {backlinksCreated} links
+          </span>
+        )}
+      </div>
+      {errors && errors.length > 0 && (
+        <p className="text-destructive">
+          {errors.length} error{errors.length > 1 ? 's' : ''} occurred
+        </p>
+      )}
+    </div>
+  );
+}
 
 // Error component
 function ErrorBanner({
@@ -228,8 +289,10 @@ export default function NotificationsPage() {
           {notifications.map((notification) => {
             const IconComponent = getNotificationIcon(
               notification.notification_type,
+              notification.event_type,
             );
             const isUnread = notification.status === "unread";
+            const isWorkflowNotification = notification.event_type?.startsWith('workflow_');
 
             return (
               <div
@@ -290,6 +353,11 @@ export default function NotificationsPage() {
                   <p className="line-clamp-2 text-sm text-muted-foreground">
                     {notification.message}
                   </p>
+                  
+                  {/* Add workflow summary for completion */}
+                  {isWorkflowNotification && notification.event_type === 'workflow_complete' && notification.context_data && (
+                    <WorkflowSummary contextData={notification.context_data as WorkflowContextData} />
+                  )}
                 </div>
               </div>
             );

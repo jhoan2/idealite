@@ -114,7 +114,9 @@ export function TagList({
 
   // Original page variant with the card container
   const pageContent = (
-    <div className={`mt-4 w-full max-w-2xl ${className}`}>
+    <div
+      className={`mt-4 w-full max-w-2xl ${className} ${tags.length === 0 ? "hidden" : ""}`}
+    >
       <Card className="mt-4 w-full max-w-2xl cursor-context-menu transition-colors hover:bg-muted/50">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">

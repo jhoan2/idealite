@@ -599,8 +599,6 @@ export default function CanvasEditor({
             <HeadingEditor
               key={pageId}
               initialTitle={title}
-              pageId={pageId}
-              userTagTree={userTagTree}
               immediatelyRender={true}
               onSavingStateChange={setIsSavingTitle}
               isCanvas={true}
@@ -641,8 +639,6 @@ export default function CanvasEditor({
           <HeadingEditor
             key={pageId}
             initialTitle={title}
-            pageId={pageId}
-            userTagTree={userTagTree}
             immediatelyRender={true}
             onSavingStateChange={setIsSavingTitle}
             isCanvas={true}

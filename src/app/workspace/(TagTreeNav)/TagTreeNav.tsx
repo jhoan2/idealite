@@ -4,12 +4,8 @@ import React, { useRef, useState, useMemo } from "react";
 import {
   ChevronRight,
   ChevronDown,
-  StickyNote,
-  PanelTop,
   FolderPlus,
   Archive,
-  FilePlus,
-  Palette,
   Tag,
   Compass,
 } from "lucide-react";
@@ -24,7 +20,7 @@ import {
   createTagForUser,
   toggleTagArchived,
 } from "~/server/actions/usersTags";
-import { createPage, movePage, createRootPage } from "~/server/actions/page";
+import { movePage } from "~/server/actions/page";
 import { createRootFolder } from "~/server/actions/usersFolders";
 import { toast } from "sonner";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
@@ -42,7 +38,6 @@ import { Drawer, DrawerContent } from "~/components/ui/drawer";
 import TagDrawer from "./(Drawer)/TagDrawer";
 import FolderDrawer from "./(Drawer)/FolderDrawer";
 import PageDrawer from "./(Drawer)/PageDrawer";
-import { createUntitledPage, createUntitledPageInFolder } from "~/lib/tree";
 import {
   Dialog,
   DialogContent,
@@ -176,33 +171,6 @@ const TreeNode: React.FC<{
     }
   };
 
-  const handleCreatePage = async (type: "page" | "canvas") => {
-    try {
-      setIsLoading(true);
-      const pageInput = createUntitledPage(node, allTags);
-      const result = await createPage(pageInput, type);
-
-      if (result.success) {
-        // Dispatch the page-created event
-        window.dispatchEvent(
-          new CustomEvent("page-created", {
-            detail: {
-              pageId: "123",
-              tagId: node.id,
-            },
-          }),
-        );
-      }
-
-      if (!result.success) {
-        throw new Error("Failed to create page");
-      }
-    } catch (error) {
-      console.error("Error creating page:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleArchiveTag = async () => {
     await toggleTagArchived({ tagId: node.id, isArchived: true });
@@ -319,30 +287,6 @@ const TreeNode: React.FC<{
     }
   };
 
-  const handleCreatePageInFolder = async (
-    folder: TreeFolder,
-    type: "page" | "canvas",
-  ) => {
-    try {
-      setIsLoading(true);
-      const pageInput = createUntitledPageInFolder(folder, node.id, allTags);
-      const result = await createPage(pageInput, type);
-
-      if (!result.success) {
-        throw new Error("Failed to create page");
-      }
-
-      // Optionally expand the folder if it's not already expanded
-      if (!expandedFolders.has(folder.id)) {
-        handleFolderToggle(folder.id);
-      }
-    } catch (error) {
-      console.error("Error creating page:", error);
-      toast.error("Failed to create page");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleCreateSubfolder = async (parentFolder: TreeFolder) => {
     try {
@@ -541,7 +485,6 @@ const TreeNode: React.FC<{
                             });
                             setShowMoveDialog(true);
                           }}
-                          onCreatePageInFolder={handleCreatePageInFolder}
                           onCreateSubfolder={handleCreateSubfolder}
                           isLoading={isLoading}
                           onOpenDrawer={onOpenDrawer}
@@ -568,22 +511,6 @@ const TreeNode: React.FC<{
             </ContextMenuTrigger>
             {/* Context menu for tags */}
             <ContextMenuContent className="w-64">
-              <ContextMenuItem
-                onSelect={() => handleCreatePage("page")}
-                disabled={isLoading}
-                className={isLoading ? "cursor-not-allowed opacity-50" : ""}
-              >
-                <StickyNote className="mr-2 h-4 w-4" />
-                <span>{isLoading ? "Creating..." : "Create  page"}</span>
-              </ContextMenuItem>
-              <ContextMenuItem
-                onSelect={() => handleCreatePage("canvas")}
-                disabled={isLoading}
-                className={isLoading ? "cursor-not-allowed opacity-50" : ""}
-              >
-                <PanelTop className="mr-2 h-4 w-4" />
-                <span>{isLoading ? "Creating..." : "Create canvas"}</span>
-              </ContextMenuItem>
               <ContextMenuItem
                 onSelect={() => handleCreateFolder()}
                 disabled={isLoading}
@@ -687,7 +614,6 @@ const TreeNode: React.FC<{
                         });
                         setShowMoveDialog(true);
                       }}
-                      onCreatePageInFolder={handleCreatePageInFolder}
                       onCreateSubfolder={handleCreateSubfolder}
                       isLoading={isLoading}
                       onOpenDrawer={onOpenDrawer}
@@ -841,20 +767,6 @@ export default function TagTreeNav({
   const [isLoading, setIsLoading] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
-  const handleCreateRootPage = async (type: "page" | "canvas") => {
-    try {
-      setIsLoading(true);
-      const result = await createRootPage(type);
-      if (!result.success) {
-        throw new Error(result.error || "Failed to create page");
-      }
-    } catch (error) {
-      console.error("Error creating page:", error);
-      toast.error("Failed to create page");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleCreateRootFolder = async () => {
     try {
@@ -948,23 +860,7 @@ export default function TagTreeNav({
       {/* Hide create buttons when viewing archived pages */}
       {isMobile && !showArchived && (
         <div className="mb-4 bg-background px-4 py-3 md:hidden">
-          <div className="flex w-full justify-between space-x-1">
-            <Button
-              variant="ghost"
-              className="flex-1"
-              onClick={() => handleCreateRootPage("page")}
-              disabled={isLoading}
-            >
-              <FilePlus className="h-6 w-6" />
-            </Button>
-            <Button
-              variant="ghost"
-              className="flex-1"
-              onClick={() => handleCreateRootPage("canvas")}
-              disabled={isLoading}
-            >
-              <Palette className="h-6 w-6" />
-            </Button>
+          <div className="flex w-full justify-center space-x-1">
             <Button
               variant="ghost"
               className="flex-1"

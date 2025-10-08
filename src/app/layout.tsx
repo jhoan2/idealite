@@ -1,11 +1,13 @@
+// src/app/layout.tsx (Updated)
 import "~/styles/globals.css";
 import { inter } from "~/app/ui/fonts";
 import { PHProvider } from "~/app/providers";
-import SideNav from "~/app/SideNav";
 import { ThemeProvider } from "~/app/ThemeProvider";
 import { Toaster } from "~/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
-import BottomNav from "./BottomNav";
+import SideBarWrapper from "./SideBarWrapper"; // Changed from SideBar to SideBarWrapper
+import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
+import ConditionalSidebarTrigger from "./ConditionalSidebarTrigger";
 
 export const metadata = {
   title: "idealite",
@@ -19,7 +21,7 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider waitlistUrl="/waitlist">
       <html
         lang="en"
         suppressHydrationWarning={true}
@@ -32,20 +34,22 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {/* <NeynarProvider>
-            <SessionProvider> */}
             <PHProvider>
-              <div className="flex h-screen">
-                <div className="hidden md:block">
-                  <SideNav />
+              <SidebarProvider>
+                <div className="flex h-screen w-full">
+                  <div className="">
+                    <SideBarWrapper />
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="md:hidden">
+                      <ConditionalSidebarTrigger />
+                    </div>
+                    {children}
+                  </div>
+                  <Toaster />
                 </div>
-                <div className="flex-1 overflow-y-auto">{children}</div>
-                <BottomNav />
-                <Toaster />
-              </div>
+              </SidebarProvider>
             </PHProvider>
-            {/* </SessionProvider>
-          </NeynarProvider> */}
           </ThemeProvider>
         </body>
       </html>

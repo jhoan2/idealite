@@ -100,6 +100,58 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   }
 
+  if (eventType === "waitlistEntry.created" || eventType === "waitlistEntry.updated") {
+    const waitlistData = evt.data;
+
+    // Send Discord notification
+    if (process.env.DISCORD_WEBHOOK_URL) {
+      const { error: discordError } = await tryCatch(
+        fetch(process.env.DISCORD_WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            embeds: [
+              {
+                title: `🎉 Waitlist Entry ${eventType === "waitlistEntry.created" ? "Created" : "Updated"}`,
+                color: eventType === "waitlistEntry.created" ? 0x00ff00 : 0xffa500,
+                fields: [
+                  {
+                    name: "Email",
+                    value: waitlistData.email_address || "N/A",
+                    inline: true,
+                  },
+                  {
+                    name: "Event Type",
+                    value: eventType,
+                    inline: true,
+                  },
+                  {
+                    name: "Timestamp",
+                    value: new Date().toISOString(),
+                    inline: false,
+                  },
+                ],
+                footer: {
+                  text: "Idealite Waitlist",
+                },
+              },
+            ],
+          }),
+        }),
+      );
+
+      if (discordError) {
+        console.error("Error sending Discord notification:", discordError);
+        Sentry.captureException(discordError);
+        // Don't fail the webhook if Discord notification fails
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  }
+
   // Return a response for other event types
   return NextResponse.json({ success: true });
 }

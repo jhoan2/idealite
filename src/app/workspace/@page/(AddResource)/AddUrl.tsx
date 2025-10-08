@@ -74,6 +74,7 @@ export default function AddUrl({ pageId, handleOpenChange }: AddUrlProps) {
         ? new Date(previewData.date_published)
         : undefined,
       page_id: pageId,
+      metadata: previewData.metadata || {},
     };
 
     try {
@@ -131,7 +132,7 @@ export default function AddUrl({ pageId, handleOpenChange }: AddUrlProps) {
         {previewData &&
           !error &&
           (previewData.url && previewData.url.includes("twitter.com") ? (
-            <TwitterEmbed html={previewData.html} />
+            <TwitterEmbed html={previewData.metadata.oembed.html} />
           ) : (
             <MetadataDisplay
               type={previewData.type}

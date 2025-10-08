@@ -32,11 +32,19 @@ export function RightSideBar({
 
   useEffect(() => {
     if (pageId) {
+      // Skip query for temporary/optimistic page IDs
+      if (pageId.startsWith("temp-")) {
+        // Read the type from URL params for temp pages
+        const typeParam = searchParams.get("type");
+        setPageType(typeParam === "canvas" ? "canvas" : "page");
+        return;
+      }
+      
       getPageType(pageId).then((type) => {
         setPageType(type);
       });
     }
-  }, [pageId]);
+  }, [pageId, searchParams]);
 
   const toggleView = () => {
     setActiveView(activeView === "cards" ? "image-generator" : "cards");

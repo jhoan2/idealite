@@ -7,6 +7,7 @@ import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Focus from "@tiptap/extension-focus";
 import { savePageContent } from "~/server/actions/page";
+import * as Sentry from "@sentry/nextjs";
 import { BubbleMenu } from "@tiptap/react";
 import { CustomTypography } from "./CustomTypograph";
 import { CustomKeymap } from "./CustomKeymap";
@@ -42,6 +43,8 @@ import { TaskListWithId } from "./TaskListWithId";
 import { TaskItemWithId } from "./TaskItemWithId";
 import { BulletListWithId } from "./BulletListWithId";
 import { OrderedListWithId } from "./OrderedListWithId";
+import { PageMention } from "./PageMention";
+import { Link } from "@tiptap/extension-link";
 
 const BodyEditor = ({
   content,
@@ -69,11 +72,53 @@ const BodyEditor = ({
   const [isGeneratingQA, setIsGeneratingQA] = useState(false);
   const [isGeneratingCloze, setIsGeneratingCloze] = useState(false);
 
-  const debouncedSave = useDebouncedCallback(async (content: string) => {
+  const debouncedSave = useDebouncedCallback(async (content: string, jsonContent: any) => {
+    // Convert TipTap JSON to plain object for Server Action serialization
+    let serializedJsonContent = null;
+    
     try {
       onSavingStateChange(true);
-      await savePageContent(pageId, content);
+      
+      if (jsonContent) {
+        try {
+          // Strip prototypes and classes by serializing and parsing
+          serializedJsonContent = JSON.parse(JSON.stringify(jsonContent));
+        } catch (serializationError) {
+          // Log serialization errors to Sentry for future debugging
+          Sentry.captureException(serializationError, {
+            tags: {
+              operation: "tiptap_json_serialization",
+              component: "body_editor",
+            },
+            extra: {
+              pageId,
+              contentLength: content.length,
+              hasJsonContent: !!jsonContent,
+            },
+            level: "warning",
+          });
+          console.error('Failed to serialize TipTap JSON content:', serializationError);
+          // Continue without jsonContent if serialization fails
+          serializedJsonContent = null;
+        }
+      }
+      
+      await savePageContent(pageId, content, serializedJsonContent);
     } catch (error) {
+      // Log save errors to Sentry for future debugging
+      Sentry.captureException(error, {
+        tags: {
+          operation: "save_page_content",
+          component: "body_editor",
+        },
+        extra: {
+          pageId,
+          contentLength: content.length,
+          hasSerializedJsonContent: !!serializedJsonContent,
+        },
+        level: "error",
+      });
+      console.error('Failed to save page content:', error);
       toast.error("Failed to save changes");
     } finally {
       onSavingStateChange(false);
@@ -451,6 +496,43 @@ const BodyEditor = ({
     }, 0);
   };
 
+  const CustomLink = Link.extend({
+    inclusive: false, // Set this at the mark level
+    addAttributes() {
+      return {
+        ...this.parent?.(),
+        // Just add a simple pageId attribute for internal links
+        pageId: {
+          default: null,
+          parseHTML: element => element.getAttribute('data-page-id'),
+          renderHTML: attributes => {
+            return attributes.pageId ? { 'data-page-id': attributes.pageId } : {};
+          },
+        },
+      };
+    },
+    renderHTML({ HTMLAttributes }) {
+      const { pageId, ...otherAttrs } = HTMLAttributes;
+      
+      // Internal links have pageId, external links don't
+      const isInternal = !!pageId;
+      
+      return [
+        'a',
+        {
+          ...otherAttrs,
+          class: isInternal 
+            ? 'bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-sm font-medium cursor-pointer hover:bg-blue-200 transition-colors duration-150 no-underline dark:bg-blue-800 dark:text-blue-100 dark:hover:bg-blue-700'
+            : 'text-blue-600 hover:text-blue-800 underline cursor-pointer dark:text-blue-400 dark:hover:text-blue-300',
+          'data-page-id': pageId || null,
+          // Add target="_blank" only for external links (no pageId)
+          ...(isInternal ? {} : { target: '_blank', rel: 'noopener noreferrer' }),
+        },
+        0,
+      ];
+    },
+  });
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -478,13 +560,23 @@ const BodyEditor = ({
         className: "has-focus",
         mode: "all",
       }),
+      CustomLink.configure({
+        openOnClick: false,
+        autolink: true,
+        protocols: ["http", "https"],
+        validate: (url: string) => {
+          return url.startsWith("http://") || url.startsWith("https://");
+        },
+      }),
+      PageMention,
     ],
     content: content,
     immediatelyRender: immediatelyRender,
     onUpdate: ({ editor }) => {
       const newContent = editor.getHTML();
+      const jsonContent = editor.getJSON();
       setEditorContent(newContent);
-      debouncedSave(newContent);
+      debouncedSave(newContent, jsonContent);
     },
     editorProps: {
       attributes: {

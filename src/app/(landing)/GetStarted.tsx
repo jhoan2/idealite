@@ -1,7 +1,10 @@
-import { Button } from "~/components/ui/button";
-import { SignUpButton } from "@clerk/nextjs";
+import { WaitlistButton } from "~/components/WaitlistButton";
 
-export default function GetStarted() {
+interface GetStartedProps {
+  variant?: string;
+}
+
+export default function GetStarted({ variant }: GetStartedProps) {
   return (
     <section className="flex w-full justify-center py-12 md:p-10 lg:py-32">
       <div className="container relative mx-auto max-w-6xl px-4">
@@ -13,9 +16,16 @@ export default function GetStarted() {
               </h2>
             </div>
             <div className="flex flex-col gap-2 pt-8 min-[400px]:flex-row">
-              <Button className="bg-white px-8 py-6 text-lg text-black hover:bg-gray-300">
+              {/* <span className="cursor-pointer bg-white px-8 py-6 text-lg text-black hover:bg-gray-300">
                 <SignUpButton />
-              </Button>
+              </span> */}
+              <WaitlistButton
+                variant={variant}
+                className="inline-flex transform items-center rounded-md bg-white px-8 py-6 text-lg font-semibold text-black shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-gray-100 hover:shadow-xl"
+              >
+                Join the Waitlist
+                <span className="ml-2">→</span>
+              </WaitlistButton>
             </div>
           </div>
         </div>
