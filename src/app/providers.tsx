@@ -27,12 +27,15 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
 function PostHogAuthWrapper({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
   useEffect(() => {
+    // Wait for PostHog to fully load before calling any methods
+    if (!posthog.__loaded) {
+      return;
+    }
+
     if (user) {
       posthog.identify(user.id, {
         email: user.emailAddresses[0]?.emailAddress || "",
       });
-    } else if (!user) {
-      posthog.reset();
     }
   }, [user]);
 
