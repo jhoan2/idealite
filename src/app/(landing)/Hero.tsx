@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import {
   SignInButton,
   SignedOut,
@@ -7,7 +6,9 @@ import {
   UserButton,
   SignUpButton,
 } from "@clerk/nextjs";
+import Image from "next/image";
 import { WaitlistButton } from "~/components/WaitlistButton";
+import LandingNavbar from "./LandingNavbar";
 
 export default function Hero() {
   return (
@@ -40,41 +41,7 @@ export default function Hero() {
       {/* Content */}
       <div className="relative z-10">
         {/* Navigation */}
-        <nav className="container mx-auto flex items-center justify-between px-4 py-6">
-          <div className="flex items-center justify-between p-4">
-            <Link href="/">
-              <div className="flex items-center space-x-2">
-                <Image
-                  src="/icon128.png"
-                  alt="idealite logo"
-                  width={48}
-                  height={48}
-                  priority
-                />
-                <h1 className="text-xl font-semibold text-amber-600">
-                  Idealite
-                </h1>
-              </div>
-            </Link>
-          </div>
-          {/* <div className="flex gap-2 sm:gap-4">
-            <SignedOut>
-              <SignInButton>
-                <span className="cursor-pointer rounded-lg bg-gray-800 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-700 sm:px-6 sm:py-3 sm:text-base">
-                  Sign In
-                </span>
-              </SignInButton>
-              <SignUpButton>
-                <span className="cursor-pointer rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-700 sm:px-6 sm:py-3 sm:text-base">
-                  Sign Up
-                </span>
-              </SignUpButton>
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </div> */}
-        </nav>
+        <LandingNavbar />
 
         {/* Main Hero Content */}
         <div className="container mx-auto mt-8 px-4 text-center">

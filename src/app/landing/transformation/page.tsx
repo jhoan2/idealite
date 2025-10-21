@@ -6,6 +6,7 @@ import Footer from "../../(landing)/Footer";
 import GetStarted from "../../(landing)/GetStarted";
 import FeatureSection from "../../(landing)/FeatureSection";
 import { ExperimentTracker } from "~/components/ExperimentTracker";
+import LandingNavbar from "../../(landing)/LandingNavbar";
 
 function HeroVariantA() {
   return (
@@ -74,24 +75,7 @@ function HeroVariantA() {
       {/* Content */}
       <div className="relative z-10">
         {/* Navigation */}
-        <nav className="container mx-auto flex items-center justify-between px-4 py-6">
-          <div className="flex items-center justify-between p-4">
-            <Link href="/">
-              <div className="flex items-center space-x-2">
-                <Image
-                  src="/icon128.png"
-                  alt="idealite logo"
-                  width={48}
-                  height={48}
-                  priority
-                />
-                <h1 className="text-xl font-semibold text-orange-600">
-                  Idealite
-                </h1>
-              </div>
-            </Link>
-          </div>
-        </nav>
+        <LandingNavbar />
 
         {/* Main Hero Content */}
         <div className="container mx-auto mt-8 px-4 text-center">
