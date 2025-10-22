@@ -145,7 +145,8 @@ export default function SideBarClient({
     pathname === "/" ||
     pathname.startsWith("/mobile") ||
     pathname === "/waitlist" ||
-    pathname.startsWith("/landing")
+    pathname.startsWith("/landing") ||
+    pathname.startsWith("/blog")
   ) {
     return null;
   }

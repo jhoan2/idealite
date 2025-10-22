@@ -23,10 +23,25 @@ Sentry.init({
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
-  beforeSend: (event) => {
+  beforeSend: (event, hint) => {
     if (process.env.NODE_ENV === 'development') {
       return null
     }
+
+    // Filter out unauthorized errors - these are expected when users aren't logged in
+    const error = hint.originalException;
+
+    const isUnauthorized =
+      (error instanceof Error && error.message === 'Unauthorized') ||
+      event.contexts?.response?.status_code === 401 ||
+      (event.exception?.values?.some(
+        (exception) => exception.value?.includes('Unauthorized') || exception.value?.includes('401')
+      ) ?? false);
+
+    if (isUnauthorized) {
+      return null;
+    }
+
     return event
   }
 });
