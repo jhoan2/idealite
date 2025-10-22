@@ -36,9 +36,12 @@ export default function LandingNavbar() {
         >
           Twitter
         </Link>
-        <span className="text-base font-medium text-gray-400 cursor-not-allowed">
+        <Link
+          href="/blog/introducing-idealite"
+          className="text-base font-medium text-gray-900 transition-colors hover:text-orange-600"
+        >
           About
-        </span>
+        </Link>
         <Link
           href="mailto:john@idealite.xyz"
           className="text-base font-medium text-gray-900 transition-colors hover:text-orange-600"
