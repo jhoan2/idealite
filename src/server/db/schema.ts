@@ -892,3 +892,20 @@ export const notifications = createTable(
     index("notification_status_changed_idx").on(table.status_changed_at),
   ],
 );
+
+// ----------------------------------------------------------------
+// Blog Posts
+// ----------------------------------------------------------------
+
+export const blogPosts = createTable("blog_posts", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  content: text("content").notNull(), // HTML from Tiptap
+  excerpt: text("excerpt"),
+  coverImage: text("cover_image"),
+  published: boolean("published").default(false),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
