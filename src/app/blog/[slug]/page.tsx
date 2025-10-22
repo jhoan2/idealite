@@ -1,7 +1,45 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getBlogPostBySlug } from "~/server/queries/blog";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const post = await getBlogPostBySlug(params.slug);
+
+  if (!post) {
+    return {
+      title: "Post Not Found",
+    };
+  }
+
+  const siteUrl = "https://idealite.xyz";
+  const postUrl = `${siteUrl}/blog/${post.slug}`;
+
+  return {
+    title: post.title,
+    description: post.excerpt ?? "Read this article on Idealite",
+    openGraph: {
+      title: post.title,
+      description: post.excerpt ?? "Read this article on Idealite",
+      images: post.coverImage ? [post.coverImage] : [],
+      type: "article",
+      publishedTime: post.publishedAt?.toISOString(),
+      url: postUrl,
+      siteName: "Idealite",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt ?? "Read this article on Idealite",
+      images: post.coverImage ? [post.coverImage] : [],
+    },
+  };
+}
 
 export default async function BlogPostPage({
   params,

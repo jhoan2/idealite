@@ -1,6 +1,25 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getPublishedBlogPosts } from "~/server/queries/blog";
+
+export const metadata: Metadata = {
+  title: "Blog - Idealite",
+  description: "Insights, updates, and stories from the Idealite team",
+  openGraph: {
+    title: "Blog - Idealite",
+    description: "Insights, updates, and stories from the Idealite team",
+    images: ["/icon128.png"],
+    type: "website",
+    siteName: "Idealite",
+  },
+  twitter: {
+    card: "summary",
+    title: "Blog - Idealite",
+    description: "Insights, updates, and stories from the Idealite team",
+    images: ["/icon128.png"],
+  },
+};
 
 export default async function BlogPage() {
   const { data: posts, totalPages } = await getPublishedBlogPosts({
