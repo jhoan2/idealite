@@ -133,8 +133,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate public URL (adjust based on your R2 configuration)
-    const publicUrl = `https://idealite.xyz/${uniqueKey}`;
+    // Generate public URL using environment variable
+    const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${uniqueKey}`;
 
     const cloudflareData: CloudflareUploadResponse = {
       key: uniqueKey,

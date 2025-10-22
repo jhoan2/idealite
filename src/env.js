@@ -41,6 +41,8 @@ export const env = createEnv({
     CLOUDFLARE_ACCOUNT_ID: z.string(),
     CLOUDFLARE_R2_ACCESS_KEY_ID: z.string(),
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string(),
+    CLOUDFLARE_R2_BUCKET_NAME: z.string(),
+    CLOUDFLARE_R2_PUBLIC_URL: z.string().url(),
     VOYAGER_API_KEY: z.string(),
     DISCORD_WEBHOOK_URL: z.string().url(),
     EDGE_CONFIG: z.string().url(),
@@ -111,6 +113,8 @@ export const env = createEnv({
     CLOUDFLARE_R2_ACCESS_KEY_ID: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
     CLOUDFLARE_R2_SECRET_ACCESS_KEY:
       process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    CLOUDFLARE_R2_BUCKET_NAME: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+    CLOUDFLARE_R2_PUBLIC_URL: process.env.CLOUDFLARE_R2_PUBLIC_URL,
     VOYAGER_API_KEY: process.env.VOYAGER_API_KEY,
     DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL,
     EDGE_CONFIG: process.env.EDGE_CONFIG,
