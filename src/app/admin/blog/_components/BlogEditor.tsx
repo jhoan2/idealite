@@ -7,7 +7,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import { BubbleMenu } from "@tiptap/react";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Link2, Unlink } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 interface BlogEditorProps {
@@ -87,6 +87,27 @@ export function BlogEditor({
       }
     };
     input.click();
+  };
+
+  const handleSetLink = () => {
+    if (!editor) return;
+
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("Enter URL:", previousUrl);
+
+    // cancelled
+    if (url === null) {
+      return;
+    }
+
+    // empty
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+
+    // update link
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
   const editor = useEditor({
@@ -271,6 +292,29 @@ export function BlogEditor({
           type="button"
           variant="outline"
           size="sm"
+          onClick={handleSetLink}
+          className={editor.isActive("link") ? "bg-muted" : ""}
+        >
+          <Link2 className="h-4 w-4" />
+          Link
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => editor.chain().focus().unsetLink().run()}
+          disabled={!editor.isActive("link")}
+        >
+          <Unlink className="h-4 w-4" />
+          Unlink
+        </Button>
+
+        <div className="h-6 w-px bg-border" />
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={handleImageButtonClick}
           disabled={isUploadingImage}
         >
@@ -313,6 +357,26 @@ export function BlogEditor({
             >
               Strike
             </Button>
+            <div className="h-6 w-px bg-border" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleSetLink}
+              className={editor.isActive("link") ? "bg-muted" : ""}
+            >
+              <Link2 className="h-4 w-4" />
+            </Button>
+            {editor.isActive("link") && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => editor.chain().focus().unsetLink().run()}
+              >
+                <Unlink className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </BubbleMenu>
       )}
