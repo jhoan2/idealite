@@ -23,15 +23,15 @@ export default function Footer() {
               <ul className="space-y-3">
                 <li>
                   <Link
-                    href="https://warpcast.com/~/channel/idealite"
+                    href="https://www.youtube.com/@idealitexyz"
                     className="text-gray-300 transition-colors hover:text-white"
                   >
-                    Warpcast
+                    Youtube
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="https://x.com/jhoangeth"
+                    href="https://x.com/idealitexyz"
                     className="text-gray-300 transition-colors hover:text-white"
                   >
                     Twitter
