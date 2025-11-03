@@ -7,9 +7,9 @@ import dynamic from "next/dynamic";
 import { useUser } from "@clerk/nextjs";
 import { TooltipProvider } from "~/components/ui/tooltip";
 
-if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+if (typeof window !== "undefined") {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    api_host: "/ingest",
+    api_host: "/idealite-ph",
     ui_host: "https://app.posthog.com",
   });
 }
