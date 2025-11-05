@@ -9,7 +9,7 @@ const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 // Use the model for image editing
-const MODEL_ID = "gemini-2.0-flash-exp";
+const MODEL_ID = "gemini-2.5-flash-image";
 
 export async function POST(req: NextRequest) {
   // Authenticate user
@@ -153,7 +153,7 @@ async function processImageEdit(
     // Return the edited image and description
     return NextResponse.json({
       success: true,
-      message: "Image edited successfully with Gemini 2.0",
+      message: "Image edited successfully with Gemini 2.5 Flash Image",
       image: `data:${responseMimeType};base64,${imageData64}`,
       description: textResponse,
     });

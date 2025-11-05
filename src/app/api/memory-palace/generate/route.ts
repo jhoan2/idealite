@@ -8,7 +8,7 @@ const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 // Use the specific model for image generation
-const MODEL_ID = "gemini-2.0-flash-exp-image-generation";
+const MODEL_ID = "gemini-2.5-flash-image";
 
 export async function POST(req: Request) {
   try {
