@@ -41,11 +41,11 @@ const workspaceItems = [
     icon: Folder,
     isActive: false,
     items: [
-      {
-        title: "Create Page",
-        icon: StickyNote,
-        url: null,
-      },
+      // {
+      //   title: "Create Page",
+      //   icon: StickyNote,
+      //   url: null,
+      // },
       {
         title: "Create Memory Map",
         icon: Map,
@@ -169,13 +169,13 @@ export default function SideBarClient({
       icon: Inbox,
       isActive: pathname === "/inbox",
     },
-    {
-      title: "Notifications",
-      url: "/notifications",
-      icon: NotificationsNavItem,
-      isActive: pathname === "/notifications",
-      customContent: true,
-    },
+    // {
+    //   title: "Notifications",
+    //   url: "/notifications",
+    //   icon: NotificationsNavItem,
+    //   isActive: pathname === "/notifications",
+    //   customContent: true,
+    // },
   ];
 
   return (
