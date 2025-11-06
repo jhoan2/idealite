@@ -143,6 +143,9 @@ export function SidebarCard({
       });
       setIsEditing(false);
       toast.success("Card updated successfully");
+
+      // Dispatch event to refresh card list
+      window.dispatchEvent(new CustomEvent("flashcard:updated"));
     } catch (error) {
       toast.error("Failed to update card");
       console.error("Error updating card:", error);
@@ -153,6 +156,9 @@ export function SidebarCard({
     try {
       await deleteCard(id);
       toast.success("Card deleted successfully");
+
+      // Dispatch event to refresh card list
+      window.dispatchEvent(new CustomEvent("flashcard:deleted"));
     } catch (error) {
       toast.error("Failed to delete card");
       console.error("Error deleting card:", error);
@@ -240,7 +246,7 @@ export function SidebarCard({
             {image_cid ? (
               <div className="space-y-2">
                 <img
-                  src={`https://idealite.xyz/${image_cid}`}
+                  src={`https://assets.idealite.xyz/${image_cid}`}
                   alt="Card content"
                   className="w-full rounded-md"
                 />
