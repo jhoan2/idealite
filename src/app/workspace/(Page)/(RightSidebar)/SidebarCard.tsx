@@ -37,6 +37,16 @@ interface SidebarCardProps {
   currentCardId: string;
   isMobile: boolean;
   embedding?: number[];
+  onCardUpdate: (
+    cardId: string,
+    updates: {
+      content?: string;
+      description?: string;
+      question?: string;
+      answer?: string;
+    },
+  ) => void;
+  onCardDelete: (cardId: string) => void;
 }
 
 export function SidebarCard({
@@ -53,6 +63,8 @@ export function SidebarCard({
   currentCardId,
   isMobile,
   embedding,
+  onCardUpdate,
+  onCardDelete,
 }: SidebarCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content || "");
@@ -134,6 +146,16 @@ export function SidebarCard({
 
   const handleSave = async () => {
     try {
+      // Optimistic update - update UI immediately
+      onCardUpdate(id, {
+        content: editedContent,
+        description: editedDescription,
+        question: editedQuestion,
+        answer: editedAnswer,
+      });
+      setIsEditing(false);
+
+      // Then sync with server
       await updateCard({
         id,
         content: editedContent,
@@ -141,11 +163,7 @@ export function SidebarCard({
         question: editedQuestion,
         answer: editedAnswer,
       });
-      setIsEditing(false);
       toast.success("Card updated successfully");
-
-      // Dispatch event to refresh card list
-      window.dispatchEvent(new CustomEvent("flashcard:updated"));
     } catch (error) {
       toast.error("Failed to update card");
       console.error("Error updating card:", error);
@@ -154,11 +172,12 @@ export function SidebarCard({
 
   const handleDelete = async () => {
     try {
+      // Optimistic update - remove from UI immediately
+      onCardDelete(id);
+
+      // Then sync with server
       await deleteCard(id);
       toast.success("Card deleted successfully");
-
-      // Dispatch event to refresh card list
-      window.dispatchEvent(new CustomEvent("flashcard:deleted"));
     } catch (error) {
       toast.error("Failed to delete card");
       console.error("Error deleting card:", error);
