@@ -19,9 +19,12 @@ export function ImageGenerator() {
     description?: string;
   } | null>(null);
   const [description, setDescription] = useState("");
+  const [showCopyAnimation, setShowCopyAnimation] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Auto-resize textarea effect
   useEffect(() => {
     if (textareaRef.current) {
       const textarea = textareaRef.current as HTMLTextAreaElement;
@@ -47,6 +50,22 @@ export function ImageGenerator() {
       textarea.scrollTop = scrollTop;
     }
   }, [message]);
+
+  // Copy button pulse animation effect
+  useEffect(() => {
+    if (result?.image) {
+      // Trigger animation immediately when result appears
+      setShowCopyAnimation(true);
+
+      // Auto-stop after 4 seconds
+      const timer = setTimeout(() => {
+        setShowCopyAnimation(false);
+      }, 3000);
+
+      // Cleanup timeout on unmount or when result changes
+      return () => clearTimeout(timer);
+    }
+  }, [result?.image]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
@@ -258,6 +277,9 @@ export function ImageGenerator() {
   const handleCopyToClipboard = async () => {
     if (!result || !result.image) return;
 
+    // Stop animation when user clicks copy
+    setShowCopyAnimation(false);
+
     try {
       // For images, we need to fetch them first
       const response = await fetch(result.image);
@@ -275,6 +297,10 @@ export function ImageGenerator() {
       });
 
       await navigator.clipboard.write([item]);
+
+      // Show success feedback
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
       try {
         await navigator.clipboard.writeText(result.image);
@@ -293,6 +319,7 @@ export function ImageGenerator() {
     setImage(null);
     setResult(null);
     setDescription("");
+    setIsCopied(false);
   };
 
   return (
@@ -310,12 +337,15 @@ export function ImageGenerator() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-gray-800 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white hover:text-gray-900 hover:shadow-md active:scale-95 active:shadow-sm dark:bg-gray-800/90 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white"
+                className={cn(
+                  "flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-gray-800 shadow-lg backdrop-blur-sm hover:bg-white hover:text-gray-900 hover:shadow-md active:scale-95 active:shadow-sm dark:bg-gray-800/90 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white",
+                  showCopyAnimation && "animate-bounce",
+                )}
                 onClick={handleCopyToClipboard}
                 title="Copy to clipboard"
               >
                 <Copy className="h-4 w-4" />
-                <span>Copy</span>
+                <span>{isCopied ? "Copied!" : "Copy"}</span>
               </Button>
             </div>
 

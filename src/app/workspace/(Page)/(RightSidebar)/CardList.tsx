@@ -18,6 +18,26 @@ export function CardList({ pageId, userTagTree, isMobile }: CardListProps) {
   const [cards, setCards] = useState<Card[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const handleCardUpdate = (
+    cardId: string,
+    updates: {
+      content?: string;
+      description?: string;
+      question?: string;
+      answer?: string;
+    },
+  ) => {
+    setCards((prevCards) =>
+      prevCards.map((card) =>
+        card.id === cardId ? { ...card, ...updates } : card,
+      ),
+    );
+  };
+
+  const handleCardDelete = (cardId: string) => {
+    setCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
+  };
+
   useEffect(() => {
     const loadCards = async () => {
       try {
@@ -86,6 +106,8 @@ export function CardList({ pageId, userTagTree, isMobile }: CardListProps) {
               }))}
               currentCardId={card.id}
               isMobile={isMobile}
+              onCardUpdate={handleCardUpdate}
+              onCardDelete={handleCardDelete}
             />
           ))}
         </div>

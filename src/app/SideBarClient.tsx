@@ -41,11 +41,11 @@ const workspaceItems = [
     icon: Folder,
     isActive: false,
     items: [
-      {
-        title: "Create Page",
-        icon: StickyNote,
-        url: null,
-      },
+      // {
+      //   title: "Create Page",
+      //   icon: StickyNote,
+      //   url: null,
+      // },
       {
         title: "Create Memory Map",
         icon: Map,
@@ -56,16 +56,16 @@ const workspaceItems = [
         url: "/workspace/pages",
         icon: Layers,
       },
-      {
-        title: "Tags",
-        url: "/workspace/global-tags",
-        icon: Tag,
-      },
-      {
-        title: "Resources",
-        url: "/workspace/resources",
-        icon: LibraryBig,
-      },
+      // {
+      //   title: "Tags",
+      //   url: "/workspace/global-tags",
+      //   icon: Tag,
+      // },
+      // {
+      //   title: "Resources",
+      //   url: "/workspace/resources",
+      //   icon: LibraryBig,
+      // },
       // {
       //   title: "Graph",
       //   url: "/workspace/projects/archived",
@@ -169,13 +169,13 @@ export default function SideBarClient({
       icon: Inbox,
       isActive: pathname === "/inbox",
     },
-    {
-      title: "Notifications",
-      url: "/notifications",
-      icon: NotificationsNavItem,
-      isActive: pathname === "/notifications",
-      customContent: true,
-    },
+    // {
+    //   title: "Notifications",
+    //   url: "/notifications",
+    //   icon: NotificationsNavItem,
+    //   isActive: pathname === "/notifications",
+    //   customContent: true,
+    // },
   ];
 
   return (
@@ -234,7 +234,7 @@ export default function SideBarClient({
           {/* Review and Notifications */}
           <NavMain items={bottomNavigationItems} />
         </SidebarGroup>
-        <NavPinned initialPinnedPages={initialPinnedPages} />
+        {/* <NavPinned initialPinnedPages={initialPinnedPages} /> */}
         <SidebarFooter />
       </SidebarContent>
     </Sidebar>

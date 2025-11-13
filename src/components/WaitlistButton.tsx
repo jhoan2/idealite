@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { trackConversion } from "~/hooks/useExperimentTracking";
+import { usePostHog } from "posthog-js/react";
 
 interface WaitlistButtonProps {
   children: React.ReactNode;
@@ -10,10 +10,17 @@ interface WaitlistButtonProps {
 }
 
 export function WaitlistButton({ children, className, variant }: WaitlistButtonProps) {
+  const posthog = usePostHog();
+
   const handleClick = () => {
-    trackConversion("waitlist_button_clicked", {
-      landing_variant: variant,
-    });
+    if (typeof window !== "undefined" && posthog?.__loaded) {
+      posthog.capture("waitlist_button_clicked", {
+        // Use PostHog's feature flag property format for automatic experiment linking
+        $feature_flag: "transformation-hero-landing",
+        $feature_flag_response: variant,
+        landing_variant: variant,
+      });
+    }
   };
 
   return (
