@@ -166,7 +166,7 @@ export default function FlashcardReview({
         <div className="flex flex-col items-center">
           <div className="mb-4 flex max-h-[300px] w-full justify-center">
             <img
-              src={`https://idealite.xyz/${currentCard.image_cid}`}
+              src={`https://assets.idealite.xyz/${currentCard.image_cid}`}
               alt="Card image"
               className="max-h-[300px] rounded-md object-contain"
             />
