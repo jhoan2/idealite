@@ -8,6 +8,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import SideBarWrapper from "./SideBarWrapper"; // Changed from SideBar to SideBarWrapper
 import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 import ConditionalSidebarTrigger from "./ConditionalSidebarTrigger";
+import { getBootstrapData } from "~/utils/posthog/getBootstrapData";
 
 export const metadata = {
   title: "idealite",
@@ -20,6 +21,8 @@ export const metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const bootstrapData = await getBootstrapData();
+
   return (
     <ClerkProvider waitlistUrl="/waitlist">
       <html
@@ -34,7 +37,7 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <PHProvider>
+            <PHProvider bootstrapData={bootstrapData}>
               <SidebarProvider>
                 <div className="flex h-screen w-full">
                   <div className="">

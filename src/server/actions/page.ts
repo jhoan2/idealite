@@ -552,7 +552,7 @@ export async function createPage(
         .insert(pages)
         .values({
           title: newTitle,
-          content: "",
+          content: type === "canvas" ? JSON.stringify({ document: " " }) : " ",
           content_type: type,
           primary_tag_id: input.tag_id || null, // Handle optional tag
           folder_id: input.folder_id,

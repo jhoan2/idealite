@@ -29,7 +29,8 @@
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite/**)",
-      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\search/**)"
+      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\search/**)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

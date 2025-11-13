@@ -1,14 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SignedOut, SignedIn } from "@clerk/nextjs";
-import Progress from "../../(landing)/Progress";
-import Footer from "../../(landing)/Footer";
-import GetStarted from "../../(landing)/GetStarted";
-import FeatureSection from "../../(landing)/FeatureSection";
-import { ExperimentTracker } from "~/components/ExperimentTracker";
-import LandingNavbar from "../../(landing)/LandingNavbar";
+import { SignedIn } from "@clerk/nextjs";
+import { WaitlistButton } from "~/components/WaitlistButton";
+import LandingNavbar from "~/app/(landing)/LandingNavbar";
 
-function HeroVariantA() {
+export function HeroTransformation() {
   return (
     <div className="relative min-h-screen overflow-hidden md:min-h-[140vh] md:pb-24">
       {/* Sky Gradient Background */}
@@ -99,13 +95,13 @@ function HeroVariantA() {
           </p>
 
           <div className="mb-12 mt-8 flex flex-col items-center gap-4">
-            <Link
-              href="/waitlist"
+            <WaitlistButton
+              variant="transformation"
               className="inline-flex transform items-center rounded-md bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
             >
               Join the Waitlist
               <span className="ml-2">→</span>
-            </Link>
+            </WaitlistButton>
 
             <SignedIn>
               <Link
@@ -140,24 +136,6 @@ function HeroVariantA() {
           priority
         />
       </div>
-    </div>
-  );
-}
-
-export default function VariantALanding() {
-  return (
-    <div className="min-h-screen bg-black text-gray-800">
-      <ExperimentTracker
-        experimentName="landing_test"
-        variant="transformation"
-      />
-      <HeroVariantA />
-      <main>
-        <FeatureSection />
-        <Progress />
-        <GetStarted />
-      </main>
-      <Footer />
     </div>
   );
 }

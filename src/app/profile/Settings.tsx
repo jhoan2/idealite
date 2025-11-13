@@ -49,10 +49,10 @@ export function Settings({ user }: { user: UserData }) {
             <User size={16} />
             <span>Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="upload" className="flex items-center gap-2">
+          {/* <TabsTrigger value="upload" className="flex items-center gap-2">
             <ExternalLink size={16} />
             <span>Upload Notes</span>
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         {/* Profile Tab */}

@@ -599,7 +599,7 @@ export default function CanvasEditor({
             <HeadingEditor
               key={pageId}
               initialTitle={title}
-              immediatelyRender={true}
+              immediatelyRender={false}
               onSavingStateChange={setIsSavingTitle}
               isCanvas={true}
             />
@@ -639,7 +639,7 @@ export default function CanvasEditor({
           <HeadingEditor
             key={pageId}
             initialTitle={title}
-            immediatelyRender={true}
+            immediatelyRender={false}
             onSavingStateChange={setIsSavingTitle}
             isCanvas={true}
           />

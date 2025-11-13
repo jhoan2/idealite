@@ -6,15 +6,28 @@ import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useUser } from "@clerk/nextjs";
 import { TooltipProvider } from "~/components/ui/tooltip";
+import type { BootstrapData } from "~/utils/posthog/getBootstrapData";
 
-if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    api_host: "/ingest",
-    ui_host: "https://app.posthog.com",
-  });
-}
+export function PHProvider({
+  children,
+  bootstrapData,
+}: {
+  children: React.ReactNode;
+  bootstrapData?: BootstrapData;
+}) {
+  if (typeof window !== "undefined" && !posthog.__loaded) {
+    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+      api_host: "/idealite-ph",
+      ui_host: "https://app.posthog.com",
+      bootstrap: bootstrapData
+        ? {
+            distinctID: bootstrapData.distinctID,
+            featureFlags: bootstrapData.featureFlags,
+          }
+        : undefined,
+    });
+  }
 
-export function PHProvider({ children }: { children: React.ReactNode }) {
   return (
     <PostHogProvider client={posthog}>
       <PostHogAuthWrapper>

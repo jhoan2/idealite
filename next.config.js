@@ -24,15 +24,17 @@ const coreConfig = {
   async rewrites() {
     return [
       {
-        source: "/ingest/static/:path*",
+        source: "/idealite-ph/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
       },
       {
-        source: "/ingest/:path*",
+        source: "/idealite-ph/:path*",
         destination: "https://us.i.posthog.com/:path*",
       },
     ];
   },
+  // This is required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
   webpack: (config) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;

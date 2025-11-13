@@ -29,12 +29,12 @@ export default function LandingNavbar() {
           Blog
         </Link>
         <Link
-          href="https://x.com/idealitexyz"
+          href="https://www.youtube.com/@idealitexyz"
           target="_blank"
           rel="noopener noreferrer"
           className="text-base font-medium text-gray-900 transition-colors hover:text-orange-600"
         >
-          Twitter
+          Youtube
         </Link>
         <Link
           href="/blog/introducing-idealite"
