@@ -29,9 +29,9 @@ export default async function HomeLayout({
           {/* Bottom row - Graphs */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Bar Graph - Tag Mastery */}
-            <div className="rounded-xl bg-white shadow-sm transition-all hover:shadow-md dark:bg-gray-800">
+            {/* <div className="rounded-xl bg-white shadow-sm transition-all hover:shadow-md dark:bg-gray-800">
               <div className="h-full overflow-auto">{totalcardsprogress}</div>
-            </div>
+            </div> */}
 
             {/* Circle Graph - Card Status Distribution */}
             <div className="rounded-xl bg-white shadow-sm transition-all hover:shadow-md dark:bg-gray-800">

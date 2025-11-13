@@ -234,7 +234,7 @@ export default function SideBarClient({
           {/* Review and Notifications */}
           <NavMain items={bottomNavigationItems} />
         </SidebarGroup>
-        <NavPinned initialPinnedPages={initialPinnedPages} />
+        {/* <NavPinned initialPinnedPages={initialPinnedPages} /> */}
         <SidebarFooter />
       </SidebarContent>
     </Sidebar>
