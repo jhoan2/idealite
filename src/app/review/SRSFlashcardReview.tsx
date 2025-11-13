@@ -52,6 +52,10 @@ export default function FlashcardReview({
   const currentCard = cards[currentCardIndex];
   const isLastCard = currentCardIndex === cards.length - 1;
 
+  // Constants for SRS algorithm
+  const TWO_WEEKS = 1000 * 60 * 60 * 24 * 14; // 14 days in milliseconds
+  const ONE_AND_HALF_MONTHS = 1000 * 60 * 60 * 24 * 45; // ~45 days in milliseconds
+
   const handleShowAnswer = () => {
     setShowAnswer(true);
   };
@@ -60,17 +64,48 @@ export default function FlashcardReview({
     if (!currentCard) return;
 
     const now = new Date();
+    const lastReviewed = currentCard.last_reviewed
+      ? new Date(currentCard.last_reviewed)
+      : null;
+    const timeSinceLastReview = lastReviewed
+      ? now.getTime() - lastReviewed.getTime()
+      : null;
 
-    // Simple update: only track last_reviewed, keep status as "active"
-    // No SRS algorithm - next_review is not calculated
-    const updateData: CardUpdate = {
+    // Prepare the update based on the SRS algorithm
+    let updateData: CardUpdate = {
       id: currentCard.id,
-      status: "active", // Always keep as active
+      status: currentCard.status as "active" | "mastered" | "suspended",
       next_review: currentCard.next_review
         ? currentCard.next_review.toISOString()
-        : null, // Don't change next_review
+        : null,
       last_reviewed: now.toISOString(),
     };
+
+    // Apply SRS algorithm based on user's response
+    switch (action) {
+      case "wrong":
+      case "skip":
+        updateData.status = "active";
+        updateData.next_review = new Date(
+          now.getTime() + TWO_WEEKS,
+        ).toISOString();
+        break;
+
+      case "correct":
+        if (timeSinceLastReview && timeSinceLastReview > ONE_AND_HALF_MONTHS) {
+          updateData.status = "mastered";
+        } else {
+          updateData.status = "active";
+          const nextReviewInterval =
+            timeSinceLastReview && timeSinceLastReview < TWO_WEEKS
+              ? TWO_WEEKS
+              : ONE_AND_HALF_MONTHS;
+          updateData.next_review = new Date(
+            now.getTime() + nextReviewInterval,
+          ).toISOString();
+        }
+        break;
+    }
 
     const allUpdates = [...pendingUpdates, updateData];
 
@@ -150,7 +185,7 @@ export default function FlashcardReview({
               </h4>
               <div className="flex max-h-[300px] w-full justify-center">
                 <img
-                  src={`https://assets.idealite.xyz/${pageCanvas}`}
+                  src={`https://idealite.xyz/${pageCanvas}`}
                   alt="Page canvas"
                   className="max-h-[300px] rounded-md border border-border object-contain"
                 />
