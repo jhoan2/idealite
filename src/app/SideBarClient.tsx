@@ -56,16 +56,16 @@ const workspaceItems = [
         url: "/workspace/pages",
         icon: Layers,
       },
-      {
-        title: "Tags",
-        url: "/workspace/global-tags",
-        icon: Tag,
-      },
-      {
-        title: "Resources",
-        url: "/workspace/resources",
-        icon: LibraryBig,
-      },
+      // {
+      //   title: "Tags",
+      //   url: "/workspace/global-tags",
+      //   icon: Tag,
+      // },
+      // {
+      //   title: "Resources",
+      //   url: "/workspace/resources",
+      //   icon: LibraryBig,
+      // },
       // {
       //   title: "Graph",
       //   url: "/workspace/projects/archived",
