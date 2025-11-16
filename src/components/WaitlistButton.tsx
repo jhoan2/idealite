@@ -9,14 +9,18 @@ interface WaitlistButtonProps {
   variant?: string;
 }
 
-export function WaitlistButton({ children, className, variant }: WaitlistButtonProps) {
+export function WaitlistButton({
+  children,
+  className,
+  variant,
+}: WaitlistButtonProps) {
   const posthog = usePostHog();
 
   const handleClick = () => {
     if (typeof window !== "undefined" && posthog?.__loaded) {
       posthog.capture("waitlist_button_clicked", {
         // Use PostHog's feature flag property format for automatic experiment linking
-        $feature_flag: "transformation-hero-landing",
+        $feature_flag: "digital-method-of-loci",
         $feature_flag_response: variant,
         landing_variant: variant,
       });
@@ -24,11 +28,7 @@ export function WaitlistButton({ children, className, variant }: WaitlistButtonP
   };
 
   return (
-    <Link
-      href="/waitlist"
-      onClick={handleClick}
-      className={className}
-    >
+    <Link href="/waitlist" onClick={handleClick} className={className}>
       {children}
     </Link>
   );
