@@ -8,7 +8,7 @@ export default function Progress() {
           <div className="flex justify-center">
             <div className="relative w-full max-w-lg overflow-hidden rounded-2xl">
               <Image
-                src="/mastery-graph.png"
+                src="/auto-flashcards.png"
                 alt="Learning Progress Dashboard"
                 width={600}
                 height={400}
@@ -19,12 +19,10 @@ export default function Progress() {
           </div>
           <div className="space-y-6">
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-              Progress you can plot, not just feel.
+              Instantly transformed into flashcards
             </h1>
             <p className="text-lg text-gray-700 md:text-xl">
-              Monitor your knowledge retention, identify areas for improvement,
-              and celebrate your achievements with our comprehensive progress
-              tracking system.
+              Visual mnemonics turn into flashcards the moment you create them.
             </p>
           </div>
         </div>

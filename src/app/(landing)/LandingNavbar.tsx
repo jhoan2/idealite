@@ -5,7 +5,7 @@ export default function LandingNavbar() {
   return (
     <nav className="container mx-auto grid grid-cols-3 items-center px-4 py-6">
       {/* Column 1: Logo */}
-      <div className="flex items-center p-4">
+      <div className="flex items-center">
         <Link href="/">
           <div className="flex items-center space-x-2">
             <Image
@@ -15,7 +15,9 @@ export default function LandingNavbar() {
               height={48}
               priority
             />
-            <h1 className="text-xl font-semibold text-orange-600">Idealite</h1>
+            <h1 className="hidden text-xl font-semibold text-orange-600 sm:block">
+              Idealite
+            </h1>
           </div>
         </Link>
       </div>
@@ -27,14 +29,6 @@ export default function LandingNavbar() {
           className="text-base font-medium text-gray-900 transition-colors hover:text-orange-600"
         >
           Blog
-        </Link>
-        <Link
-          href="https://www.youtube.com/@idealitexyz"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-base font-medium text-gray-900 transition-colors hover:text-orange-600"
-        >
-          Youtube
         </Link>
         <Link
           href="/blog/introducing-idealite"

@@ -11,22 +11,19 @@ import { getBootstrapData } from "~/utils/posthog/getBootstrapData";
 export default async function FrontPage() {
   // Get feature flags server-side to prevent flicker
   const bootstrapData = await getBootstrapData();
-  const flagValue = bootstrapData.featureFlags["transformation-hero-landing"];
+  const flagValue = bootstrapData.featureFlags["digital-method-of-loci"];
 
   // PostHog returns "test" (string) or false (boolean) for 50/50 split
   // Map false to "control" for consistency
   const variant = flagValue === "test" ? "test" : "control";
 
   // Select Hero component based on server-side feature flag
-  const HeroComponent = variant === "test" ? Hero : HeroTransformation;
+  const HeroComponent = variant === "test" ? HeroTransformation : Hero;
 
   return (
     <div className="min-h-screen bg-black text-gray-800">
       <GoogleTag />
-      <VariantTracker
-        flagName="transformation-hero-landing"
-        variant={variant}
-      />
+      <VariantTracker flagName="digital-method-of-loci" variant={variant} />
       <HeroComponent />
       <main>
         <FeatureSection />
