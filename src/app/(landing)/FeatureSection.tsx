@@ -11,7 +11,7 @@ const features = [
     subtitle: "Visual mnemonics",
     description:
       "Create visual mnemonics with the method of loci technique and take your memory palaces to the next level.",
-    image: "/visual-mnemonic.png",
+    image: "/the-method-of-loci.jpg",
   },
   {
     id: "learning-interesting",
@@ -20,7 +20,7 @@ const features = [
     subtitle: "Visualize facts so they come alive",
     description:
       "Turn dry facts into scenes you can actually picture and revisit.",
-    image: "/learning-interesting.png",
+    image: "/digital-memory-palace.jpg",
   },
   {
     id: "ai-work",
@@ -93,11 +93,11 @@ export default function MinimalVariation() {
 
           {/* Right Side - Clean Image */}
           <div className="lg:col-span-3">
-            <div className="relative overflow-hidden rounded-2xl shadow-xl">
+            <div className="relative overflow-hidden rounded-2xl">
               <img
                 src={activeFeature.image || "/placeholder.svg"}
                 alt={activeFeature.title}
-                className="h-[400px] w-full object-cover"
+                className="h-[300px] w-full object-contain"
               />
             </div>
           </div>
