@@ -6,7 +6,7 @@ import LandingNavbar from "~/app/(landing)/LandingNavbar";
 
 export function HeroTransformation() {
   return (
-    <div className="relative min-h-screen overflow-hidden md:min-h-[140vh] md:pb-24">
+    <div className="relative min-h-[120vh] overflow-hidden md:min-h-[140vh] md:pb-24">
       {/* Sky Gradient Background */}
       <div className="absolute inset-0 bg-sky-400"></div>
 
@@ -126,9 +126,9 @@ export function HeroTransformation() {
         />
       </div>
       {/* Mobile Image */}
-      <div className="pointer-events-none absolute inset-x-4 flex justify-center md:inset-x-0 md:hidden">
+      <div className="pointer-events-none absolute inset-x-4 flex justify-center md:hidden">
         <Image
-          src="/home-phone-mockup.png"
+          src="/visual-mnemonic.png"
           alt="App interface on mobile"
           width={350}
           height={700}
