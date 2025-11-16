@@ -12,31 +12,67 @@ import LandingNavbar from "./LandingNavbar";
 
 export default function Hero() {
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Gradient Background with Grid Pattern */}
-      <div className="absolute inset-0 bg-white">
-        <svg
-          className="absolute inset-0 h-full w-full"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <pattern
-              id="grid"
-              width="60"
-              height="60"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 60 0 L 0 0 0 60"
-                fill="none"
-                stroke="rgb(3 49 140 / 0.4)"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-      </div>
+    <div className="relative min-h-screen overflow-hidden md:min-h-[140vh] md:pb-24">
+      {/* Sky Gradient Background */}
+      <div className="absolute inset-0 bg-sky-400"></div>
+
+      <Image
+        src="/top-left-foliage.PNG"
+        alt=""
+        width={400}
+        height={150}
+        className="absolute left-0 top-0 z-0 hidden h-auto w-48 object-contain md:block md:w-64 lg:w-80"
+        priority
+      />
+      <Image
+        src="/top-right-foliage.PNG"
+        alt=""
+        width={400}
+        height={150}
+        className="absolute right-0 top-0 z-0 hidden h-auto w-48 object-contain md:block md:w-64 lg:w-80"
+        priority
+      />
+      <Image
+        src="/bottom-right-foliage.PNG"
+        alt=""
+        width={400}
+        height={150}
+        className="absolute bottom-0 right-0 z-0 hidden h-auto w-48 object-contain md:block md:w-64 lg:w-80"
+        priority
+      />
+      <Image
+        src="/bottom-left-foliage.PNG"
+        alt=""
+        width={400}
+        height={150}
+        className="absolute bottom-0 left-0 z-0 hidden h-auto w-48 object-contain md:block md:w-64 lg:w-80"
+        priority
+      />
+      <Image
+        src="/icon256-sun.png"
+        alt="idealite logo"
+        width={84}
+        height={84}
+        className="absolute right-[25%] top-[5%] z-0 h-auto -rotate-12 object-contain"
+        priority
+      />
+      {/* Mobile Images */}
+      <Image
+        src="/top-left-foliage.PNG"
+        alt=""
+        width={400}
+        height={150}
+        className="absolute left-0 top-0 z-0 block h-auto w-48 object-contain md:hidden md:w-64 lg:w-80"
+        priority
+      />
+      <Image
+        src="/top-right-foliage.PNG"
+        alt=""
+        width={400}
+        height={150}
+        className="absolute right-0 top-0 z-0 block h-auto w-48 object-contain md:hidden md:w-64 lg:w-80"
+        priority
+      />
 
       {/* Content */}
       <div className="relative z-10">
@@ -56,18 +92,19 @@ export default function Hero() {
           </div>
 
           <h1 className="mx-auto max-w-5xl pt-4 text-4xl font-bold leading-tight text-gray-900 md:text-6xl">
-            Focus on Learning, Not Busy Work
+            Remember anything in minutes.
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-            Knowledge management on autopilot. Automation prunes the clutter;
-            you harvest the insights.
+            Born from a 2,000-year-old memory technique and rebuilt for today,
+            Idealite helps you lock information into memory with unmatched
+            clarity.
           </p>
 
           <div className="mb-12 mt-8 flex flex-col items-center gap-4">
             <WaitlistButton
               variant="control"
-              className="inline-flex transform items-center rounded-md bg-orange-500 px-8 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-xl"
+              className="inline-flex transform items-center rounded-md bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
             >
               Join the Waitlist
               <span className="ml-2">→</span>
@@ -84,7 +121,19 @@ export default function Hero() {
           </div>
         </div>
       </div>
-      <div className="pointer-events-none absolute inset-x-0 flex justify-center">
+      {/* Desktop/Tablet Image */}
+      <div className="pointer-events-none absolute inset-x-4 hidden justify-center md:flex lg:inset-x-0">
+        <Image
+          src="/landing-visual-mnemonic.png"
+          alt="App interface on desktop"
+          width={1200}
+          height={700}
+          className="object-contain"
+          priority
+        />
+      </div>
+      {/* Mobile Image */}
+      <div className="pointer-events-none absolute inset-x-4 flex justify-center md:inset-x-0 md:hidden">
         <Image
           src="/phone-mockup.png"
           alt="App interface on mobile"
