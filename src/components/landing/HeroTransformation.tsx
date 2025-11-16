@@ -6,7 +6,7 @@ import LandingNavbar from "~/app/(landing)/LandingNavbar";
 
 export function HeroTransformation() {
   return (
-    <div className="relative min-h-screen overflow-hidden md:min-h-[140vh] md:pb-24">
+    <div className="relative min-h-[120vh] overflow-hidden md:min-h-[140vh] md:pb-24">
       {/* Sky Gradient Background */}
       <div className="absolute inset-0 bg-sky-400"></div>
 
@@ -86,17 +86,17 @@ export function HeroTransformation() {
           </div>
 
           <h1 className="mx-auto max-w-5xl pt-4 text-4xl font-bold leading-tight text-gray-900 md:text-6xl">
-            Evolve Your Ideas
+            The Digital Method of Loci
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-            Idealtite is the tool for creating to learn. Transform your learning
-            system, focus on what matters, and transcend.
+            A technique once used by ancient scholars to memorize speeches and
+            texts, now reimagined for the digital age.
           </p>
 
           <div className="mb-12 mt-8 flex flex-col items-center gap-4">
             <WaitlistButton
-              variant="transformation"
+              variant="test"
               className="inline-flex transform items-center rounded-md bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-3 text-base font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
             >
               Join the Waitlist
@@ -115,20 +115,20 @@ export function HeroTransformation() {
         </div>
       </div>
       {/* Desktop/Tablet Image */}
-      <div className="pointer-events-none absolute inset-x-0 hidden justify-center md:flex">
+      <div className="pointer-events-none absolute inset-x-4 hidden justify-center md:flex lg:inset-x-0">
         <Image
-          src="/home-page.png"
+          src="/landing-visual-mnemonic.png"
           alt="App interface on desktop"
-          width={1400}
-          height={900}
+          width={1200}
+          height={700}
           className="object-contain"
           priority
         />
       </div>
       {/* Mobile Image */}
-      <div className="pointer-events-none absolute inset-x-0 flex justify-center md:hidden">
+      <div className="pointer-events-none absolute inset-x-4 flex justify-center md:hidden">
         <Image
-          src="/home-phone-mockup.png"
+          src="/visual-mnemonic.png"
           alt="App interface on mobile"
           width={350}
           height={700}

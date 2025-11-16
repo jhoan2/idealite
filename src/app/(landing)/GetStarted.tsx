@@ -12,7 +12,7 @@ export default function GetStarted({ variant }: GetStartedProps) {
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-4xl font-bold tracking-tighter text-white md:text-4xl md:text-5xl lg:text-6xl">
-                Build your brain, not your notes.
+                Build vivid memories, far beyond the page
               </h2>
             </div>
             <div className="flex flex-col gap-2 pt-8 min-[400px]:flex-row">
