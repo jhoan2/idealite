@@ -17,17 +17,18 @@ const features = [
     id: "learning-interesting",
     icon: Globe,
     title: "Keep it interesting",
-    subtitle: "Your curiosity sets the curriculum",
+    subtitle: "Visualize facts so they come alive",
     description:
-      "Learning is more effective when you're curious about the topic.",
+      "Turn dry facts into scenes you can actually picture and revisit.",
     image: "/learning-interesting.png",
   },
   {
     id: "ai-work",
     icon: Pickaxe,
     title: "Put AI to work",
-    subtitle: "We automate the busywork, so you can do the breakthroughs",
-    description: "",
+    subtitle: "Turn your visuals into study aids",
+    description:
+      "AI converts your imagined scenes into polished memory tools. Structured and ready to use.",
     image: "/ai-work.png",
   },
 ] as const;
