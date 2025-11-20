@@ -9,6 +9,7 @@ import SideBarWrapper from "./SideBarWrapper"; // Changed from SideBar to SideBa
 import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 import ConditionalSidebarTrigger from "./ConditionalSidebarTrigger";
 import { getBootstrapData } from "~/utils/posthog/getBootstrapData";
+import { GoogleTag } from "~/components/GoogleTag";
 
 export const metadata = {
   title: "idealite",
@@ -31,6 +32,7 @@ export default async function RootLayout({
         className={`${inter.className} antialiased`}
       >
         <body suppressHydrationWarning={true}>
+          <GoogleTag />
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
