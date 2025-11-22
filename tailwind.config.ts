@@ -8,6 +8,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["var(--font-geist-sans)", ...fontFamily.sans],
+        serif: ["var(--font-lora)", ...fontFamily.serif],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -15,6 +16,14 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
+        "near-black": "#060202",
+        "off-white": "#EBDCDA",
+        "primary-yellow": "#FFD700",
+        "muted-yellow": "#D4AF37",
+        "dark-primary": "#060202",
+        "light-secondary": "#EBDCDA",
+        "accent-vibrant": "#FFD700",
+        "accent-muted": "#D4AF37",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
