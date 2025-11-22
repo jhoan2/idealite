@@ -23,10 +23,27 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogPage() {
-  const { data: posts, totalPages } = await getPublishedBlogPosts({
+  const { data: posts } = await getPublishedBlogPosts({
     page: 1,
     pageSize: 12,
   });
+
+  // Featured static blog posts
+  const featuredPosts = [
+    {
+      id: "introducing-idealite",
+      slug: "introducing-idealite",
+      title: "Introducing Idealite",
+      excerpt:
+        "Fundamentally, idealite's mission is to provide a different path",
+      coverImage:
+        "https://assets.idealite.xyz/images/ef83a28f-0078-4747-8f10-810b3b906821/c52e15b1-0fb5-46aa-bc67-5a01a7890e20.jpg",
+      publishedAt: new Date("2025-11-23"),
+    },
+  ];
+
+  // Combine featured posts with database posts
+  const allPosts = [...featuredPosts, ...posts];
 
   return (
     <div
