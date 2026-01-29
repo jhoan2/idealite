@@ -46,6 +46,10 @@ export const env = createEnv({
     VOYAGER_API_KEY: z.string(),
     DISCORD_WEBHOOK_URL: z.string().url(),
     EDGE_CONFIG: z.string().url(),
+    DISCORD_APPLICATION_ID: z.string(),
+    DISCORD_PUBLIC_KEY: z.string(),
+    DISCORD_BOT_TOKEN: z.string(),
+    UPSTASH_WORKFLOW_URL: z.string().url(),
   },
 
   /**
@@ -118,6 +122,10 @@ export const env = createEnv({
     VOYAGER_API_KEY: process.env.VOYAGER_API_KEY,
     DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL,
     EDGE_CONFIG: process.env.EDGE_CONFIG,
+    DISCORD_APPLICATION_ID: process.env.DISCORD_APPLICATION_ID,
+    DISCORD_PUBLIC_KEY: process.env.DISCORD_PUBLIC_KEY,
+    DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN,
+    UPSTASH_WORKFLOW_URL: process.env.UPSTASH_WORKFLOW_URL,
   },
   /**
 
