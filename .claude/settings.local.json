@@ -26,7 +26,8 @@
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\pinned-pages/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\search/**)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
