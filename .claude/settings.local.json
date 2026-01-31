@@ -13,7 +13,6 @@
       "Bash(npm run lint)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app/**)",
-      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\db/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\server\\db/**)",
@@ -25,12 +24,10 @@
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\users\\me/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\[id]/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\pinned-pages/**)",
-      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
-      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
-      "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\workspace\\@page\\(BodyEditor)/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\search/**)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

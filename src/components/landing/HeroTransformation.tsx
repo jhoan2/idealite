@@ -86,7 +86,7 @@ export function HeroTransformation() {
           </div>
 
           <h1 className="mx-auto max-w-5xl pt-4 text-4xl font-bold leading-tight text-gray-900 md:text-6xl">
-            The Digital Method of Loci
+            A New Way to Remember Everything
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
