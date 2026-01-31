@@ -1,6 +1,6 @@
 // src/app/layout.tsx (Updated)
 import "~/styles/globals.css";
-import { inter } from "~/app/ui/fonts";
+import { inter, cinzel, jetbrainsMono, spaceGrotesk } from "~/app/ui/fonts";
 import { PHProvider } from "~/app/providers";
 import { ThemeProvider } from "~/app/ThemeProvider";
 import { Toaster } from "~/components/ui/sonner";
@@ -29,7 +29,7 @@ export default async function RootLayout({
       <html
         lang="en"
         suppressHydrationWarning={true}
-        className={`${inter.className} antialiased`}
+        className={`${inter.className} ${cinzel.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} antialiased`}
       >
         <body suppressHydrationWarning={true}>
           <GoogleTag />

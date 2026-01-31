@@ -6,6 +6,7 @@ import { users } from "~/server/db/schema";
 import { tryCatch } from "~/lib/tryCatch";
 import { Webhook } from "svix";
 import * as Sentry from "@sentry/nextjs";
+import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   // Get the headers
@@ -53,7 +54,57 @@ export async function POST(req: Request) {
     const { id, username, image_url, first_name, last_name, email_addresses } =
       evt.data;
 
-    // Insert the new user into the database and get the inserted user's ID
+    const email = email_addresses[0]?.email_address || "";
+
+    // Check if a user with this email already exists (e.g., created via Discord)
+    const { data: existingUser, error: lookupError } = await tryCatch(
+      db.query.users.findFirst({
+        where: eq(users.email, email),
+      }),
+    );
+
+    if (lookupError) {
+      console.error("Error looking up existing user:", lookupError);
+      Sentry.captureException(lookupError);
+    }
+
+    if (existingUser) {
+      // Link Clerk account to existing Discord-created user
+      const { error: linkError } = await tryCatch(
+        db
+          .update(users)
+          .set({ clerk_id: id })
+          .where(eq(users.id, existingUser.id)),
+      );
+
+      if (linkError) {
+        console.error("Error linking Clerk to existing user:", linkError);
+        return new NextResponse("Error linking accounts", { status: 500 });
+      }
+
+      // Update Clerk user with the existing database ID as externalId
+      const { error: clerkError } = await tryCatch(
+        fetch(`https://api.clerk.dev/v1/users/${id}`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            external_id: existingUser.id,
+          }),
+        }),
+      );
+
+      if (clerkError) {
+        console.error("Error updating Clerk user:", clerkError);
+        Sentry.captureException(clerkError);
+      }
+
+      return NextResponse.json({ success: true, linked: true });
+    }
+
+    // No existing user found - create a new one
     const { data: insertResult, error: dbError } = await tryCatch(
       db
         .insert(users)
@@ -65,7 +116,7 @@ export async function POST(req: Request) {
           pfp_url: image_url,
           role: "user",
           clerk_id: id,
-          email: email_addresses[0]?.email_address || "",
+          email: email,
         })
         .returning({ id: users.id }),
     );
