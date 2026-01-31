@@ -117,6 +117,10 @@ export default {
           },
         },
       }),
+      transitionTimingFunction: {
+        "ease-out-expo": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "ease-out-quart": "cubic-bezier(0.5, 0, 0, 1)",
+      },
       keyframes: {
         "float-up": {
           "0%": {

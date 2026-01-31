@@ -424,14 +424,14 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
       <section className="relative flex min-h-screen items-center overflow-hidden pt-32">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-16 px-8 md:grid-cols-[1.2fr_0.8fr]">
           <div className="hero-content">
-            <h1 className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] mb-8 translate-y-8 font-[family-name:var(--font-cinzel)] text-5xl font-bold leading-[1.1] tracking-tight opacity-0 transition-all duration-700 md:text-[clamp(3rem,5vw,5rem)] [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+            <h1 className="reveal-on-scroll ease-out-quart mb-8 translate-y-8 font-[family-name:var(--font-cinzel)] text-5xl font-bold leading-[1.1] tracking-tight opacity-0 transition-all duration-700 md:text-[clamp(3rem,5vw,5rem)] [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
               The <span className="text-[#f28705]">Solo Queue</span> is Over.
             </h1>
-            <p className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] mb-8 max-w-[500px] translate-y-8 text-xl text-[#f2e7c4]/80 opacity-0 transition-all delay-100 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+            <p className="reveal-on-scroll ease-out-quart mb-8 max-w-[500px] translate-y-8 text-xl text-[#f2e7c4]/80 opacity-0 transition-all delay-100 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
               Escape the syllabus, explore rabbit holes, and squad up with elite
               autodidacts. The first MMORPG for the intellectually curious.
             </p>
-            <div className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] flex translate-y-8 flex-wrap gap-4 opacity-0 transition-all delay-200 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+            <div className="reveal-on-scroll ease-out-quart flex translate-y-8 flex-wrap gap-4 opacity-0 transition-all delay-200 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
               <WaitlistButton
                 variant={variant}
                 className="inline-flex items-center justify-center bg-[#f28705] px-8 py-4 font-[family-name:var(--font-jetbrains-mono)] font-bold uppercase tracking-widest text-[#03318c] transition-all duration-300 [clip-path:polygon(10px_0,100%_0,100%_calc(100%-10px),calc(100%-10px)_100%,0_100%,0_10px)] hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(242,135,5,0.4)]"
@@ -447,7 +447,7 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
             </div>
 
             <SignedIn>
-              <p className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] mt-6 translate-y-8 font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#f2a716] opacity-0 transition-all delay-300 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+              <p className="reveal-on-scroll ease-out-quart mt-6 translate-y-8 font-[family-name:var(--font-jetbrains-mono)] text-sm text-[#f2a716] opacity-0 transition-all delay-300 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
                 Already approved?{" "}
                 <Link
                   href="/workspace"
@@ -458,7 +458,7 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
               </p>
             </SignedIn>
 
-{/* <div className="trust-signals reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] mt-16 translate-y-8 border-t border-[#f2e7c4]/20 pt-4 opacity-0 transition-all delay-300 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+{/* <div className="trust-signals reveal-on-scroll ease-out-quart mt-16 translate-y-8 border-t border-[#f2e7c4]/20 pt-4 opacity-0 transition-all delay-300 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
               <span className="mb-4 block font-[family-name:var(--font-jetbrains-mono)] text-[0.8rem] uppercase opacity-60">
                 Guild members from
               </span>
@@ -470,7 +470,7 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
 
           {/* INTERACTIVE CARD */}
           <div
-            className="card-container reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] perspective-[1000px] mt-12 flex translate-y-8 justify-center p-8 opacity-0 transition-all delay-200 duration-700 md:mt-0 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100"
+            className="card-container reveal-on-scroll ease-out-quart perspective-[1000px] mt-12 flex translate-y-8 justify-center p-8 opacity-0 transition-all delay-200 duration-700 md:mt-0 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100"
             id="cardContainer"
             ref={cardContainerRef}
             onMouseMove={handleMouseMove}
@@ -543,7 +543,7 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
                 </p>
                 <div className="relative mt-2 h-1.5 w-full bg-black/40">
                   <div
-                    className="duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] h-full w-0 bg-[#f28705] transition-[width]"
+                    className="duration-[2000ms] ease-out-expo h-full w-0 bg-[#f28705] transition-[width]"
                     ref={xpFillRef}
                     id="xpFill"
                   ></div>
@@ -557,12 +557,12 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
       {/* PROBLEM */}
       <section className="relative py-32">
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-32 px-8 md:grid-cols-2">
-          <div className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] relative flex h-[400px] translate-y-8 items-center justify-center overflow-hidden border border-[#f2e7c4]/20 bg-[#103c96]/20 opacity-0 transition-all duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <div className="reveal-on-scroll ease-out-quart relative flex h-[400px] translate-y-8 items-center justify-center overflow-hidden border border-[#f2e7c4]/20 bg-[#103c96]/20 opacity-0 transition-all duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             <div className="scale-150">
               <EmptyPartySlots />
             </div>
           </div>
-          <div className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] translate-y-8 opacity-0 transition-all delay-100 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <div className="reveal-on-scroll ease-out-quart translate-y-8 opacity-0 transition-all delay-100 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             <h2 className="mb-8 font-[family-name:var(--font-cinzel)] text-5xl font-bold leading-tight">
               Stuck in the <span className="text-[#f28705]">NPC Loop?</span>
             </h2>
@@ -584,14 +584,14 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
         id="quests"
       >
         <div className="mx-auto max-w-[1200px] px-8">
-          <h2 className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] translate-y-8 font-[family-name:var(--font-cinzel)] text-5xl font-bold leading-tight opacity-0 transition-all duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <h2 className="reveal-on-scroll ease-out-quart translate-y-8 font-[family-name:var(--font-cinzel)] text-5xl font-bold leading-tight opacity-0 transition-all duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             The Quest Board
           </h2>
-          <p className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] mt-4 translate-y-8 font-[family-name:var(--font-jetbrains-mono)] text-[#f2a716] opacity-0 transition-all delay-100 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <p className="reveal-on-scroll ease-out-quart mt-4 translate-y-8 font-[family-name:var(--font-jetbrains-mono)] text-[#f2a716] opacity-0 transition-all delay-100 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             Interface v2.4 // Connected
           </p>
 
-          <div className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] relative mx-auto mt-16 h-[600px] max-w-[1000px] translate-y-8 overflow-hidden border border-[#f2a716] bg-[#03318c] text-left opacity-0 shadow-[0_0_40px_rgba(242,167,22,0.1)] transition-all delay-200 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <div className="reveal-on-scroll ease-out-quart relative mx-auto mt-16 h-[600px] max-w-[1000px] translate-y-8 overflow-hidden border border-[#f2a716] bg-[#03318c] text-left opacity-0 shadow-[0_0_40px_rgba(242,167,22,0.1)] transition-all delay-200 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             <div className="flex h-10 items-center justify-between border-b border-[#f2e7c4]/20 px-4 font-[family-name:var(--font-jetbrains-mono)] text-[0.8rem] text-[#f2a716]">
               <span>IDEALITEOS_SYS_ROOT</span>
               <span>COMING SOON...</span>
@@ -667,11 +667,11 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
 {/* SOCIAL PROOF - COMMENTED OUT
       <section className="py-32">
         <div className="mx-auto max-w-[1200px] px-8">
-          <h2 className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] translate-y-8 font-[family-name:var(--font-cinzel)] text-5xl font-bold leading-tight opacity-0 transition-all duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <h2 className="reveal-on-scroll ease-out-quart translate-y-8 font-[family-name:var(--font-cinzel)] text-5xl font-bold leading-tight opacity-0 transition-all duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             Legendary Members
           </h2>
           <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <div className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] translate-y-8 border border-[#f2e7c4]/20 bg-[#103c96]/10 p-8 opacity-0 transition-all delay-100 duration-300 duration-700 hover:-translate-y-1.5 hover:border-[#f2a716] [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+            <div className="reveal-on-scroll ease-out-quart translate-y-8 border border-[#f2e7c4]/20 bg-[#103c96]/10 p-8 opacity-0 transition-all delay-100 duration-300 duration-700 hover:-translate-y-1.5 hover:border-[#f2a716] [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
               <div className="mb-6 flex items-center gap-4">
                 <div className="h-10 w-10 rounded-full bg-[#103c96]"></div>
                 <div>
@@ -687,7 +687,7 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
                 real."
               </p>
             </div>
-            <div className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] translate-y-8 border border-[#f2e7c4]/20 bg-[#103c96]/10 p-8 opacity-0 transition-all delay-200 duration-300 duration-700 hover:-translate-y-1.5 hover:border-[#f2a716] [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+            <div className="reveal-on-scroll ease-out-quart translate-y-8 border border-[#f2e7c4]/20 bg-[#103c96]/10 p-8 opacity-0 transition-all delay-200 duration-300 duration-700 hover:-translate-y-1.5 hover:border-[#f2a716] [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
               <div className="mb-6 flex items-center gap-4">
                 <div className="h-10 w-10 rounded-full bg-[#103c96]"></div>
                 <div>
@@ -702,7 +702,7 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
                 side-project for 3 months before taking VC money."
               </p>
             </div>
-            <div className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] translate-y-8 border border-[#f2e7c4]/20 bg-[#103c96]/10 p-8 opacity-0 transition-all delay-300 duration-300 duration-700 hover:-translate-y-1.5 hover:border-[#f2a716] [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+            <div className="reveal-on-scroll ease-out-quart translate-y-8 border border-[#f2e7c4]/20 bg-[#103c96]/10 p-8 opacity-0 transition-all delay-300 duration-300 duration-700 hover:-translate-y-1.5 hover:border-[#f2a716] [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
               <div className="mb-6 flex items-center gap-4">
                 <div className="h-10 w-10 rounded-full bg-[#103c96]"></div>
                 <div>
@@ -726,7 +726,7 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
       {/* TECH SPECS */}
       <section className="border-t border-[#f2e7c4]/20 py-32">
         <div className="mx-auto max-w-[1200px] px-8">
-          <div className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] grid translate-y-8 grid-cols-1 gap-[1px] border border-[#f2e7c4]/20 bg-[#f2e7c4]/20 opacity-0 transition-all duration-700 md:grid-cols-3 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <div className="reveal-on-scroll ease-out-quart grid translate-y-8 grid-cols-1 gap-[1px] border border-[#f2e7c4]/20 bg-[#f2e7c4]/20 opacity-0 transition-all duration-700 md:grid-cols-3 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             <div className="bg-[#03318c] p-8 text-center transition-colors duration-300 hover:bg-[#103c96]">
               <div className="mb-4 font-[family-name:var(--font-jetbrains-mono)] text-3xl text-[#f2a716]">
                 ⌘
@@ -767,15 +767,15 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
       <section className="relative py-32 text-center" id="join">
         <div className="absolute left-0 top-0 h-[1px] w-full bg-gradient-to-r from-transparent via-[#f28705] to-transparent"></div>
         <div className="mx-auto max-w-[1200px] px-8">
-          <h2 className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] translate-y-8 font-[family-name:var(--font-cinzel)] text-5xl font-bold leading-tight opacity-0 transition-all duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <h2 className="reveal-on-scroll ease-out-quart translate-y-8 font-[family-name:var(--font-cinzel)] text-5xl font-bold leading-tight opacity-0 transition-all duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             Ready to Spawn?
           </h2>
-          <p className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] mt-4 translate-y-8 text-[#f2a716] opacity-0 transition-all delay-100 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <p className="reveal-on-scroll ease-out-quart mt-4 translate-y-8 text-[#f2a716] opacity-0 transition-all delay-100 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             Season 4 enrollment closes in:{" "}
             <span className="font-[family-name:var(--font-jetbrains-mono)]">04:21:12</span>
           </p>
 
-          <div className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] my-8 translate-y-8 opacity-0 transition-all delay-200 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <div className="reveal-on-scroll ease-out-quart my-8 translate-y-8 opacity-0 transition-all delay-200 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             <WaitlistButton
               variant={variant}
               className="inline-flex items-center justify-center bg-[#f28705] px-8 py-4 font-[family-name:var(--font-jetbrains-mono)] font-bold uppercase tracking-widest text-[#03318c] transition-all duration-300 [clip-path:polygon(10px_0,100%_0,100%_calc(100%-10px),calc(100%-10px)_100%,0_100%,0_10px)] hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(242,135,5,0.4)]"
@@ -783,7 +783,7 @@ export default function LandingGaming({ variant }: LandingGamingProps) {
               Join the Guild
             </WaitlistButton>
           </div>
-          <p className="reveal-on-scroll ease-[cubic-bezier(0.5,0,0,1)] translate-y-8 font-[family-name:var(--font-jetbrains-mono)] text-[0.7rem] opacity-0 opacity-50 transition-all delay-300 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
+          <p className="reveal-on-scroll ease-out-quart translate-y-8 font-[family-name:var(--font-jetbrains-mono)] text-[0.7rem] opacity-0 opacity-50 transition-all delay-300 duration-700 [&.is-visible]:translate-y-0 [&.is-visible]:opacity-100">
             NO CREDIT CARD REQUIRED FOR TUTORIAL MODE
           </p>
         </div>
