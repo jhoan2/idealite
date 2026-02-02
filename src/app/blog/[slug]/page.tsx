@@ -21,13 +21,22 @@ export async function generateMetadata({
   const siteUrl = "https://idealite.xyz";
   const postUrl = `${siteUrl}/blog/${post.slug}`;
 
+  const ogImageUrl = `${siteUrl}/api/og?title=${encodeURIComponent(post.title)}&subtitle=${encodeURIComponent(post.excerpt ?? "Read this article on Idealite")}&type=post`;
+
   return {
     title: post.title,
     description: post.excerpt ?? "Read this article on Idealite",
     openGraph: {
       title: post.title,
       description: post.excerpt ?? "Read this article on Idealite",
-      images: post.coverImage ? [post.coverImage] : [],
+      images: [
+        {
+          url: post.coverImage ?? ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
       type: "article",
       publishedTime: post.publishedAt?.toISOString(),
       url: postUrl,
@@ -37,7 +46,10 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: post.title,
       description: post.excerpt ?? "Read this article on Idealite",
-      images: post.coverImage ? [post.coverImage] : [],
+      images: [post.coverImage ?? ogImageUrl],
+    },
+    alternates: {
+      canonical: postUrl,
     },
   };
 }

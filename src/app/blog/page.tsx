@@ -5,20 +5,44 @@ import { getPublishedBlogPosts } from "~/server/queries/blog";
 import { lora } from "~/app/ui/fonts";
 
 export const metadata: Metadata = {
-  title: "Blog - Idealite",
-  description: "A curated collection of thoughts",
+  title: "Idealite Blog | Self-Directed Learning Guides & Autodidact Resources",
+  description:
+    "Explore guides on escaping the tutorial loop, building skill trees, and leveling up your learning. Written by and for the intellectually curious.",
+  keywords: [
+    "self-directed learning",
+    "autodidact guides",
+    "learning strategies",
+    "skill development",
+    "independent learning",
+    "educational philosophy",
+  ],
   openGraph: {
-    title: "Blog - Idealite",
-    description: "A curated collection of thoughts",
-    images: ["/icon128.png"],
+    title: "Idealite Blog | Guides for the Intellectually Curious",
+    description:
+      "Escape the NPC loop. Explore strategies for self-directed learning, skill trees, and leveling up your knowledge.",
+    url: "https://idealite.xyz/blog",
+    images: [
+      {
+        url: "https://idealite.xyz/api/og?title=Idealite%20Blog&subtitle=Guides%20for%20the%20Intellectually%20Curious&type=blog",
+        width: 1200,
+        height: 630,
+        alt: "Idealite Blog - Self-Directed Learning Resources",
+      },
+    ],
     type: "website",
     siteName: "Idealite",
   },
   twitter: {
-    card: "summary",
-    title: "Blog - Idealite",
-    description: "A curated collection of thoughts",
-    images: ["/icon128.png"],
+    card: "summary_large_image",
+    title: "Idealite Blog | Guides for the Intellectually Curious",
+    description:
+      "Escape the NPC loop. Strategies for autodidacts and self-directed learners.",
+    images: [
+      "https://idealite.xyz/api/og?title=Idealite%20Blog&subtitle=Guides%20for%20the%20Intellectually%20Curious&type=blog",
+    ],
+  },
+  alternates: {
+    canonical: "https://idealite.xyz/blog",
   },
 };
 
