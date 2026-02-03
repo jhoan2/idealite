@@ -51,3 +51,4 @@ yarn-error.log*
 .env.sentry-build-plugin
 
 skills
+/plans

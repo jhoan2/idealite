@@ -27,7 +27,8 @@
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite/**)",
       "Read(/C:\\Users\\John Hoang\\Downloads\\codingprojects\\idealite\\src\\app\\api\\v1\\pages\\search/**)",
       "Bash(ls:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
