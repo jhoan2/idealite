@@ -1,6 +1,4 @@
 import { getUserTagTree } from "~/server/queries/usersTags";
-import { SidebarProvider } from "~/components/ui/sidebar";
-import { RightSideBar } from "./(Page)/(RightSidebar)/RightSideBar";
 import { headers } from "next/headers";
 import { trackEvent } from "~/lib/posthog/server";
 import { getUserDiscoveredFeatures } from "~/server/queries/featureDiscovery";
@@ -25,7 +23,6 @@ export default async function WorkspaceLayout({
   const headersList = headers();
   const userAgent = headersList.get("user-agent");
 
-  const isMobile = userAgent?.toLowerCase().includes("mobile");
   if (userId) {
     trackEvent(Number(userId), "workspace_viewed", {
       username: user?.emailAddresses[0]?.emailAddress,
@@ -37,31 +34,16 @@ export default async function WorkspaceLayout({
       userId={userId ?? ""}
       initialDiscoveredFeatures={initialDiscoveredFeatures}
     >
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "24rem",
-          } as React.CSSProperties
-        }
-        defaultOpen={false}
-      >
-        <div className="flex h-screen w-full overflow-hidden">
-          <div className="custom-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="fixed right-8 top-4 z-50"></div>
-            <div className="w-full">
-              {page}
-              {children}
-            </div>
-          </div>
-          {editor}
-          <div>
-            <RightSideBar
-              userTagTree={userTagTree}
-              isMobile={isMobile ?? false}
-            />
+      <div className="flex h-screen w-full overflow-hidden">
+        <div className="custom-scrollbar flex min-w-0 flex-1 flex-col overflow-y-auto">
+          <div className="fixed right-8 top-4 z-50"></div>
+          <div className="w-full">
+            {page}
+            {children}
           </div>
         </div>
-      </SidebarProvider>
+        {editor}
+      </div>
     </FeatureDiscoveryProvider>
   );
 }

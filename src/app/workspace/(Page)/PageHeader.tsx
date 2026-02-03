@@ -11,7 +11,6 @@ import AddMetadata from "../@page/(AddResource)/AddMetadata";
 import { Resource } from "~/server/queries/resource";
 import PageResourceInfo from "../@page/(ResourceInfo)/PageResourceInfo";
 import TagCrumbs from "./TagCrumbs";
-import { SidebarTrigger } from "~/components/ui/sidebar";
 
 interface PageHeaderProps {
   tags: Tag[];
@@ -66,7 +65,6 @@ export function PageHeader({
           >
             <Info className="h-4 w-4" aria-label="Metadata tab" />
           </Button>
-          <SidebarTrigger />
         </div>
       </div>
       <div>
