@@ -48,7 +48,7 @@ export function MobileGlobalTagsList({
 
   // Get the children of the root node (the main categories)
   const mainCategories = useMemo(() => {
-    if (tagTree.length === 1 && tagTree[0].children) {
+    if (tagTree.length === 1 && tagTree[0]?.children) {
       return tagTree[0].children;
     }
     return tagTree;
