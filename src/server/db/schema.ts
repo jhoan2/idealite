@@ -18,6 +18,7 @@ import {
   json,
   serial,
   vector,
+  real,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -382,6 +383,44 @@ export const users_folders = createTable(
   ],
 );
 
+export const scenes = createTable("scenes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  user_id: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  background_image_id: uuid("background_image_id")
+    .references(() => images.id), // Link to Warehouse
+  dimensions: jsonb("dimensions").$type<{ w: number; h: number }>(),
+  created_at: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+    () => new Date(),
+  ),
+});
+
+export const scene_nodes = createTable("scene_nodes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  scene_id: uuid("scene_id")
+    .notNull()
+    .references(() => scenes.id, { onDelete: "cascade" }),
+  image_id: uuid("image_id")
+    .notNull()
+    .references(() => images.id), // The "Sprite"
+  
+  // Transform Data
+  x: integer("x").notNull().default(0),
+  y: integer("y").notNull().default(0),
+  scale_x: real("scale_x").default(1.0),
+  scale_y: real("scale_y").default(1.0),
+  rotation: real("rotation").default(0),
+  layer_order: integer("layer_order").default(0),
+  
+  // Interaction Data
+  label: text("label"), // Optional text label
+});
+
 export const cards = createTable(
   "card",
   {
@@ -392,7 +431,7 @@ export const cards = createTable(
     page_id: uuid("page_id").references(() => pages.id),
     resource_id: uuid("resource_id").references(() => resources.id),
     card_type: varchar("card_type", {
-      enum: ["qa", "image", "cloze"],
+      enum: ["qa", "image", "cloze", "scene_target"],
     }),
     question: text("question"),
     answer: text("answer"),
@@ -419,6 +458,10 @@ export const cards = createTable(
     source_locator: jsonb("source_locator")
       .notNull()
       .default(sql`'{}'::jsonb`),
+    
+    // Universal Card Fields
+    scene_id: uuid("scene_id").references(() => scenes.id),
+    scene_node_id: uuid("scene_node_id").references(() => scene_nodes.id),
   },
   (table) => [
     index("card_user_idx").on(table.user_id),
@@ -678,6 +721,31 @@ export const usersFoldersRelations = relations(users_folders, ({ one }) => ({
   }),
 }));
 
+export const scenesRelations = relations(scenes, ({ one, many }) => ({
+  user: one(users, {
+    fields: [scenes.user_id],
+    references: [users.id],
+  }),
+  backgroundImage: one(images, {
+    fields: [scenes.background_image_id],
+    references: [images.id],
+  }),
+  nodes: many(scene_nodes),
+  cards: many(cards),
+}));
+
+export const sceneNodesRelations = relations(scene_nodes, ({ one, many }) => ({
+  scene: one(scenes, {
+    fields: [scene_nodes.scene_id],
+    references: [scenes.id],
+  }),
+  image: one(images, {
+    fields: [scene_nodes.image_id],
+    references: [images.id],
+  }),
+  cards: many(cards),
+}));
+
 export const cardsRelations = relations(cards, ({ many, one }) => ({
   tags: many(cards_tags),
   user: one(users, {
@@ -691,6 +759,15 @@ export const cardsRelations = relations(cards, ({ many, one }) => ({
   resource: one(resources, {
     fields: [cards.resource_id],
     references: [resources.id],
+  }),
+  // Universal Card Relations
+  scene: one(scenes, {
+    fields: [cards.scene_id],
+    references: [scenes.id],
+  }),
+  sceneNode: one(scene_nodes, {
+    fields: [cards.scene_node_id],
+    references: [scene_nodes.id],
   }),
 }));
 
