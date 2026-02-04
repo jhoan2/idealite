@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import GlobalTagsFlow from "../GlobalTagsFlow";
+import GlobalTagsFlow from "./GlobalTagsFlow";
 import { SelectTag } from "~/server/queries/tag";
-import { createTagTree, TagNode } from "../tagUtils";
+import { createTagTree } from "./tagUtils";
 
 interface GlobalTagStateProps {
   tag: SelectTag[];

@@ -1,5 +1,5 @@
 // src/app/workspace/global-tags/page.tsx
-import GlobalTagState from "./(GlobalTagTree)/GlobalTagState";
+import GlobalTagState from "./GlobalTagState";
 import { getTagWithChildren } from "~/server/queries/tag";
 import {
   getUserTags,
