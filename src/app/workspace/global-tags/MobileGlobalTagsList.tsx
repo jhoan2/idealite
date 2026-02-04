@@ -113,7 +113,7 @@ export function MobileGlobalTagsList({
               key={category.id}
               node={category}
               level={0}
-              parentColor={category.color || PALETTE[index % PALETTE.length]}
+              parentColor={category.color ?? PALETTE[index % PALETTE.length] ?? "#FAAC7D"}
               onAddTag={handleAddTag}
             />
           ))}
