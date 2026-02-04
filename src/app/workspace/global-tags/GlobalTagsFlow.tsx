@@ -45,14 +45,28 @@ function GlobalTagsFlowInner({ tagTree, isMobile }: GlobalTagsFlowProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView, setCenter, getNode } = useReactFlow();
 
-  // Helper to apply semantic zoom visibility
+  // Helper to apply semantic zoom visibility (zooming OUT reveals more levels)
   const applySemanticZoom = useCallback((currentNodes: Node[], zoom: number) => {
-    const ZOOM_THRESHOLD = 0.6;
-    
+    // Linear thresholds: each level appears as user zooms out further
+    // Level 0: always visible
+    // Level 1: visible when zoom < 1.2
+    // Level 2: visible when zoom < 0.9
+    // Level 3: visible when zoom < 0.6
+    // Level 4: visible when zoom < 0.4
+    // Level 5: visible when zoom < 0.25
+    // Level 6+: visible when zoom < 0.15
+    const getThresholdForLevel = (level: number): number => {
+      if (level === 0) return Infinity; // Always visible
+      // Start at 1.2 for level 1, decrease by 0.3 per level
+      return Math.max(0.15, 1.5 - level * 0.3);
+    };
+
     return currentNodes.map(node => {
-      // Level 2+ nodes (Topics) are hidden when zoomed out
-      const shouldHide = (node.data.level >= 2) && (zoom < ZOOM_THRESHOLD);
-      
+      const level = node.data.level;
+      const threshold = getThresholdForLevel(level);
+      // Hide if zoom is ABOVE the threshold (zoomed in too much)
+      const shouldHide = zoom >= threshold;
+
       if (node.hidden !== shouldHide) {
         return { ...node, hidden: shouldHide };
       }
@@ -64,19 +78,24 @@ function GlobalTagsFlowInner({ tagTree, isMobile }: GlobalTagsFlowProps) {
     // If tagTree is valid, compute layout
     if (tagTree && tagTree.length > 0) {
       const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-        tagTree,
-        'LR' // Switch to Left-Right layout
+        tagTree
       );
 
-      // Initial state: hide deep levels for cleaner load
-      const initialNodes = applySemanticZoom(layoutedNodes, 0.5);
+      // Initial state: start zoomed in (high zoom value), showing only top levels
+      const INITIAL_ZOOM = 1.3;
+      const initialNodes = applySemanticZoom(layoutedNodes, INITIAL_ZOOM);
 
       setNodes(initialNodes);
       setEdges(layoutedEdges);
 
-      // Short delay to allow rendering before fitting
+      // Short delay to allow rendering, then fit to only level 0 nodes
       setTimeout(() => {
-        fitView({ padding: 0.2, duration: 800 });
+        fitView({
+          padding: 0.3,
+          duration: 800,
+          maxZoom: INITIAL_ZOOM, // Cap the zoom so we start zoomed in
+          nodes: initialNodes.filter(n => n.data.level === 0) // Only fit to level 0 nodes
+        });
       }, 50);
     }
   }, [tagTree, fitView, setNodes, setEdges, applySemanticZoom]);
@@ -202,11 +221,11 @@ function GlobalTagsFlowInner({ tagTree, isMobile }: GlobalTagsFlowProps) {
         onNodeClick={onNodeClick}
         onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}
-        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineType={ConnectionLineType.Straight}
         fitView
         minZoom={0.1}
         maxZoom={1.5}
-        defaultEdgeOptions={{ type: 'smoothstep', animated: false }}
+        defaultEdgeOptions={{ type: 'straight', animated: false }}
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={20} size={1} color="#94a3b8" className="opacity-20" />
