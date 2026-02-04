@@ -1,6 +1,9 @@
 
 import { SelectTag } from "~/server/queries/tag";
 
+// Re-export for client components to avoid importing from "use server" files
+export type { SelectTag };
+
 export interface TagNode extends SelectTag {
   children: TagNode[];
   isInBoth: boolean;
