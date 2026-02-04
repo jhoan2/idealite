@@ -3,40 +3,14 @@
 
 import { useMemo, useState } from "react";
 import { SelectTag } from "~/server/queries/tag";
-import MobileCirclePack from "./MobileCirclePack";
+import GlobalTagsFlow from "../../workspace/global-tags/GlobalTagsFlow";
 import * as Sentry from "@sentry/nextjs";
-
-interface TagNode extends SelectTag {
-  children: TagNode[];
-  isInBoth: boolean;
-}
+import { createTagTree, TagNode } from "../../workspace/global-tags/tagUtils";
 
 interface MobileGlobalTagsClientProps {
   tag: SelectTag[];
   userTags: SelectTag[];
   userId: string | null;
-}
-
-function createTagTree(
-  rootTags: SelectTag[],
-  userTags: SelectTag[],
-): TagNode[] {
-  const userTagSet = new Set(userTags.map((tag) => tag.id));
-
-  function buildTree(
-    tags: SelectTag[],
-    parentId: string | null = null,
-  ): TagNode[] {
-    return tags
-      .filter((tag) => tag.parent_id === parentId)
-      .map((tag) => ({
-        ...tag,
-        children: buildTree(tags, tag.id),
-        isInBoth: userTagSet.has(tag.id),
-      }));
-  }
-
-  return buildTree(rootTags);
 }
 
 export default function MobileGlobalTagsClient({
@@ -105,7 +79,7 @@ export default function MobileGlobalTagsClient({
 
   return (
     <div className="h-screen w-full">
-      <MobileCirclePack tagTree={tagTree[0]} />
+      <GlobalTagsFlow tagTree={tagTree} isMobile={true} />
     </div>
   );
 }
