@@ -32,7 +32,7 @@ export default async function GlobalTagsPage() {
   return (
     <>
       {isMobile || isWarpcast ? (
-        <MobileGlobalTagsTour>
+        // <MobileGlobalTagsTour>
           <div className="relative h-screen">
             {/* Full height for GlobalTagState */}
             <GlobalTagState
@@ -47,9 +47,9 @@ export default async function GlobalTagsPage() {
               userId={userId ?? ""}
             />
           </div>
-        </MobileGlobalTagsTour>
+        // </MobileGlobalTagsTour>
       ) : (
-        <GlobalTagsTour>
+        // <GlobalTagsTour>
           <div className="flex h-screen">
             {/* Desktop: Side by side */}
             <div className="w-80 border-r border-border">
@@ -67,7 +67,7 @@ export default async function GlobalTagsPage() {
               />
             </div>
           </div>
-        </GlobalTagsTour>
+        // </GlobalTagsTour>
       )}
     </>
   );
