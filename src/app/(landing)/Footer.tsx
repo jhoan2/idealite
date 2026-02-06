@@ -79,6 +79,12 @@ export default function Footer() {
             Copyright © {new Date().getFullYear()} idealite. All Rights
             Reserved.
           </p>
+          <Link
+            href="/llms.txt"
+            className="mt-4 text-xs text-gray-600 transition-colors hover:text-gray-400 md:mt-0"
+          >
+            AI
+          </Link>
         </div>
       </div>
     </footer>
