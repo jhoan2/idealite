@@ -65,10 +65,44 @@ export default async function BlogPostPage({
     notFound();
   }
 
+  const siteUrl = "https://idealite.xyz";
+  const postUrl = `${siteUrl}/blog/${post.slug}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "description": post.excerpt ?? "Read this article on Idealite",
+    "image": post.coverImage ?? `${siteUrl}/icon256.png`,
+    "datePublished": post.publishedAt?.toISOString(),
+    "dateModified": post.updatedAt?.toISOString() ?? post.publishedAt?.toISOString(),
+    "author": {
+      "@type": "Organization",
+      "name": "Idealite",
+      "url": siteUrl,
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Idealite",
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${siteUrl}/icon128.png`,
+      },
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": postUrl,
+    },
+  };
+
   return (
     <div
       className={`min-h-screen bg-near-black text-off-white antialiased ${lora.variable}`}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Navigation */}
       <nav className="w-full border-b border-muted-yellow/20 py-6 md:py-10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">

@@ -23,10 +23,43 @@ export const metadata: Metadata = {
 };
 
 export default function IntroducingIdealite() {
+  const siteUrl = "https://idealite.xyz";
+  const postUrl = `${siteUrl}/blog/introducing-idealite`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Introducing Idealite",
+    "description": "Fundamentally, idealite's mission is to provide a different path",
+    "image": "https://assets.idealite.xyz/images/ef83a28f-0078-4747-8f10-810b3b906821/c52e15b1-0fb5-46aa-bc67-5a01a7890e20.jpg",
+    "datePublished": "2025-11-23T00:00:00Z",
+    "author": {
+      "@type": "Organization",
+      "name": "Idealite",
+      "url": siteUrl,
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Idealite",
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${siteUrl}/icon128.png`,
+      },
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": postUrl,
+    },
+  };
+
   return (
     <div
       className={`min-h-screen bg-dark-primary font-sans text-light-secondary antialiased ${lora.variable}`}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Navigation */}
       <nav className="fixed left-0 right-0 top-0 z-10 bg-dark-primary/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
