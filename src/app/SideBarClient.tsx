@@ -24,6 +24,7 @@ import { useDailyNote } from "./notes/_hooks/useDailyNote";
 import { NavLocalPinned } from "./notes/_components/NavLocalPinned";
 import { SearchModal } from "./notes/_components/SearchModal";
 import { useGlobalSearch } from "./notes/_hooks/useGlobalSearch";
+import { SyncStatus } from "./notes/_components/SyncStatus";
 
 interface SideBarClientProps {
   initialPinnedPages: any[]; 
@@ -128,6 +129,9 @@ export default function SideBarClient({
         <SidebarContent>
           <NavMain items={navItems} />
           <NavLocalPinned />
+          <div className="mt-auto pb-4">
+            <SyncStatus />
+          </div>
         </SidebarContent>
 
         <SidebarFooter>

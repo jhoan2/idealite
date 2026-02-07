@@ -11,10 +11,13 @@ export class SyncManager {
     this.isSyncing = true;
 
     try {
+      await db.syncMetadata.put({ key: 'sync_status', value: 'syncing' });
       await this.push();
       await this.pull();
+      await db.syncMetadata.put({ key: 'sync_status', value: 'synced' });
     } catch (e) {
       console.error('Sync failed:', e);
+      await db.syncMetadata.put({ key: 'sync_status', value: 'error' });
     } finally {
       this.isSyncing = false;
     }
