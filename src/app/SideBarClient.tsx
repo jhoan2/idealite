@@ -14,6 +14,7 @@ import {
   Inbox,
   UserRound,
   LogIn,
+  Layers,
 } from "lucide-react";
 import { NavUser } from "./NavUser";
 import { useUser, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
@@ -80,6 +81,12 @@ export default function SideBarClient({
       ),
       customContent: true,
       isActive: false
+    },
+    {
+      title: "All Notes",
+      url: "/notes/all",
+      icon: Layers,
+      isActive: pathname === "/notes/all",
     },
     {
       title: "Review",
