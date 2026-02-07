@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { SignOutButton } from "@clerk/nextjs";
+import { useClerk } from "@clerk/nextjs";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,6 +19,8 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar";
 import { MoreVertical, CreditCard, LogOut, UserCircle } from "lucide-react";
+import { wipeDatabase } from "~/storage/db";
+import { useRouter } from "next/navigation";
 
 export function NavUser({
   user,
@@ -30,6 +32,19 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { signOut } = useClerk();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    // 1. Wipe local IndexedDB
+    await wipeDatabase();
+    
+    // 2. Clear sync metadata (if any other storage used)
+    localStorage.removeItem("last_sync_time");
+
+    // 3. Perform Clerk sign out and redirect to home
+    await signOut(() => router.push("/"));
+  };
 
   return (
     <SidebarMenu>
@@ -87,12 +102,10 @@ export function NavUser({
               </DropdownMenuItem> */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <SignOutButton>
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
-            </SignOutButton>
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

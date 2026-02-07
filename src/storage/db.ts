@@ -41,3 +41,17 @@ export class IdealiteDB extends Dexie {
 }
 
 export const db = new IdealiteDB();
+
+/**
+ * Utility to securely wipe all user data from the local database.
+ * Used during logout or user switch.
+ */
+export async function wipeDatabase() {
+  await db.transaction('rw', db.pages, db.links, db.syncMetadata, async () => {
+    await Promise.all([
+      db.pages.clear(),
+      db.links.clear(),
+      db.syncMetadata.clear()
+    ]);
+  });
+}
