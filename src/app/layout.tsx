@@ -10,6 +10,7 @@ import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 import ConditionalSidebarTrigger from "./ConditionalSidebarTrigger";
 import { getBootstrapData } from "~/utils/posthog/getBootstrapData";
 import { GoogleTag } from "~/components/GoogleTag";
+import { SyncProvider } from "~/storage/SyncProvider";
 
 export const metadata = {
   title: "idealite",
@@ -40,20 +41,22 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <PHProvider bootstrapData={bootstrapData}>
-              <SidebarProvider>
-                <div className="flex h-screen w-full">
-                  <div className="">
-                    <SideBarWrapper />
-                  </div>
-                  <div className="flex-1 overflow-y-auto">
-                    <div className="md:hidden">
-                      <ConditionalSidebarTrigger />
+              <SyncProvider>
+                <SidebarProvider>
+                  <div className="flex h-screen w-full">
+                    <div className="">
+                      <SideBarWrapper />
                     </div>
-                    {children}
+                    <div className="flex-1 overflow-y-auto">
+                      <div className="md:hidden">
+                        <ConditionalSidebarTrigger />
+                      </div>
+                      {children}
+                    </div>
+                    <Toaster />
                   </div>
-                  <Toaster />
-                </div>
-              </SidebarProvider>
+                </SidebarProvider>
+              </SyncProvider>
             </PHProvider>
           </ThemeProvider>
         </body>
