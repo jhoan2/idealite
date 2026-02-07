@@ -50,6 +50,7 @@ export const env = createEnv({
     DISCORD_PUBLIC_KEY: z.string(),
     DISCORD_BOT_TOKEN: z.string(),
     UPSTASH_WORKFLOW_URL: z.string().url(),
+    MNEMONIC_SYSTEM_PROMPT: z.string(),
   },
 
   /**
@@ -126,6 +127,7 @@ export const env = createEnv({
     DISCORD_PUBLIC_KEY: process.env.DISCORD_PUBLIC_KEY,
     DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN,
     UPSTASH_WORKFLOW_URL: process.env.UPSTASH_WORKFLOW_URL,
+    MNEMONIC_SYSTEM_PROMPT: process.env.MNEMONIC_SYSTEM_PROMPT,
   },
   /**
 
