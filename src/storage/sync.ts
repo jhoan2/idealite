@@ -6,9 +6,6 @@ import { db, type LocalPage } from './db';
 export class SyncManager {
   private static isSyncing = false;
 
-  /**
-   * Main sync entry point. Runs both pull and push.
-   */
   static async sync() {
     if (this.isSyncing) return;
     this.isSyncing = true;
@@ -23,9 +20,6 @@ export class SyncManager {
     }
   }
 
-  /**
-   * Pulls changes from the server.
-   */
   private static async pull() {
     const lastSyncMeta = await db.syncMetadata.get('last_synced_at');
     const since = lastSyncMeta?.value || '';
@@ -34,15 +28,14 @@ export class SyncManager {
     if (!response.ok) return;
 
     const data = await response.json();
-    if (!data.success) return;
+    if (!data.success || !data.pages) return;
 
-    // Batch upsert to Dexie
     if (data.pages.length > 0) {
       const localPages: LocalPage[] = data.pages.map((p: any) => ({
         id: p.id,
         title: p.title,
         content: p.content || '',
-        plainText: '', // We can generate this locally if needed
+        plainText: '', 
         updatedAt: new Date(p.updated_at).getTime(),
         deleted: p.deleted ? 1 : 0,
         isSynced: 1,
@@ -52,37 +45,42 @@ export class SyncManager {
       await db.pages.bulkPut(localPages);
     }
 
-    // Save checkpoint
     await db.syncMetadata.put({ key: 'last_synced_at', value: data.server_timestamp });
   }
 
-  /**
-   * Pushes local changes to the server.
-   */
   private static async push() {
     const dirtyPages = await db.pages.where('isSynced').equals(0).toArray();
     if (dirtyPages.length === 0) return;
 
-    const lastSyncMeta = await db.syncMetadata.get('last_synced_at');
+    // Separate creates (temp- ids) from updates (UUIDs)
+    const creates = dirtyPages
+      .filter(p => p.id.startsWith('temp-'))
+      .map(p => ({
+        client_id: 0, // Simplified for this draft
+        title: p.title,
+        content: p.content,
+        content_type: 'page' as const,
+        created_at: new Date(p.updatedAt).toISOString(),
+        updated_at: new Date(p.updatedAt).toISOString(),
+      }));
 
-    // Separate new pages from updated pages
-    // For now, we'll treat everything as an update if it has a UUID format id
-    // In a real impl, we might use a prefix for 'temp' IDs
-    const updates = dirtyPages.map(p => ({
-      server_id: p.id,
-      title: p.title,
-      content: p.content,
-      updated_at: new Date(p.updatedAt).toISOString(),
-      deleted: p.deleted === 1
-    }));
+    const updates = dirtyPages
+      .filter(p => !p.id.startsWith('temp-'))
+      .map(p => ({
+        server_id: p.id,
+        title: p.title,
+        content: p.content,
+        updated_at: new Date(p.updatedAt).toISOString(),
+        deleted: p.deleted === 1
+      }));
 
     const response = await fetch('/api/v1/sync/pages/push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        creates,
         updates,
-        creates: [], // Handle creates properly once we have temp ID logic
-        last_synced_at: lastSyncMeta?.value
+        last_synced_at: (await db.syncMetadata.get('last_synced_at'))?.value
       })
     });
 
@@ -90,9 +88,43 @@ export class SyncManager {
 
     const data = await response.json();
     if (data.success) {
-      // Mark as synced
-      const syncedIds = data.updated.map((u: any) => u.server_id);
-      await db.pages.where('id').anyOf(syncedIds).modify({ isSynced: 1 });
+      await db.transaction('rw', db.pages, db.links, async () => {
+        // 1. Handle ID Swapping for newly created pages
+        if (data.created && data.created.length > 0) {
+          for (const created of data.created) {
+            // Find the local record that was just created (matching by title for now)
+            // In a better impl, we'd use client_id mapping
+            const localTempPage = await db.pages
+              .where('title').equals(created.final_title)
+              .and(p => p.id.startsWith('temp-'))
+              .first();
+
+            if (localTempPage) {
+              const oldId = localTempPage.id;
+              const newId = created.server_id;
+
+              // Move page to new ID
+              await db.pages.add({
+                ...localTempPage,
+                id: newId,
+                isSynced: 1,
+                updatedAt: new Date(created.updated_at).getTime()
+              });
+              await db.pages.delete(oldId);
+
+              // Update all local backlinks pointing to this temp ID
+              await db.links.where('targetPageId').equals(oldId).modify({ targetPageId: newId });
+              await db.links.where('sourcePageId').equals(oldId).modify({ sourcePageId: newId });
+            }
+          }
+        }
+
+        // 2. Mark updated pages as synced
+        if (data.updated && data.updated.length > 0) {
+          const syncedIds = data.updated.map((u: any) => u.server_id);
+          await db.pages.where('id').anyOf(syncedIds).modify({ isSynced: 1 });
+        }
+      });
     }
   }
 }
