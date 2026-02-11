@@ -50,7 +50,10 @@ export const env = createEnv({
     DISCORD_PUBLIC_KEY: z.string(),
     DISCORD_BOT_TOKEN: z.string(),
     UPSTASH_WORKFLOW_URL: z.string().url(),
-    MNEMONIC_SYSTEM_PROMPT: z.string(),
+    TOGETHER_API_KEY: z.string(),
+    STICKER_PROMPT_EXPERIMENT_ENABLED: z.enum(["true", "false"]).default("false"),
+    STICKER_PROMPT_VERSION: z.enum(["v1", "v2"]).default("v1"),
+    GROK_API_KEY: z.string().optional(),
   },
 
   /**
@@ -127,7 +130,11 @@ export const env = createEnv({
     DISCORD_PUBLIC_KEY: process.env.DISCORD_PUBLIC_KEY,
     DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN,
     UPSTASH_WORKFLOW_URL: process.env.UPSTASH_WORKFLOW_URL,
-    MNEMONIC_SYSTEM_PROMPT: process.env.MNEMONIC_SYSTEM_PROMPT,
+    TOGETHER_API_KEY: process.env.TOGETHER_API_KEY,
+    STICKER_PROMPT_EXPERIMENT_ENABLED:
+      process.env.STICKER_PROMPT_EXPERIMENT_ENABLED,
+    STICKER_PROMPT_VERSION: process.env.STICKER_PROMPT_VERSION,
+    GROK_API_KEY: process.env.GROK_API_KEY,
   },
   /**
 
