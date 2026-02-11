@@ -54,30 +54,47 @@ export function useLocalPage(pageId: string | undefined) {
  */
 async function updateLocalLinks(sourceId: string, contentJson: string) {
   try {
-    const content = JSON.parse(contentJson);
     const linkedIds = new Set<string>();
 
-    // Recursive search for marks with data-page-id (from your PageMention.tsx logic)
-    const findLinks = (node: any) => {
-      if (node.marks) {
-        for (const mark of node.marks) {
-          if (mark.type === 'link' && mark.attrs?.pageId) {
-            linkedIds.add(mark.attrs.pageId);
+    // Legacy path: content stored as TipTap JSON string.
+    try {
+      const content = JSON.parse(contentJson);
+      const findLinks = (node: any) => {
+        if (node?.marks) {
+          for (const mark of node.marks) {
+            if (mark.type === 'link' && mark.attrs?.pageId) {
+              linkedIds.add(String(mark.attrs.pageId));
+            }
           }
         }
-      }
-      if (node.content) {
-        node.content.forEach(findLinks);
-      }
-    };
+        if (node?.content) {
+          node.content.forEach(findLinks);
+        }
+      };
+      findLinks(content);
+    } catch {
+      // Non-JSON content is expected in /notes (HTML from TipTap getHTML()).
+    }
 
-    findLinks(content);
+    // Primary path: parse HTML and read page IDs from link attributes.
+    if (typeof DOMParser !== 'undefined') {
+      const doc = new DOMParser().parseFromString(contentJson, 'text/html');
+      const anchors = doc.querySelectorAll('a[data-page-id]');
+      for (const anchor of anchors) {
+        const pageId = anchor.getAttribute('data-page-id');
+        if (pageId) {
+          linkedIds.add(pageId);
+        }
+      }
+    }
 
     // Update the links table: Remove old, Add new
     await db.links.where('sourcePageId').equals(sourceId).delete();
     
-    if (linkedIds.size > 0) {
-      const newLinks = Array.from(linkedIds).map(targetId => ({
+    const filteredIds = Array.from(linkedIds).filter((targetId) => targetId && targetId !== sourceId);
+
+    if (filteredIds.length > 0) {
+      const newLinks = filteredIds.map(targetId => ({
         sourcePageId: sourceId,
         targetPageId: targetId
       }));
