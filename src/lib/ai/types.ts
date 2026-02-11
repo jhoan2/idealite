@@ -12,26 +12,28 @@ export interface StructuredNotesResponse {
   facts: SROFact[];
 }
 
-export type SymbolTechnique = "phonetic" | "semantic" | "numeric" | "pao";
+export type SymbolTechnique = "phonetic" | "semantic" | "pao" | "cultural" | "spatial";
 
-export type SceneStructure = "sequence" | "panorama" | "snapshot";
+export interface FactPair {
+  pair_id: number;
+  fact: string;
+  component_a: string;
+  component_b: string;
+}
 
-export interface SceneCharacter {
-  symbol: string;
-  represents: string;
-  technique: SymbolTechnique;
+export interface StickerAssociation {
+  pair_id: number;
+  component_a: {
+    label: string;
+    symbol: string;
+    technique: SymbolTechnique;
+  };
+  component_b: {
+    label: string;
+    symbol: string;
+    technique: SymbolTechnique;
+  };
+  interaction: string;
   reasoning: string;
-  placement: string;
-}
-
-export interface SceneCard {
-  scene_title: string;
-  structure: SceneStructure;
-  setting: string;
-  characters: SceneCharacter[];
-  narrative: string;
-}
-
-export interface GenerateScenesResponse {
-  scenes: SceneCard[];
+  image_prompt: string;
 }
