@@ -44,6 +44,7 @@ export default function NotePage() {
       {/* Local Editor Section */}
       <div className="mt-8">
         <LocalEditor 
+          pageId={id}
           initialContent={page.content} 
           onUpdate={(content, plainText) => savePage({ content, plainText })}
         />

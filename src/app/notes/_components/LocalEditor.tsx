@@ -10,6 +10,7 @@ import { Link } from "@tiptap/extension-link";
 import { useEffect, useState } from "react";
 import { NodeSelection } from "@tiptap/pm/state";
 import { Loader2, Wrench } from "lucide-react";
+import { toast } from "sonner";
 
 // Existing custom components/extensions
 import { CustomTypography } from "../../workspace/@page/(BodyEditor)/CustomTypograph";
