@@ -212,7 +212,7 @@ export default function LociCreatePage() {
   };
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 px-4 py-8">
+    <div className="container mx-auto max-w-4xl space-y-6 px-4 pt-8 pb-24 md:pb-8">
       <div>
         <h1 className="text-3xl font-bold">Loci Create</h1>
         <p className="mt-2 text-sm text-muted-foreground">

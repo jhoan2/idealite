@@ -154,7 +154,12 @@ export function FlashcardReviewDeck({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="space-y-3">
+        <div className="flex items-center justify-start">
+          <Button variant="outline" size="sm" onClick={onBack}>
+            Back
+          </Button>
+        </div>
         <CardTitle>2) Flashcard Review</CardTitle>
         <CardDescription>
           Reveal the answer, then mark each card as correct or wrong.
@@ -166,52 +171,50 @@ export function FlashcardReviewDeck({
             Card {safeCurrentIndex + 1} of {flashcards.length}
           </Badge>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">
-              {(currentCard.confidence * 100).toFixed(0)}%
-            </Badge>
             <Badge variant="outline">Wrong {wrongCount}</Badge>
             <Badge variant="outline">Left {unansweredCount}</Badge>
           </div>
         </div>
 
-        <div className="rounded-md border p-4">
-          <p className="text-sm font-medium">{currentCard.question}</p>
+        <div className="flex min-h-[280px] items-center justify-center rounded-xl border p-6 text-center md:p-10">
           {isAnswerRevealed ? (
-            <p className="mt-3 text-sm text-muted-foreground">{currentCard.answer}</p>
+            <p className="text-lg font-semibold leading-relaxed md:text-xl">
+              {currentCard.answer}
+            </p>
           ) : (
-            <p className="mt-3 text-sm text-muted-foreground">
-              Answer hidden. Reveal to grade this card.
+            <p className="text-lg font-semibold leading-relaxed md:text-xl">
+              {currentCard.question}
             </p>
           )}
-          <p className="mt-3 text-xs text-muted-foreground">
-            {currentCard.why_testable}
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={onBack}>
-            Back
-          </Button>
           {!isAnswerRevealed ? (
-            <Button onClick={() => setIsAnswerRevealed(true)} disabled={isBusy}>
+            <Button
+              className="w-full"
+              onClick={() => setIsAnswerRevealed(true)}
+              disabled={isBusy}
+            >
               Reveal Answer
             </Button>
           ) : (
-            <>
+            <div className="grid w-full grid-cols-2 gap-2">
               <Button
                 variant="destructive"
+                className="w-full"
                 onClick={() => void handleMarkCard("wrong")}
                 disabled={isBusy}
               >
                 Wrong
               </Button>
               <Button
+                className="w-full"
                 onClick={() => void handleMarkCard("correct")}
                 disabled={isBusy}
               >
                 Correct
               </Button>
-            </>
+            </div>
           )}
         </div>
       </CardContent>
