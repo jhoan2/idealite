@@ -4,6 +4,7 @@
 import { sql, relations } from "drizzle-orm";
 import {
   index,
+  unique,
   pgTableCreator,
   timestamp,
   varchar,
@@ -11,7 +12,6 @@ import {
   integer,
   text,
   boolean,
-  AnyPgColumn,
   primaryKey,
   pgEnum,
   jsonb,
@@ -20,6 +20,7 @@ import {
   vector,
   real,
 } from "drizzle-orm/pg-core";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -54,19 +55,34 @@ export const users = createTable("user", {
 });
 
 export type Image = typeof images.$inferSelect;
-export const images = createTable("images", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  user_id: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  filename: varchar("filename", { length: 256 }).notNull(),
-  url: varchar("url", { length: 1024 }).notNull(),
-  size: integer("size").notNull(),
-  is_temporary: boolean("is_temporary").default(false),
-  created_at: timestamp("created_at", { withTimezone: true })
-    .default(sql`CURRENT_TIMESTAMP`)
-    .notNull(),
-});
+export const images = createTable(
+  "images",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    user_id: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    filename: varchar("filename", { length: 256 }).notNull(),
+    url: varchar("url", { length: 1024 }).notNull(),
+    size: integer("size").notNull(),
+    source: varchar("source", { length: 64 }).notNull().default("upload"),
+    source_metadata: jsonb("source_metadata")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    is_temporary: boolean("is_temporary").default(false),
+    created_at: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    index("images_user_idx").on(table.user_id),
+    index("images_user_source_created_idx").on(
+      table.user_id,
+      table.source,
+      table.created_at,
+    ),
+  ],
+);
 
 export type Tag = typeof tags.$inferSelect;
 export const tags = createTable(
@@ -392,6 +408,9 @@ export const scenes = createTable("scenes", {
   background_image_id: uuid("background_image_id")
     .references(() => images.id), // Link to Warehouse
   dimensions: jsonb("dimensions").$type<{ w: number; h: number }>(),
+  canvas_state: jsonb("canvas_state")
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   created_at: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -400,26 +419,40 @@ export const scenes = createTable("scenes", {
   ),
 });
 
-export const scene_nodes = createTable("scene_nodes", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  scene_id: uuid("scene_id")
-    .notNull()
-    .references(() => scenes.id, { onDelete: "cascade" }),
-  image_id: uuid("image_id")
-    .notNull()
-    .references(() => images.id), // The "Sprite"
-  
-  // Transform Data
-  x: integer("x").notNull().default(0),
-  y: integer("y").notNull().default(0),
-  scale_x: real("scale_x").default(1.0),
-  scale_y: real("scale_y").default(1.0),
-  rotation: real("rotation").default(0),
-  layer_order: integer("layer_order").default(0),
-  
-  // Interaction Data
-  label: text("label"), // Optional text label
-});
+export const scene_nodes = createTable(
+  "scene_nodes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    scene_id: uuid("scene_id")
+      .notNull()
+      .references(() => scenes.id, { onDelete: "cascade" }),
+    image_id: uuid("image_id")
+      .notNull()
+      .references(() => images.id), // The "Sprite"
+    shape_id: text("shape_id"),
+    
+    // Transform Data
+    x: integer("x").notNull().default(0),
+    y: integer("y").notNull().default(0),
+    scale_x: real("scale_x").default(1.0),
+    scale_y: real("scale_y").default(1.0),
+    rotation: real("rotation").default(0),
+    layer_order: integer("layer_order").default(0),
+    
+    // Interaction Data
+    label: text("label"), // Optional text label
+    is_reviewable: boolean("is_reviewable").notNull().default(false),
+  },
+  (table) => [
+    index("scene_nodes_scene_id_idx").on(table.scene_id),
+    index("scene_nodes_scene_layer_idx").on(table.scene_id, table.layer_order),
+    index("scene_nodes_scene_reviewable_idx").on(
+      table.scene_id,
+      table.is_reviewable,
+    ),
+    unique("scene_nodes_scene_shape_unique").on(table.scene_id, table.shape_id),
+  ],
+);
 
 export const cards = createTable(
   "card",
@@ -430,9 +463,13 @@ export const cards = createTable(
       .references(() => users.id),
     page_id: uuid("page_id").references(() => pages.id),
     resource_id: uuid("resource_id").references(() => resources.id),
-    card_type: varchar("card_type", {
-      enum: ["qa", "image", "cloze", "scene_target"],
-    }),
+    card_type: text("card_type"),
+    card_payload: jsonb("card_payload")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    card_payload_version: integer("card_payload_version")
+      .notNull()
+      .default(1),
     question: text("question"),
     answer: text("answer"),
     cloze_template: text("cloze_template"),
@@ -461,7 +498,9 @@ export const cards = createTable(
     
     // Universal Card Fields
     scene_id: uuid("scene_id").references(() => scenes.id),
-    scene_node_id: uuid("scene_node_id").references(() => scene_nodes.id),
+    scene_node_id: uuid("scene_node_id").references(() => scene_nodes.id, {
+      onDelete: "set null",
+    }),
   },
   (table) => [
     index("card_user_idx").on(table.user_id),
@@ -472,7 +511,15 @@ export const cards = createTable(
       sql`to_tsvector('english', ${table.content})`,
     ),
     index("card_status_idx").on(table.status),
+    index("card_type_idx").on(table.card_type),
     index("card_deleted_idx").on(table.deleted),
+    index("card_scene_node_idx").on(table.scene_node_id),
+    index("card_scene_review_idx").on(
+      table.scene_id,
+      table.card_type,
+      table.status,
+      table.next_review,
+    ),
   ],
 );
 
