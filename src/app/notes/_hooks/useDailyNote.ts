@@ -26,7 +26,7 @@ export function useDailyNote() {
     await db.pages.add({
       id,
       title: today,
-      content: JSON.stringify({ type: 'doc', content: [] }),
+      content: '',
       plainText: '',
       updatedAt: Date.now(),
       deleted: 0,
