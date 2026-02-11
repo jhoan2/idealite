@@ -108,7 +108,12 @@ export function FlashcardReviewDeck({
   if (isDeckComplete) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="space-y-3">
+          <div className="flex items-center justify-start">
+            <Button variant="outline" size="sm" onClick={onBack}>
+              Back
+            </Button>
+          </div>
           <CardTitle>2) Flashcard Review</CardTitle>
           <CardDescription>Review complete.</CardDescription>
         </CardHeader>
@@ -127,10 +132,7 @@ export function FlashcardReviewDeck({
               Wrong cards are ready for sticker generation.
             </p>
           )}
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={onBack}>
-              Back
-            </Button>
+          <div className="flex w-full flex-wrap items-center justify-between gap-2">
             <Button
               variant="outline"
               onClick={handleRestartReview}

@@ -13,9 +13,13 @@ import {
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Textarea } from "~/components/ui/textarea";
-import type { FactPair, StickerAssociation } from "~/lib/ai/types";
+import type { StickerAssociation } from "~/lib/ai/types";
 
 import { FlashcardReviewDeck } from "./_components/flashcard-review-deck";
+import {
+  StickerChoiceDeck,
+  type StickerChoiceGroup,
+} from "./_components/sticker-choice-deck";
 
 type CreateMode = "notes" | "languages";
 type NotesStep = 1 | 2 | 3 | 4;
@@ -87,7 +91,10 @@ interface ExtractAssociationsFromFlashcardsApiResponse {
 
 interface GenerateStickersApiResponse {
   success: boolean;
-  data?: { stickers: StickerAssociation[] };
+  data?: {
+    stickers: StickerAssociation[];
+    prompt_version?: string;
+  };
   error?: string;
 }
 
@@ -122,10 +129,10 @@ export default function LociCreatePage() {
   const [notesDraft, setNotesDraft] = useState("");
   const [notesError, setNotesError] = useState<string | null>(null);
   const [flashcards, setFlashcards] = useState<FlashcardReviewItem[]>([]);
-  const [stickers, setStickers] = useState<StickerAssociation[]>([]);
-  const [selectedStickerIds, setSelectedStickerIds] = useState<Set<number>>(
-    new Set(),
-  );
+  const [stickerChoiceGroups, setStickerChoiceGroups] = useState<
+    StickerChoiceGroup[]
+  >([]);
+  const [currentStickerChoiceIndex, setCurrentStickerChoiceIndex] = useState(0);
   const [notesImage, setNotesImage] = useState<
     GenerateStickerImageProofApiResponse["data"] | null
   >(null);
@@ -149,17 +156,12 @@ export default function LociCreatePage() {
     () => choices.find((choice) => choice.pair_id === selectedPairId) ?? null,
     [choices, selectedPairId],
   );
-  const firstSelectedSticker = useMemo(
-    () => stickers.find((s) => selectedStickerIds.has(s.pair_id)) ?? null,
-    [stickers, selectedStickerIds],
-  );
-
   const isNotesBusy =
     isGeneratingFlashcards || isPreparingStickers || isGeneratingNotesImage;
   const isLanguagesBusy = isGeneratingChoices || isGeneratingImage;
   const maxUnlockedNotesStep: NotesStep = notesImage
     ? 4
-    : stickers.length > 0
+    : stickerChoiceGroups.length > 0
       ? 3
       : flashcards.length > 0
         ? 2
@@ -173,8 +175,8 @@ export default function LociCreatePage() {
 
     setIsPreparingStickers(true);
     setNotesError(null);
-    setStickers([]);
-    setSelectedStickerIds(new Set());
+    setStickerChoiceGroups([]);
+    setCurrentStickerChoiceIndex(0);
     setNotesImage(null);
     try {
       const extractResponse = await fetch("/api/ai/extract-associations-from-flashcards", {
@@ -189,20 +191,67 @@ export default function LociCreatePage() {
       if (!extractResult.data?.associations?.length) throw new Error("No associations returned");
 
       const rows: ExtractedAssociation[] = extractResult.data.associations.map((row) => ({ ...row }));
-      const pairs = buildPairsFromAssociations(rows);
-      if (!pairs.length) throw new Error("No valid pairs to generate stickers");
+      const rowById = new Map(rows.map((row) => [row.id, row] as const));
+      const orderedRows = wrongCards
+        .map((card) => rowById.get(card.id) ?? null)
+        .filter((row): row is ExtractedAssociation => row !== null);
+      if (!orderedRows.length) {
+        throw new Error("No valid associations for wrong cards");
+      }
 
-      const stickerResponse = await fetch("/api/ai/generate-stickers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pairs }),
-      });
-      const stickerResult = await parseJsonResponse<GenerateStickersApiResponse>(stickerResponse);
-      if (!stickerResponse.ok) throw new Error(stickerResult.error ?? "Failed to generate stickers");
-      if (!stickerResult.data?.stickers?.length) throw new Error("No stickers returned");
+      const groups = await Promise.all(
+        orderedRows.map(async (row) => {
+          const componentA = row.question_key.trim();
+          const componentB = row.answer_key.trim();
+          if (!componentA || !componentB) {
+            throw new Error(`Missing association keys for card ${row.id}`);
+          }
 
-      setStickers(stickerResult.data.stickers);
-      setSelectedStickerIds(new Set(stickerResult.data.stickers.map((s) => s.pair_id)));
+          const choicesResponse = await fetch("/api/ai/generate-stickers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pairs: [
+                {
+                  pair_id: row.id,
+                  fact: `Q: ${row.question.trim()} A: ${row.answer.trim()}`,
+                  component_a: componentA,
+                  component_b: componentB,
+                },
+              ],
+              countPerPair: 4,
+            }),
+          });
+          const choicesResult =
+            await parseJsonResponse<GenerateStickersApiResponse>(
+              choicesResponse,
+            );
+          if (!choicesResponse.ok) {
+            throw new Error(choicesResult.error ?? "Failed to generate choices");
+          }
+          const generatedChoices = (choicesResult.data?.stickers ?? []).filter(
+            (choice) => choice.pair_id === row.id,
+          );
+          if (generatedChoices.length < 4) {
+            throw new Error(
+              `Expected 4 choices for card ${row.id}, got ${generatedChoices.length}`,
+            );
+          }
+
+          return {
+            cardId: row.id,
+            question: row.question,
+            answer: row.answer,
+            choices: generatedChoices.slice(0, 4).map((choice, index) => ({
+              ...choice,
+              pair_id: row.id * 10 + index + 1,
+            })),
+          } satisfies StickerChoiceGroup;
+        }),
+      );
+
+      setStickerChoiceGroups(groups);
+      setCurrentStickerChoiceIndex(0);
       setNotesStep(3);
     } catch (err) {
       setNotesError(err instanceof Error ? err.message : "Failed to prepare stickers");
@@ -290,8 +339,8 @@ export default function LociCreatePage() {
                       setIsGeneratingFlashcards(true);
                       setNotesError(null);
                       setFlashcards([]);
-                      setStickers([]);
-                      setSelectedStickerIds(new Set());
+                      setStickerChoiceGroups([]);
+                      setCurrentStickerChoiceIndex(0);
                       setNotesImage(null);
                       try {
                         const response = await fetch("/api/ai/generate-flashcards-from-notes", {
@@ -329,66 +378,41 @@ export default function LociCreatePage() {
           )}
 
           {notesStep === 3 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>3) Sticker Candidates</CardTitle>
-                <CardDescription>Select candidate(s), then generate image proof.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {stickers.map((sticker) => {
-                  const selected = selectedStickerIds.has(sticker.pair_id);
-                  return (
-                    <button
-                      key={sticker.pair_id}
-                      type="button"
-                      onClick={() => setSelectedStickerIds((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(sticker.pair_id)) next.delete(sticker.pair_id);
-                        else next.add(sticker.pair_id);
-                        return next;
-                      })}
-                      className={`w-full rounded-md border p-3 text-left ${selected ? "border-primary bg-primary/5" : "hover:border-muted-foreground/40"}`}
-                    >
-                      <p className="text-sm">{sticker.component_a.label} {"->"} {sticker.component_a.symbol}</p>
-                      <p className="text-sm">{sticker.component_b.label} {"->"} {sticker.component_b.symbol}</p>
-                    </button>
+            <StickerChoiceDeck
+              groups={stickerChoiceGroups}
+              currentIndex={currentStickerChoiceIndex}
+              isBusy={isNotesBusy}
+              onBack={() => setNotesStep(2)}
+              onIndexChange={setCurrentStickerChoiceIndex}
+              onSelectChoice={async (choice) => {
+                setIsGeneratingNotesImage(true);
+                setNotesError(null);
+                setNotesImage(null);
+                try {
+                  const response = await fetch("/api/ai/generate-sticker-image-grok-test", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ sticker: choice }),
+                  });
+                  const result =
+                    await parseJsonResponse<GenerateStickerImageProofApiResponse>(
+                      response,
+                    );
+                  if (!response.ok) {
+                    throw new Error(result.error ?? "Failed to generate image");
+                  }
+                  if (!result.data) throw new Error("No image data returned");
+                  setNotesImage(result.data);
+                  setNotesStep(4);
+                } catch (err) {
+                  setNotesError(
+                    err instanceof Error ? err.message : "Failed to generate image",
                   );
-                })}
-
-                <div className="flex items-center justify-between">
-                  <Button variant="outline" onClick={() => setNotesStep(2)}>
-                    Back
-                  </Button>
-                  <Button
-                    disabled={isNotesBusy || !firstSelectedSticker}
-                    onClick={async () => {
-                      if (!firstSelectedSticker) return;
-                      setIsGeneratingNotesImage(true);
-                      setNotesError(null);
-                      setNotesImage(null);
-                      try {
-                        const response = await fetch("/api/ai/generate-sticker-image-grok-test", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ sticker: firstSelectedSticker }),
-                        });
-                        const result = await parseJsonResponse<GenerateStickerImageProofApiResponse>(response);
-                        if (!response.ok) throw new Error(result.error ?? "Failed to generate image");
-                        if (!result.data) throw new Error("No image data returned");
-                        setNotesImage(result.data);
-                        setNotesStep(4);
-                      } catch (err) {
-                        setNotesError(err instanceof Error ? err.message : "Failed to generate image");
-                      } finally {
-                        setIsGeneratingNotesImage(false);
-                      }
-                    }}
-                  >
-                    {isGeneratingNotesImage ? "Generating..." : "Generate Image Proof"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                } finally {
+                  setIsGeneratingNotesImage(false);
+                }
+              }}
+            />
           )}
 
           {notesStep === 4 && notesImage && (
@@ -552,32 +576,4 @@ export default function LociCreatePage() {
       </Tabs>
     </div>
   );
-}
-
-function buildPairsFromAssociations(rows: ExtractedAssociation[]): FactPair[] {
-  const pairs: FactPair[] = [];
-  const seen = new Set<string>();
-
-  for (const row of rows) {
-    const questionKey = normalizeWhitespace(row.question_key);
-    const answerKey = normalizeWhitespace(row.answer_key);
-    if (!questionKey || !answerKey) continue;
-
-    const dedupeKey = `${questionKey.toLowerCase()}|||${answerKey.toLowerCase()}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-
-    pairs.push({
-      pair_id: pairs.length + 1,
-      fact: `Q: ${normalizeWhitespace(row.question)} A: ${normalizeWhitespace(row.answer)}`,
-      component_a: questionKey,
-      component_b: answerKey,
-    });
-  }
-
-  return pairs;
-}
-
-function normalizeWhitespace(input: string): string {
-  return input.replace(/\s+/g, " ").trim();
 }
