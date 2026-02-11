@@ -119,6 +119,24 @@ export class SyncManager {
               // Update all local backlinks pointing to this temp ID
               await db.links.where('targetPageId').equals(oldId).modify({ targetPageId: newId });
               await db.links.where('sourcePageId').equals(oldId).modify({ sourcePageId: newId });
+
+              // Rewrite stale temp-id references in note HTML content.
+              // Mark changed pages dirty so corrected links are pushed upstream.
+              const now = Date.now();
+              const pagesWithOldRefs = await db.pages
+                .filter((p) => typeof p.content === 'string' && p.content.includes(oldId))
+                .toArray();
+
+              for (const page of pagesWithOldRefs) {
+                const rewrittenContent = rewriteNoteContentPageRefs(page.content, oldId, newId);
+                if (rewrittenContent !== page.content) {
+                  await db.pages.update(page.id, {
+                    content: rewrittenContent,
+                    updatedAt: now,
+                    isSynced: 0,
+                  });
+                }
+              }
             }
           }
         }
@@ -131,4 +149,24 @@ export class SyncManager {
       });
     }
   }
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function rewriteNoteContentPageRefs(content: string, oldId: string, newId: string) {
+  if (!content || !oldId || oldId === newId) return content;
+
+  const escapedOldId = escapeRegex(oldId);
+  let rewritten = content.replace(
+    new RegExp(`(data-page-id=["'])${escapedOldId}(["'])`, 'g'),
+    `$1${newId}$2`
+  );
+  rewritten = rewritten.replace(
+    new RegExp(`(href=["']\\/notes\\/)${escapedOldId}(["'])`, 'g'),
+    `$1${newId}$2`
+  );
+
+  return rewritten;
 }

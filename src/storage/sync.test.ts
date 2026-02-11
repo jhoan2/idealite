@@ -152,4 +152,67 @@ describe("Sync Robustness & Privacy", () => {
       );
     });
   });
+
+  describe("Temp ID Content Rewriting", () => {
+    it("rewrites temp page references in note HTML after ID swap and marks notes dirty", async () => {
+      // Why this test exists:
+      // If temp IDs inside note HTML are not rewritten after sync ID swap,
+      // later edits will re-index backlinks to stale temp-* IDs and break
+      // navigation/backlink consistency across devices.
+      const tempId = "temp-123";
+      const serverId = "server-uuid-456";
+      const initialUpdatedAt = Date.now() - 1000;
+
+      await db.pages.bulkAdd([
+        {
+          id: tempId,
+          title: "Offline Note",
+          content: "<p>Temp note body</p>",
+          plainText: "Temp note body",
+          updatedAt: Date.now(),
+          deleted: 0,
+          isSynced: 0,
+          isDaily: 0,
+        },
+        {
+          id: "source-note",
+          title: "Source Note",
+          content: `<p><a href="/notes/${tempId}" data-page-id="${tempId}">Offline Note</a></p>`,
+          plainText: "Offline Note",
+          updatedAt: initialUpdatedAt,
+          deleted: 0,
+          isSynced: 1,
+          isDaily: 0,
+        },
+      ]);
+
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            created: [{ client_id: 0, server_id: serverId, final_title: "Offline Note", updated_at: new Date().toISOString() }],
+            updated: [],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            pages: [],
+            server_timestamp: new Date().toISOString(),
+          }),
+        });
+
+      await SyncManager.sync();
+
+      const source = await db.pages.get("source-note");
+      expect(source).toBeDefined();
+      expect(source?.content).toContain(`data-page-id="${serverId}"`);
+      expect(source?.content).toContain(`/notes/${serverId}`);
+      expect(source?.content).not.toContain(tempId);
+      expect(source?.isSynced).toBe(0);
+      expect(source?.updatedAt).toBeGreaterThan(initialUpdatedAt);
+    });
+  });
 });
