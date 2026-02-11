@@ -29,8 +29,8 @@ export async function POST(req: Request) {
     }
 
     // Enhance the prompt to produce better results
-    const enhancedPrompt = `Generate a detailed, high-quality image: ${prompt}. 
-    The image should be clear, visually distinctive, and memorable.`;
+    const enhancedPrompt = `Generate a detailed, high-quality image: ${prompt}.
+    The image should be clear, visually distinctive, and memorable. Do not include any text, words, labels, or letters in the image.`;
 
     try {
       // Request image generation from Gemini

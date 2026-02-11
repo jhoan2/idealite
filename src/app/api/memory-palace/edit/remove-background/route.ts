@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
+import axios from "axios";
+import FormData from "form-data";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,55 +11,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const imageFile = formData.get("image") as File;
+    const webFormData = await req.formData();
+    const imageFile = webFormData.get("image") as File;
 
     if (!imageFile) {
       return NextResponse.json(
-        {
-          error: "Missing required field: image",
-        },
+        { error: "Missing required field: image" },
         { status: 400 },
       );
     }
 
-    // Get the image data as ArrayBuffer
     const imageArrayBuffer = await imageFile.arrayBuffer();
     const imageBuffer = Buffer.from(imageArrayBuffer);
 
-    // Prepare payload for Stability AI API
-    const apiFormData = new FormData();
-    apiFormData.append("image", new Blob([imageBuffer]), imageFile.name);
-    apiFormData.append("output_format", "png");
+    // Build form-data matching the official Stability AI example
+    const payload = new FormData();
+    payload.append("image", imageBuffer, {
+      filename: imageFile.name || "image.png",
+      contentType: imageFile.type || "image/png",
+    });
+    payload.append("output_format", "png");
 
-    // Make request to Stability AI API
-    const response = await fetch(
+    const response = await axios.post(
       "https://api.stability.ai/v2beta/stable-image/edit/remove-background",
+      payload,
       {
-        method: "POST",
+        validateStatus: undefined,
+        responseType: "arraybuffer",
         headers: {
+          ...payload.getHeaders(),
           Authorization: `Bearer ${process.env.STABLE_DIFFUSION_API_KEY}`,
           Accept: "image/*",
         },
-        body: apiFormData as any,
       },
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Stability AI API error:", errorText);
+    if (response.status !== 200) {
+      const errorText = Buffer.from(response.data).toString();
+      console.error("Stability AI API error:", response.status, errorText);
       return NextResponse.json(
         { success: false, error: "Failed to remove background" },
         { status: response.status },
       );
     }
 
-    // Get the edited image data as ArrayBuffer
-    const editedImageArrayBuffer = await response.arrayBuffer();
-
-    // Convert the image data to base64
-    const editedImageBuffer = Buffer.from(editedImageArrayBuffer);
-    const base64Image = editedImageBuffer.toString("base64");
+    const base64Image = Buffer.from(response.data).toString("base64");
 
     return NextResponse.json({
       success: true,
