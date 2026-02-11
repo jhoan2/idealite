@@ -106,14 +106,15 @@ export class SyncManager {
               const oldId = localTempPage.id;
               const newId = created.server_id;
 
-              // Move page to new ID
+              // Move page to new ID.
+              // Delete old row first to avoid unique titleKey conflicts during ID swap.
+              await db.pages.delete(oldId);
               await db.pages.add({
                 ...localTempPage,
                 id: newId,
                 isSynced: 1,
                 updatedAt: new Date(created.updated_at).getTime()
               });
-              await db.pages.delete(oldId);
 
               // Update all local backlinks pointing to this temp ID
               await db.links.where('targetPageId').equals(oldId).modify({ targetPageId: newId });

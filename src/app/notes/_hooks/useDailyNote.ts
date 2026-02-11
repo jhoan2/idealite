@@ -22,7 +22,7 @@ export function useDailyNote() {
     }
 
     // 2. Create it if missing
-    const id = uuidv4();
+    const id = `temp-${uuidv4()}`;
     await db.pages.add({
       id,
       title: today,

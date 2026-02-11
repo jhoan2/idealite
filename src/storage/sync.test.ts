@@ -86,4 +86,70 @@ describe("Sync Robustness & Privacy", () => {
       expect(link).toBeDefined();
     });
   });
+
+  describe("Push Classification", () => {
+    it("sends temp-id pages as creates and non-temp pages as updates", async () => {
+      const now = Date.now();
+
+      await db.pages.bulkAdd([
+        {
+          id: "temp-abc",
+          title: "Temp Note",
+          content: "<p>temp</p>",
+          plainText: "temp",
+          updatedAt: now,
+          deleted: 0,
+          isSynced: 0,
+          isDaily: 0,
+        },
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          title: "Existing Server Note",
+          content: "<p>server</p>",
+          plainText: "server",
+          updatedAt: now,
+          deleted: 0,
+          isSynced: 0,
+          isDaily: 0,
+        },
+      ]);
+
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            created: [],
+            updated: [
+              {
+                server_id: "11111111-1111-4111-8111-111111111111",
+              },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            pages: [],
+            server_timestamp: new Date(now).toISOString(),
+          }),
+        });
+
+      await SyncManager.sync();
+
+      const pushCall = (global.fetch as any).mock.calls.find(
+        (call: any[]) => call[0] === "/api/v1/sync/pages/push",
+      );
+      expect(pushCall).toBeDefined();
+
+      const pushBody = JSON.parse(pushCall[1].body);
+      expect(pushBody.creates).toHaveLength(1);
+      expect(pushBody.updates).toHaveLength(1);
+      expect(pushBody.creates[0].title).toBe("Temp Note");
+      expect(pushBody.updates[0].server_id).toBe(
+        "11111111-1111-4111-8111-111111111111",
+      );
+    });
+  });
 });

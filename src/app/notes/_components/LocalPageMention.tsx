@@ -6,6 +6,12 @@ import { MentionList } from "../../workspace/@page/(BodyEditor)/MentionList";
 import { db } from "~/storage/db";
 import { v4 as uuidv4 } from "uuid";
 
+interface PageSuggestion {
+  id: string;
+  title: string;
+  isCreateOption?: boolean;
+}
+
 /**
  * Local-first version of the Page Mention extension.
  * Queries Dexie instead of the server for zero-latency linking.
@@ -21,19 +27,36 @@ export const LocalPageMention = Mention.extend({
     allowSpaces: true,
     startOfLine: false,
 
-    items: async ({ query }: { query: string }) => {
-      // Instant query against Dexie
+    items: async ({ query }: { query: string }): Promise<PageSuggestion[]> => {
+      const trimmedQuery = query.trim();
+      if (!trimmedQuery) return [];
+
       const results = await db.pages
-        .where('title')
-        .startsWithIgnoreCase(query)
-        .and(p => p.deleted === 0)
+        .where("title")
+        .startsWithIgnoreCase(trimmedQuery)
+        .and((p) => p.deleted === 0)
         .limit(10)
         .toArray();
 
-      return results.map(p => ({
+      const suggestions = results.map((p) => ({
         id: p.id,
-        title: p.title
+        title: p.title,
       }));
+
+      const normalizedQuery = trimmedQuery.toLocaleLowerCase();
+      const hasExactMatch = suggestions.some(
+        (p) => p.title.trim().toLocaleLowerCase() === normalizedQuery,
+      );
+
+      if (!hasExactMatch) {
+        suggestions.unshift({
+          id: "create-new",
+          title: trimmedQuery,
+          isCreateOption: true,
+        });
+      }
+
+      return suggestions;
     },
 
     render: () => {
@@ -85,20 +108,73 @@ export const LocalPageMention = Mention.extend({
     },
 
     command: async ({ editor, range, props }) => {
-      // Logic to insert the link
+      const pageData = props as unknown as PageSuggestion;
+      let targetId = pageData.id;
+      let targetTitle = pageData.title;
+
+      if (pageData.isCreateOption) {
+        const desiredTitle = pageData.title.trim();
+        if (!desiredTitle) return;
+
+        const existing = await db.pages
+          .where("title")
+          .equalsIgnoreCase(desiredTitle)
+          .and((p) => p.deleted === 0)
+          .first();
+
+        if (existing) {
+          targetId = existing.id;
+          targetTitle = existing.title;
+        } else {
+          const tempId = `temp-${uuidv4()}`;
+          const now = Date.now();
+
+          try {
+            await db.pages.add({
+              id: tempId,
+              title: desiredTitle,
+              content: "",
+              plainText: "",
+              updatedAt: now,
+              deleted: 0,
+              isSynced: 0,
+              isDaily: /^\d{4}-\d{2}-\d{2}$/.test(desiredTitle) ? 1 : 0,
+            });
+
+            targetId = tempId;
+            targetTitle = desiredTitle;
+          } catch (error) {
+            // If another action created it first, reuse that row.
+            const fallback = await db.pages
+              .where("title")
+              .equalsIgnoreCase(desiredTitle)
+              .and((p) => p.deleted === 0)
+              .first();
+
+            if (!fallback) throw error;
+            targetId = fallback.id;
+            targetTitle = fallback.title;
+          }
+        }
+      }
+
+      const selection = editor.state.selection;
+      const deleteFrom = range.from;
+      const deleteTo = selection.from;
+
       editor
         .chain()
         .focus()
-        .deleteRange(range)
+        .deleteRange({ from: deleteFrom, to: deleteTo })
         .insertContent({
           type: "text",
-          text: props.title,
+          text: targetTitle,
           marks: [
             {
               type: "link",
               attrs: {
-                href: `/notes/${props.id}`,
-                pageId: props.id,
+                href: `/notes/${targetId}`,
+                pageId: targetId,
               },
             },
           ],

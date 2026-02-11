@@ -54,7 +54,9 @@ describe("useDailyNote", () => {
     });
 
     const createdNote = mocks.add.mock.calls[0][0];
+    expect(createdNote.id).toMatch(/^temp-/);
     expect(createdNote.content).toBe("");
     expect(createdNote.plainText).toBe("");
+    expect(mocks.push).toHaveBeenCalledWith(`/notes/${createdNote.id}`);
   });
 });
