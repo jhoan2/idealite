@@ -90,7 +90,7 @@ export function LocalEditor({ initialContent, onUpdate, pageId }: LocalEditorPro
         placeholder: "Start writing...",
       }),
       CustomLink.configure({
-        openOnClick: false,
+        openOnClick: true,
         autolink: true,
       }),
       LocalPageMention,
