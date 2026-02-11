@@ -7,6 +7,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  useSidebar,
 } from "~/components/ui/sidebar";
 import {
   Calendar,
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import { NavUser } from "./NavUser";
 import { useUser, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
-import { NavMain } from "./NavMain";
+import { NavMain, type NavMainItem } from "./NavMain";
 import { usePathname } from "next/navigation";
 import { useDailyNote } from "./notes/_hooks/useDailyNote";
 import { NavLocalPinned } from "./notes/_components/NavLocalPinned";
@@ -27,16 +28,18 @@ import { useGlobalSearch } from "./notes/_hooks/useGlobalSearch";
 import { SyncStatus } from "./notes/_components/SyncStatus";
 
 interface SideBarClientProps {
-  initialPinnedPages: any[]; 
+  initialPinnedPages: unknown[];
 }
 
 export default function SideBarClient({
-  initialPinnedPages,
+  initialPinnedPages: _initialPinnedPages,
 }: SideBarClientProps) {
   const { user, isLoaded } = useUser();
+  const { state, isMobile } = useSidebar();
   const pathname = usePathname();
   const { openDailyNote } = useDailyNote();
   const { isSearchOpen, setSearchOpen } = useGlobalSearch();
+  const isCollapsedDesktop = state === "collapsed" && !isMobile;
 
   // Hide sidebar on public/landing pages
   if (
@@ -49,49 +52,33 @@ export default function SideBarClient({
     return null;
   }
 
-  const navItems = [
+  const navItems: NavMainItem[] = [
     {
       title: "Daily Note",
-      url: "#",
-      icon: () => (
-        <button 
-          onClick={openDailyNote} 
-          className="flex w-full items-center gap-2"
-        >
-          <Calendar className="h-4 w-4" />
-          <span>Daily Note</span>
-        </button>
-      ),
-      customContent: true,
-      isActive: false
+      icon: Calendar,
+      onClick: () => {
+        void openDailyNote();
+      },
     },
     {
       title: "Search",
-      url: "#",
-      icon: () => (
-        <button 
-          onClick={() => setSearchOpen(true)} 
-          className="flex w-full items-center gap-2"
-        >
-          <Search className="h-4 w-4" />
-          <span>Search</span>
-          <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-            <span className="text-xs">⌘</span>K
-          </kbd>
-        </button>
+      icon: Search,
+      onClick: () => setSearchOpen(true),
+      rightSlot: (
+        <kbd className="pointer-events-none inline-flex h-5 select-none items-center rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          Ctrl+K
+        </kbd>
       ),
-      customContent: true,
-      isActive: false
     },
     {
       title: "All Notes",
-      url: "/notes/all",
+      href: "/notes/all",
       icon: Layers,
       isActive: pathname === "/notes/all",
     },
     {
       title: "Review",
-      url: "/review",
+      href: "/review",
       icon: Inbox,
       isActive: pathname === "/review",
     },
@@ -104,28 +91,45 @@ export default function SideBarClient({
           {!isLoaded && (
             <div className="flex items-center space-x-2 p-2">
               <UserRound className="h-4 w-4 animate-pulse" />
-              <span className="text-sm text-muted-foreground">Loading...</span>
+              <span className="text-sm text-muted-foreground group-data-[collapsible=icon]:hidden">
+                Loading...
+              </span>
             </div>
           )}
 
           <SignedOut>
-            <div className="flex items-center justify-between p-2">
-              <div className="flex items-center space-x-2">
-                <UserRound className="h-4 w-4" />
-                <span className="text-sm text-muted-foreground">
-                  Guest
-                </span>
+            {isCollapsedDesktop ? (
+              <div className="flex items-center justify-center p-2">
+                <SignInButton mode="modal">
+                  <button
+                    type="button"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span className="sr-only">Sign in</span>
+                  </button>
+                </SignInButton>
               </div>
-              <SignInButton mode="modal">
-                <span className="ml-2 cursor-pointer rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                  <LogIn className="mr-1 inline h-4 w-4" />
-                  Sign In
-                </span>
-              </SignInButton>
-            </div>
+            ) : (
+              <div className="flex items-center justify-between p-2">
+                <div className="flex items-center space-x-2">
+                  <UserRound className="h-4 w-4" />
+                  <span className="text-sm text-muted-foreground">Guest</span>
+                </div>
+                <SignInButton mode="modal">
+                  <button
+                    type="button"
+                    className="ml-2 inline-flex cursor-pointer items-center rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    <LogIn className="mr-1 inline h-4 w-4" />
+                    Sign In
+                  </button>
+                </SignInButton>
+              </div>
+            )}
           </SignedOut>
         </SidebarHeader>
-        
+
         <SidebarContent>
           <NavMain items={navItems} />
           <NavLocalPinned />
@@ -139,9 +143,9 @@ export default function SideBarClient({
             {user && (
               <NavUser
                 user={{
-                  name: user.fullName || "User",
-                  email: user.primaryEmailAddress?.emailAddress || "",
-                  avatar: user.imageUrl || "",
+                  name: user.fullName ?? "User",
+                  email: user.primaryEmailAddress?.emailAddress ?? "",
+                  avatar: user.imageUrl ?? "",
                 }}
               />
             )}

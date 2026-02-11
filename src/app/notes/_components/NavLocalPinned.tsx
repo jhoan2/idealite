@@ -7,6 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "~/components/ui/sidebar";
 import { Pin, FileText } from "lucide-react";
 import Link from "next/link";
@@ -15,7 +16,9 @@ import { db } from "~/storage/db";
 import { usePathname } from "next/navigation";
 
 export function NavLocalPinned() {
+  const { state, isMobile } = useSidebar();
   const pathname = usePathname();
+  const isCollapsedDesktop = state === "collapsed" && !isMobile;
   
   // Instant reactive read from local DB
   // We'll assume for now pinned state is in the page object or a separate table
@@ -25,7 +28,7 @@ export function NavLocalPinned() {
     []
   );
 
-  if (!pinnedPages || pinnedPages.length === 0) return null;
+  if (!pinnedPages || pinnedPages.length === 0 || isCollapsedDesktop) return null;
 
   return (
     <SidebarGroup>

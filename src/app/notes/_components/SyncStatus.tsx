@@ -3,15 +3,18 @@
 import * as React from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "~/storage/db";
-import { Cloud, CloudOff, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { Cloud, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { useSidebar } from "~/components/ui/sidebar";
 
 /**
  * Visual indicator for the background sync status.
  */
 export function SyncStatus() {
+  const { state, isMobile } = useSidebar();
   const statusMeta = useLiveQuery(() => db.syncMetadata.get("sync_status"), []);
   const status = (statusMeta?.value as string) || "idle";
+  const isCollapsedDesktop = state === "collapsed" && !isMobile;
 
   const getIcon = () => {
     switch (status) {
@@ -40,9 +43,14 @@ export function SyncStatus() {
   };
 
   return (
-    <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+    <div
+      className={cn(
+        "flex items-center px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground",
+        isCollapsedDesktop ? "justify-center" : "gap-2",
+      )}
+    >
       {getIcon()}
-      <span>{getLabel()}</span>
+      {!isCollapsedDesktop ? <span>{getLabel()}</span> : null}
     </div>
   );
 }
