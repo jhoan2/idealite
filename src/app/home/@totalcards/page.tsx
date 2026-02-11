@@ -1,3 +1,4 @@
+/*
 import { getCardStatusDistribution } from "~/server/queries/dashboard";
 import { CardStatusChart } from "./CardStatusChart";
 
@@ -9,4 +10,9 @@ export default async function TotalCards() {
       <CardStatusChart data={data} totalCards={totalCards} />
     </div>
   );
+}
+*/
+
+export default function TotalCards() {
+  return null;
 }

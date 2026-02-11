@@ -1,3 +1,4 @@
+/*
 import { getCardActivityStats } from "~/server/queries/dashboard";
 import CardActivityStats from "./CardActivityStats";
 
@@ -8,4 +9,9 @@ export default async function CardActivity() {
       <CardActivityStats stats={stats} />
     </div>
   );
+}
+*/
+
+export default function CardActivity() {
+  return null;
 }

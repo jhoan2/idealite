@@ -1,4 +1,5 @@
 // src/app/home/@totalcardsprogress/page.tsx
+/*
 import { getTagHierarchyForUserExcludingRoot } from "~/server/queries/dashboard";
 import HierarchicalTopicBrowser from "./TopicBrowser";
 import { headers } from "next/headers";
@@ -14,4 +15,9 @@ export default async function TotalCards() {
   return (
     <HierarchicalTopicBrowser tagTree={tagTree} isMobile={isMobile ?? false} />
   );
+}
+*/
+
+export default function TotalCards() {
+  return null;
 }
