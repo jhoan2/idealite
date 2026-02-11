@@ -16,7 +16,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "eval:notes:mvp": "tsx scripts/evals/run-notes-mvp-eval.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
@@ -54,6 +55,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/extension-bubble-menu": "^2.9.1",
     "@tiptap/extension-focus": "^2.9.1",
+    "@tiptap/extension-highlight": "^2.27.2",
     "@tiptap/extension-image": "^2.9.1",
     "@tiptap/extension-link": "^2.9.1",
     "@tiptap/extension-mention": "^2.9.1",
