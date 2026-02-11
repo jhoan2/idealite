@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import Dexie from 'dexie';
 import { db, type LocalPage } from '~/storage/db';
 import { useCallback } from 'react';
 
@@ -17,19 +18,27 @@ export function useLocalPage(pageId: string | undefined) {
   const savePage = useCallback(async (updates: Partial<LocalPage>) => {
     if (!pageId) return;
 
-    await db.transaction('rw', db.pages, db.links, async () => {
-      // Update the page
-      await db.pages.update(pageId, {
-        ...updates,
-        updatedAt: Date.now(),
-        isSynced: 0, // Mark for background sync
-      });
+    try {
+      await db.transaction('rw', db.pages, db.links, async () => {
+        // Update the page
+        await db.pages.update(pageId, {
+          ...updates,
+          updatedAt: Date.now(),
+          isSynced: 0, // Mark for background sync
+        });
 
-      // If content changed, re-index backlinks locally
-      if (updates.content) {
-        await updateLocalLinks(pageId, updates.content);
+        // If content changed, re-index backlinks locally
+        if (updates.content) {
+          await updateLocalLinks(pageId, updates.content);
+        }
+      });
+    } catch (error) {
+      if (error instanceof Dexie.ConstraintError) {
+        console.warn('Duplicate title blocked in local DB');
+        return;
       }
-    });
+      throw error;
+    }
   }, [pageId]);
 
   return {
