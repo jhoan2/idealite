@@ -1,10 +1,10 @@
 "use server";
 
-import { cards, cards_tags, pages_tags, users } from "~/server/db/schema";
+import { cards, cards_tags, pages_tags } from "~/server/db/schema";
 import { z } from "zod";
 import { db } from "~/server/db";
 import { revalidatePath } from "next/cache";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 
@@ -17,13 +17,9 @@ const createCardSchema = z.object({
   tagIds: z.array(z.string().uuid()).optional(),
   resourceId: z.string().uuid().optional(),
   nextReview: z.string().datetime().optional(),
-  cardType: z.enum(["qa", "image", "cloze"]).optional(),
-  cardPayload: z.record(z.string(), z.unknown()).optional(),
+  cardType: z.string().min(1),
+  cardPayload: z.record(z.string(), z.unknown()),
   cardPayloadVersion: z.number().int().min(1).optional(),
-  question: z.string().optional(),
-  answer: z.string().optional(),
-  clozeTemplate: z.string().optional(),
-  clozeAnswers: z.string().optional(),
   sourceLocator: z
     .object({
       type: z.enum(["page", "canvas"]),
@@ -71,19 +67,9 @@ export async function createCardFromPage(
           next_review: validatedInput.nextReview
             ? new Date(validatedInput.nextReview)
             : null,
-          card_type:
-            validatedInput.cardType ||
-            (validatedInput.question && validatedInput.answer
-              ? "qa"
-              : validatedInput.clozeTemplate && validatedInput.clozeAnswers
-                ? "cloze"
-                : "image"),
-          card_payload: validatedInput.cardPayload ?? {},
+          card_type: validatedInput.cardType,
+          card_payload: validatedInput.cardPayload,
           card_payload_version: validatedInput.cardPayloadVersion ?? 1,
-          question: validatedInput.question,
-          answer: validatedInput.answer,
-          cloze_template: validatedInput.clozeTemplate,
-          cloze_answers: validatedInput.clozeAnswers,
           source_locator: validatedInput.sourceLocator,
         })
         .returning();
@@ -135,8 +121,8 @@ const updateCardSchema = z.object({
   id: z.string().uuid(),
   content: z.string().optional(),
   description: z.string().optional(),
-  question: z.string().optional(),
-  answer: z.string().optional(),
+  cardPayload: z.record(z.string(), z.unknown()).optional(),
+  cardPayloadVersion: z.number().int().min(1).optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
   // Add SRS fields
   next_review: z.string().datetime().nullable().optional(),
@@ -159,11 +145,26 @@ export async function updateCard(input: z.infer<typeof updateCardSchema>) {
 
   const validatedInput = updateCardSchema.parse(input);
 
-  // Prepare the update data with proper type conversion for dates
-  const updateData: any = {
-    ...validatedInput,
-    updated_at: new Date(),
-  };
+  // Prepare update data with explicit DB column names.
+  const updateData: any = { updated_at: new Date() };
+  if (validatedInput.content !== undefined) {
+    updateData.content = validatedInput.content;
+  }
+  if (validatedInput.description !== undefined) {
+    updateData.description = validatedInput.description;
+  }
+  if (validatedInput.status !== undefined) {
+    updateData.status = validatedInput.status;
+  }
+  if (validatedInput.cardPayload !== undefined) {
+    updateData.card_payload = validatedInput.cardPayload;
+  }
+  if (validatedInput.cardPayloadVersion !== undefined) {
+    updateData.card_payload_version = validatedInput.cardPayloadVersion;
+  }
+  if (validatedInput.sourceLocator !== undefined) {
+    updateData.source_locator = validatedInput.sourceLocator;
+  }
 
   // Convert string dates to Date objects
   if (validatedInput.next_review !== undefined) {

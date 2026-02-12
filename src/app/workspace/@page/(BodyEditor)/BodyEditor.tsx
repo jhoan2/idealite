@@ -45,6 +45,7 @@ import { BulletListWithId } from "./BulletListWithId";
 import { OrderedListWithId } from "./OrderedListWithId";
 import { PageMention } from "./PageMention";
 import { Link } from "@tiptap/extension-link";
+import { buildClozePayload, buildQAPayload } from "~/lib/flashcards/cardPayload";
 
 const BodyEditor = ({
   content,
@@ -280,8 +281,9 @@ const BodyEditor = ({
       if (cardType === "qa") {
         cardData = {
           ...baseCardData,
-          question: questionText.trim(),
-          answer: answerText.trim(),
+          cardType: "qa" as const,
+          cardPayload: buildQAPayload(questionText.trim(), answerText.trim()),
+          cardPayloadVersion: 1,
         };
       } else {
         // For cloze deletion cards
@@ -293,9 +295,10 @@ const BodyEditor = ({
 
         cardData = {
           ...baseCardData,
+          cardType: "cloze" as const,
+          cardPayload: buildClozePayload(clozeTemplate, clozeAnswers),
+          cardPayloadVersion: 1,
           content: clozeText,
-          clozeTemplate: clozeTemplate,
-          clozeAnswers: clozeAnswers.join(", "),
         };
       }
 

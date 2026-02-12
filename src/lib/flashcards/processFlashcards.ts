@@ -4,6 +4,7 @@ import { cards, cards_tags } from "~/server/db/schema";
 import { tryCatch } from "~/lib/tryCatch";
 import { PersistableCard } from "./generateFlashcards";
 import * as Sentry from "@sentry/nextjs";
+import { buildQAPayload } from "./cardPayload";
 
 /**
  * Validates and de-duplicates flashcards
@@ -43,8 +44,9 @@ export async function saveFlashcards(
     user_id: userId,
     page_id: pageId,
     card_type: "qa" as const,
-    question: card.question,
-    answer: card.answer,
+    card_payload: buildQAPayload(card.question, card.answer),
+    card_payload_version: 1,
+    content: card.answer,
     source_locator: {
       type: "page",
       primary_id: card.primaryId,

@@ -11,6 +11,7 @@ import {
 } from "~/lib/flashcards/flashcard-queue";
 import { createCardFromPage } from "~/server/actions/card";
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
+import { buildClozePayload, buildQAPayload } from "~/lib/flashcards/cardPayload";
 
 // Initialize Gemini AI client
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY! });
@@ -104,9 +105,14 @@ function parseClozeResponse(text: string) {
   const answersMatch = text.match(/<cloze_answers>(.*?)<\/cloze_answers>/s);
 
   if (templateMatch?.[1] && answersMatch?.[1]) {
+    const blanks = answersMatch[1]
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
     return {
-      cloze_template: templateMatch[1].trim(),
-      cloze_answers: answersMatch[1].trim(),
+      sentence: templateMatch[1].trim(),
+      blanks: blanks.length > 0 ? blanks : [answersMatch[1].trim()],
     };
   }
   return null;
@@ -142,10 +148,10 @@ async function processFlashcardJob(job: QueuedFlashcardJob) {
     cardData = {
       pageId,
       content,
-      question: qaResult.question,
-      answer: qaResult.answer,
       tagIds,
       cardType: "qa" as const,
+      cardPayload: buildQAPayload(qaResult.question, qaResult.answer),
+      cardPayloadVersion: 1,
       nextReview: twoWeeksFromNow.toISOString(),
       sourceLocator,
     };
@@ -158,10 +164,10 @@ async function processFlashcardJob(job: QueuedFlashcardJob) {
     cardData = {
       pageId,
       content,
-      clozeTemplate: clozeResult.cloze_template,
-      clozeAnswers: clozeResult.cloze_answers,
       tagIds,
       cardType: "cloze" as const,
+      cardPayload: buildClozePayload(clozeResult.sentence, clozeResult.blanks),
+      cardPayloadVersion: 1,
       nextReview: twoWeeksFromNow.toISOString(),
       sourceLocator,
     };

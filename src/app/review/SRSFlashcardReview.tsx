@@ -15,6 +15,7 @@ import {
 import { Ellipsis, PauseCircle, Trash2 } from "lucide-react";
 import { deleteCard, processFlashCards } from "~/server/actions/card";
 import { getPageById } from "~/server/queries/page";
+import { parseCardPayload, resolveCardImageSrc } from "~/lib/flashcards/cardPayload";
 import {
   Dialog,
   DialogContent,
@@ -129,52 +130,53 @@ export default function FlashcardReview({
 
   const renderCardContent = () => {
     if (!currentCard) return null;
+    const parsedPayload = parseCardPayload(currentCard);
 
-    if (currentCard.card_type === "qa") {
+    if (parsedPayload?.type === "qa") {
       return (
         <div>
           <div className="mb-6">
-            <h3 className="text-xl font-semibold">{currentCard.question}</h3>
+            <h3 className="text-xl font-semibold">{parsedPayload.payload.prompt}</h3>
           </div>
 
           {showAnswer && (
             <div className="mt-4 rounded-md bg-muted p-4">
-              <p className="text-lg">{currentCard.answer}</p>
+              <p className="text-lg">{parsedPayload.payload.response}</p>
             </div>
           )}
         </div>
       );
-    } else if (currentCard.card_type === "cloze") {
+    } else if (parsedPayload?.type === "cloze") {
       return (
         <div className="mb-6">
           {!showAnswer ? (
-            <p className="text-lg">{currentCard.cloze_template}</p>
+            <p className="text-lg">{parsedPayload.payload.sentence}</p>
           ) : (
             <div>
-              <p className="text-lg">{currentCard.cloze_template}</p>
+              <p className="text-lg">{parsedPayload.payload.sentence}</p>
               <div className="mt-4 rounded-md bg-muted p-4">
                 <p className="font-medium">
-                  Answer: {currentCard.cloze_answers}
+                  Answer: {parsedPayload.payload.blanks.join(", ")}
                 </p>
               </div>
             </div>
           )}
         </div>
       );
-    } else if (currentCard.card_type === "image" || currentCard.image_cid) {
+    } else if (parsedPayload?.type === "image") {
       return (
         <div className="flex flex-col items-center">
           <div className="mb-4 flex max-h-[300px] w-full justify-center">
             <img
-              src={`https://assets.idealite.xyz/${currentCard.image_cid}`}
+              src={resolveCardImageSrc(parsedPayload.payload.image_url)}
               alt="Card image"
               className="max-h-[300px] rounded-md object-contain"
             />
           </div>
 
-          {showAnswer && currentCard.description && (
+          {showAnswer && (
             <div className="mt-4 w-full rounded-md bg-muted p-4">
-              <p className="text-lg">{currentCard.description}</p>
+              <p className="text-lg">{parsedPayload.payload.response}</p>
             </div>
           )}
 
@@ -340,7 +342,7 @@ export default function FlashcardReview({
                 <PauseCircle className="mr-2 h-4 w-4" />
                 Suspend Card
               </DropdownMenuItem>
-              {currentCard?.image_cid && currentCard?.description && (
+              {parseCardPayload(currentCard)?.type === "image" && (
                 <DropdownMenuItem
                   onClick={fetchPageCanvas}
                   disabled={isLoadingCanvas}

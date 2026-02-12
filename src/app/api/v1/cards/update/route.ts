@@ -8,8 +8,8 @@ const updateCardSchema = z.object({
   id: z.string().uuid(),
   content: z.string().optional(),
   description: z.string().optional(),
-  question: z.string().optional(),
-  answer: z.string().optional(),
+  cardPayload: z.record(z.string(), z.unknown()).optional(),
+  cardPayloadVersion: z.number().int().min(1).optional(),
   status: z.enum(["active", "mastered", "suspended"]).optional(),
   // Add SRS fields for spaced repetition
   next_review: z.string().datetime().nullable().optional(),

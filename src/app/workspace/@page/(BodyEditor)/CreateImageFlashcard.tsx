@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { createCardFromPage } from "~/server/actions/card";
 import { NodeSelection } from "@tiptap/pm/state";
 import { Tag } from "~/server/db/schema";
+import { buildImagePayload } from "~/lib/flashcards/cardPayload";
 
 interface ImageFlashcardCreatorProps {
   editor: any;
@@ -128,6 +129,9 @@ export function ImageFlashcardCreator({
 
       const cardData = {
         pageId,
+        cardType: "image" as const,
+        cardPayload: buildImagePayload(imageUrl, description.trim(), null),
+        cardPayloadVersion: 1,
         imageCid: imageUrl,
         description: description.trim(),
         nextReview: twoWeeksFromNow.toISOString(),
