@@ -254,8 +254,10 @@ export function PageFlashcardsPanel() {
                         </Badge>
                         <span className="text-[11px] text-muted-foreground">{card.dueLabel}</span>
                       </div>
-                      <p className="mt-2 text-sm font-medium leading-snug">{card.front}</p>
-                      <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                      <p className="mt-2 break-words text-sm font-medium leading-snug [display:-webkit-box] [overflow:hidden] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                        {card.front}
+                      </p>
+                      <p className="mt-1 break-words text-xs leading-snug text-muted-foreground [display:-webkit-box] [overflow:hidden] [-webkit-box-orient:vertical] [-webkit-line-clamp:1]">
                         {card.backPreview}
                       </p>
                       <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
