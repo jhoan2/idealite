@@ -77,12 +77,12 @@ function PinnedPageItem({
     <SidebarMenuButton asChild isActive={isActive && !isDragOverlay}>
       <Link
         href={`/workspace?pageId=${page.id}`}
-        className="flex items-center gap-2"
+        className="flex w-full min-w-0 items-center gap-2"
       >
         {page.content_type === "canvas" ? (
-          <Map className="h-4 w-4" />
+          <Map className="h-4 w-4 shrink-0" />
         ) : (
-          <FileText className="h-4 w-4" />
+          <FileText className="h-4 w-4 shrink-0" />
         )}
         <span className="flex-1 truncate">{page.title}</span>
       </Link>
@@ -248,7 +248,7 @@ export function NavPinned({ initialPinnedPages }: NavPinnedProps) {
   }
 
   return (
-    <SidebarGroup>
+    <SidebarGroup className="px-0 py-2">
       <SidebarGroupLabel className="flex items-center gap-2">
         <Pin className="h-4 w-4" />
         Pinned
