@@ -470,10 +470,6 @@ export const cards = createTable(
     card_payload_version: integer("card_payload_version")
       .notNull()
       .default(1),
-    question: text("question"),
-    answer: text("answer"),
-    cloze_template: text("cloze_template"),
-    cloze_answers: text("cloze_answers"),
     content: text("content"),
     image_cid: text("image_cid"),
     description: text("description"),
