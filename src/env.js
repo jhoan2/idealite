@@ -54,6 +54,7 @@ export const env = createEnv({
     STICKER_PROMPT_EXPERIMENT_ENABLED: z.enum(["true", "false"]).default("false"),
     STICKER_PROMPT_VERSION: z.enum(["v1", "v2"]).default("v1"),
     GROK_API_KEY: z.string().optional(),
+    INTERNAL_EVAL_API_KEY: z.string().optional(),
   },
 
   /**
@@ -135,6 +136,7 @@ export const env = createEnv({
       process.env.STICKER_PROMPT_EXPERIMENT_ENABLED,
     STICKER_PROMPT_VERSION: process.env.STICKER_PROMPT_VERSION,
     GROK_API_KEY: process.env.GROK_API_KEY,
+    INTERNAL_EVAL_API_KEY: process.env.INTERNAL_EVAL_API_KEY,
   },
   /**
 
