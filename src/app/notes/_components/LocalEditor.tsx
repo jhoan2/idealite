@@ -97,6 +97,7 @@ export function LocalEditor({ initialContent, onUpdate, pageId }: LocalEditorPro
       LocalPageMention,
     ],
     content: initialContent,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       const text = editor.getText();
