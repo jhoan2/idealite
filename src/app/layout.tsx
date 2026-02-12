@@ -6,7 +6,7 @@ import { ThemeProvider } from "~/app/ThemeProvider";
 import { Toaster } from "~/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
 import SideBarWrapper from "./SideBarWrapper"; // Changed from SideBar to SideBarWrapper
-import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
+import { SidebarProvider } from "~/components/ui/sidebar";
 import ConditionalSidebarTrigger from "./ConditionalSidebarTrigger";
 import { getBootstrapData } from "~/utils/posthog/getBootstrapData";
 import { GoogleTag } from "~/components/GoogleTag";

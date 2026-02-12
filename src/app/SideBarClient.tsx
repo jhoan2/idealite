@@ -6,6 +6,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarTrigger,
   SidebarRail,
   useSidebar,
 } from "~/components/ui/sidebar";
@@ -42,7 +43,7 @@ interface SideBarClientProps {
 export default function SideBarClient({
   initialPinnedPages,
 }: SideBarClientProps) {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const { state, isMobile } = useSidebar();
   const pathname = usePathname();
   const { openDailyNote } = useDailyNote();
@@ -95,19 +96,14 @@ export default function SideBarClient({
   return (
     <>
       <Sidebar collapsible="icon">
-        <SidebarHeader className="h-16 border-b border-sidebar-border">
-          {!isLoaded && (
-            <div className="flex items-center space-x-2 p-2">
-              <UserRound className="h-4 w-4 animate-pulse" />
-              <span className="text-sm text-muted-foreground group-data-[collapsible=icon]:hidden">
-                Loading...
-              </span>
-            </div>
-          )}
+        <SidebarHeader className="min-h-16 border-b border-sidebar-border p-2">
+          <div className="flex w-full items-center group-data-[collapsible=icon]:justify-center">
+            <SidebarTrigger className="h-8 w-8 group-data-[collapsible=icon]:mx-auto" />
+          </div>
 
           <SignedOut>
             {isCollapsedDesktop ? (
-              <div className="flex items-center justify-center p-2">
+              <div className="flex items-center justify-center pb-2">
                 <SignInButton mode="modal">
                   <button
                     type="button"
@@ -119,7 +115,7 @@ export default function SideBarClient({
                 </SignInButton>
               </div>
             ) : (
-              <div className="flex items-center justify-between p-2">
+              <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center space-x-2">
                   <UserRound className="h-4 w-4" />
                   <span className="text-sm text-muted-foreground">Guest</span>
