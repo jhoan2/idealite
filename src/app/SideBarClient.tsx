@@ -22,17 +22,25 @@ import { useUser, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { NavMain, type NavMainItem } from "./NavMain";
 import { usePathname } from "next/navigation";
 import { useDailyNote } from "./notes/_hooks/useDailyNote";
-import { NavLocalPinned } from "./notes/_components/NavLocalPinned";
+import { NavPinned } from "./NavPinned";
 import { SearchModal } from "./notes/_components/SearchModal";
 import { useGlobalSearch } from "./notes/_hooks/useGlobalSearch";
 import { SyncStatus } from "./notes/_components/SyncStatus";
 
+type PinnedPage = {
+  id: string;
+  title: string;
+  url: string;
+  content_type: "page" | "canvas";
+  pin_position: number;
+};
+
 interface SideBarClientProps {
-  initialPinnedPages: unknown[];
+  initialPinnedPages: PinnedPage[];
 }
 
 export default function SideBarClient({
-  initialPinnedPages: _initialPinnedPages,
+  initialPinnedPages,
 }: SideBarClientProps) {
   const { user, isLoaded } = useUser();
   const { state, isMobile } = useSidebar();
@@ -132,7 +140,7 @@ export default function SideBarClient({
 
         <SidebarContent>
           <NavMain items={navItems} />
-          <NavLocalPinned />
+          <NavPinned initialPinnedPages={initialPinnedPages} />
           <div className="mt-auto pb-4">
             <SyncStatus />
           </div>
