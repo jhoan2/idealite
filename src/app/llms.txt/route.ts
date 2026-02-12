@@ -1,6 +1,4 @@
-import { NextResponse } from "next/headers";
 import { getPublishedBlogPosts } from "~/server/queries/blog";
-import { createIdealiteTurndown } from "~/lib/markdown/turndown-rules";
 
 /**
  * GET /llms.txt
@@ -9,13 +7,24 @@ import { createIdealiteTurndown } from "~/lib/markdown/turndown-rules";
  * Follows the standard at https://llmstxt.org/
  */
 export async function GET() {
-  const turndown = createIdealiteTurndown();
-  
-  // 1. Fetch data
-  const { data: posts } = await getPublishedBlogPosts({
+  // 1. Fetch page 1 to discover total pages.
+  const firstPage = await getPublishedBlogPosts({
     page: 1,
-    pageSize: 100, // Get all recent posts for the index
+    pageSize: 100,
   });
+  const posts = [...firstPage.data];
+
+  // Fetch remaining pages so llms.txt includes all published posts.
+  if (firstPage.totalPages > 1) {
+    const pageNumbers = Array.from(
+      { length: firstPage.totalPages - 1 },
+      (_, idx) => idx + 2,
+    );
+    const remainingPages = await Promise.all(
+      pageNumbers.map((page) => getPublishedBlogPosts({ page, pageSize: 100 })),
+    );
+    posts.push(...remainingPages.flatMap((page) => page.data));
+  }
 
   // Featured static blog post (matching src/app/blog/page.tsx)
   const featuredPosts = [
@@ -29,26 +38,26 @@ export async function GET() {
   ];
 
   const allPosts = [...featuredPosts, ...posts];
+  const uniquePosts = Array.from(
+    new Map(allPosts.map((post) => [post.slug, post])).values(),
+  );
   const siteUrl = "https://idealite.xyz";
 
   // 2. Build the llms.txt content
-  let output = "# Idealite
+  let output = `# Idealite
 
-";
-  output += "> Idealite is a platform for self-directed learners and autodidacts to escape the tutorial loop and build unique skill trees.
+> Idealite is a platform for self-directed learners and autodidacts to escape the tutorial loop and build unique skill trees.
 
-";
-  
-  output += "## Blog Posts
+## Blog Posts
 
-";
+`;
 
-  for (const post of allPosts) {
+  for (const post of uniquePosts) {
     const postUrl = `${siteUrl}/blog/${post.slug}`;
-    const dateStr = post.publishedAt 
-      ? new Date(post.publishedAt).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })
+    const dateStr = post.publishedAt
+      ? new Date(post.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
       : "";
-    
+
     output += `### [${post.title}](${postUrl})
 `;
     if (dateStr) output += `*Published on ${dateStr}*
