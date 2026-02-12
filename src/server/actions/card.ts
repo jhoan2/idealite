@@ -18,6 +18,8 @@ const createCardSchema = z.object({
   resourceId: z.string().uuid().optional(),
   nextReview: z.string().datetime().optional(),
   cardType: z.enum(["qa", "image", "cloze"]).optional(),
+  cardPayload: z.record(z.string(), z.unknown()).optional(),
+  cardPayloadVersion: z.number().int().min(1).optional(),
   question: z.string().optional(),
   answer: z.string().optional(),
   clozeTemplate: z.string().optional(),
@@ -76,6 +78,8 @@ export async function createCardFromPage(
               : validatedInput.clozeTemplate && validatedInput.clozeAnswers
                 ? "cloze"
                 : "image"),
+          card_payload: validatedInput.cardPayload ?? {},
+          card_payload_version: validatedInput.cardPayloadVersion ?? 1,
           question: validatedInput.question,
           answer: validatedInput.answer,
           cloze_template: validatedInput.clozeTemplate,
