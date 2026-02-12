@@ -65,6 +65,12 @@ const coreConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "assets.idealite.xyz",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };

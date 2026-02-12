@@ -1,4 +1,5 @@
 import { SidebarInset } from "~/components/ui/sidebar";
+import { NotesWorkspaceShell } from "./_components/NotesWorkspaceShell";
 
 export default function NotesLayout({
   children,
@@ -7,9 +8,7 @@ export default function NotesLayout({
 }) {
   return (
     <SidebarInset>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        {children}
-      </div>
+      <NotesWorkspaceShell>{children}</NotesWorkspaceShell>
     </SidebarInset>
   );
 }
