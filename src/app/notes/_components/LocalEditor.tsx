@@ -313,6 +313,7 @@ export function LocalEditor({ initialContent, onUpdate, pageId }: LocalEditorPro
       LocalPageMention,
     ],
     content: initialContent,
+    autofocus: "start",
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
@@ -383,6 +384,15 @@ export function LocalEditor({ initialContent, onUpdate, pageId }: LocalEditorPro
       editor.commands.setContent(initialContent, false);
     }
   }, [initialContent, editor]);
+
+  // Keep typing flow fast by placing the cursor in the editor when the note opens.
+  useEffect(() => {
+    if (!editor) return;
+    const frameId = window.requestAnimationFrame(() => {
+      editor.commands.focus?.("start");
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [editor]);
 
   // Handle image selection for bubble menu
   useEffect(() => {
