@@ -49,6 +49,21 @@ const baseCard = {
   status: "active",
 };
 
+const secondCard = {
+  id: "card-2",
+  card_type: "qa",
+  card_payload: {
+    prompt: "What is NADH?",
+    response: "An electron carrier",
+  },
+  card_payload_version: 1,
+  content: "An electron carrier",
+  image_cid: null,
+  description: null,
+  next_review: null,
+  status: "active",
+};
+
 function setupFetchMock() {
   const fetchMock = vi.fn(
     async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -70,7 +85,7 @@ function setupFetchMock() {
       if (method === "GET" && url.includes("/api/v1/pages/page-1/flashcards")) {
         return {
           ok: true,
-          json: async () => ({ flashcards: [baseCard] }),
+          json: async () => ({ flashcards: [baseCard, secondCard] }),
         } as Response;
       }
 
@@ -87,10 +102,13 @@ function setupFetchMock() {
 
 async function openCardActionMenu() {
   await screen.findByText("What is ATP?");
-  const trigger = screen.getByRole("button", { name: "Flashcard actions" });
+  const trigger = screen.getAllByRole("button", { name: "Flashcard actions" })[0];
+  if (!trigger) {
+    throw new Error("Expected at least one flashcard actions button");
+  }
   const user = userEvent.setup();
   await user.click(trigger);
-  await screen.findByRole("menuitem", { name: "Batch delete flashcards" });
+  await screen.findByRole("menuitem", { name: "Select flashcards" });
 }
 
 describe("PageFlashcardsPanel actions", () => {
@@ -121,7 +139,7 @@ describe("PageFlashcardsPanel actions", () => {
     await openCardActionMenu();
 
     expect(
-      screen.getByRole("menuitem", { name: "Batch delete flashcards" }),
+      screen.getByRole("menuitem", { name: "Select flashcards" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("menuitem", { name: "Delete flashcard" }),
@@ -134,23 +152,33 @@ describe("PageFlashcardsPanel actions", () => {
     ).toBeInTheDocument();
   });
 
-  it("batch deletes flashcards from the current page", async () => {
+  it("batch deletes selected flashcards", async () => {
     const fetchMock = setupFetchMock();
     render(<PageFlashcardsPanel />);
 
     await openCardActionMenu();
-    fireEvent.click(
-      screen.getByRole("menuitem", { name: "Batch delete flashcards" }),
-    );
+    fireEvent.click(screen.getByRole("menuitem", { name: "Select flashcards" }));
+    fireEvent.click(screen.getByLabelText("Select flashcard card-2"));
+    expect(screen.getByText("2 selected")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete selected" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/v1/pages/page-1/flashcards",
-        expect.objectContaining({
-          method: "DELETE",
-        }),
+      const deleteCall = fetchMock.mock.calls.find(
+        ([, init]: [RequestInfo | URL, RequestInit | undefined]) =>
+          init?.method === "DELETE",
       );
+
+      if (!deleteCall) {
+        throw new Error("Expected a DELETE request to be issued");
+      }
+
+      const requestInit = deleteCall[1];
+      if (!requestInit || typeof requestInit.body !== "string") {
+        throw new Error("Expected delete request body to be a JSON string");
+      }
+      const requestBody = JSON.parse(requestInit.body) as { cardIds: string[] };
+      expect(new Set(requestBody.cardIds)).toEqual(new Set(["card-1", "card-2"]));
     });
   });
 

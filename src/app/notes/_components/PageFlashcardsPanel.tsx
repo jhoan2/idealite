@@ -69,7 +69,7 @@ interface FlashcardsApiResponse {
 
 type ConfirmAction =
   | { kind: "delete-one"; card: NoteFlashcard }
-  | { kind: "batch-delete" }
+  | { kind: "batch-delete-selected"; count: number }
   | null;
 
 const typeClassNames: Record<FlashcardType, string> = {
@@ -194,6 +194,10 @@ export function PageFlashcardsPanel() {
   const pageId = typeof params.id === "string" ? params.id : undefined;
   const [isLoading, setIsLoading] = useState(false);
   const [flashcards, setFlashcards] = useState<NoteFlashcard[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [expandedCardIds, setExpandedCardIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -271,6 +275,16 @@ export function PageFlashcardsPanel() {
       controller.abort();
     };
   }, [pageId, refreshTick]);
+
+  useEffect(() => {
+    setSelectedCardIds((prev) => {
+      const availableIds = new Set(flashcards.map((card) => card.id));
+      const next = new Set(
+        Array.from(prev).filter((id) => availableIds.has(id)),
+      );
+      return next.size === prev.size ? prev : next;
+    });
+  }, [flashcards]);
 
   const openEditDialog = (card: NoteFlashcard) => {
     const parsed = parseCardPayload(card.sourceCard);
@@ -457,7 +471,7 @@ export function PageFlashcardsPanel() {
     if (!confirmAction) {
       return;
     }
-    if (confirmAction.kind === "batch-delete" && !pageId) {
+    if (confirmAction.kind === "batch-delete-selected" && !pageId) {
       return;
     }
 
@@ -468,11 +482,18 @@ export function PageFlashcardsPanel() {
         await deleteCard(confirmAction.card.id);
         toast.success("Flashcard deleted");
       } else {
+        const cardIds = Array.from(selectedCardIds);
+        if (cardIds.length === 0) {
+          setConfirmAction(null);
+          return;
+        }
+
         const response = await fetch(
           `/api/v1/pages/${encodeURIComponent(pageId!)}/flashcards`,
           {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cardIds }),
           },
         );
         const body = (await response.json()) as FlashcardsApiResponse;
@@ -488,6 +509,8 @@ export function PageFlashcardsPanel() {
       }
 
       setConfirmAction(null);
+      setSelectedCardIds(new Set());
+      setIsSelectionMode(false);
       refreshCards();
     } catch (error) {
       console.error("Flashcard deletion failed:", error);
@@ -513,6 +536,38 @@ export function PageFlashcardsPanel() {
     });
   };
 
+  const toggleCardSelection = (cardId: string) => {
+    setSelectedCardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardId)) {
+        next.delete(cardId);
+      } else {
+        next.add(cardId);
+      }
+      return next;
+    });
+  };
+
+  const enterSelectionMode = (prefillCardId?: string) => {
+    setIsSelectionMode(true);
+    if (!prefillCardId) {
+      return;
+    }
+    setSelectedCardIds((prev) => {
+      const next = new Set(prev);
+      next.add(prefillCardId);
+      return next;
+    });
+  };
+
+  const selectAllCards = () => {
+    setSelectedCardIds(new Set(flashcards.map((card) => card.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedCardIds(new Set());
+  };
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {!!pageId && (
@@ -525,10 +580,67 @@ export function PageFlashcardsPanel() {
             </div>
           ) : (
             <div className="space-y-3 p-3">
+              {isSelectionMode && (
+                <div className="sticky top-0 z-10 rounded-md border bg-background/95 p-2 backdrop-blur">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {selectedCardIds.size} selected
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => {
+                        setIsSelectionMode(false);
+                        setSelectedCardIds(new Set());
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={selectAllCards}
+                    >
+                      Select all
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={clearSelection}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      disabled={selectedCardIds.size === 0 || isMutating}
+                      onClick={() =>
+                        setConfirmAction({
+                          kind: "batch-delete-selected",
+                          count: selectedCardIds.size,
+                        })
+                      }
+                    >
+                      Delete selected
+                    </Button>
+                  </div>
+                </div>
+              )}
               {flashcards.map((card) => {
                 const isExpanded = expandedCardIds.has(card.id);
                 const canExpand =
                   card.front.length > 120 || card.backPreview.length > 80;
+                const isSelected = selectedCardIds.has(card.id);
 
                 return (
                   <article
@@ -547,54 +659,64 @@ export function PageFlashcardsPanel() {
                           >
                             {card.type}
                           </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                disabled={isMutating}
-                                aria-label="Flashcard actions"
-                              >
-                                <Ellipsis className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                disabled={isMutating || flashcards.length === 0}
-                                onClick={() =>
-                                  setConfirmAction({ kind: "batch-delete" })
-                                }
-                              >
-                                Batch delete flashcards
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600 focus:text-red-600"
-                                disabled={isMutating}
-                                onClick={() =>
-                                  setConfirmAction({ kind: "delete-one", card })
-                                }
-                              >
-                                Delete flashcard
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={
-                                  isMutating ||
-                                  card.sourceCard.status === "suspended"
-                                }
-                                onClick={() => void handleSuspendCard(card)}
-                              >
-                                Suspend flashcard
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={isMutating}
-                                onClick={() => openEditDialog(card)}
-                              >
-                                Edit flashcard
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {isSelectionMode ? (
+                            <label className="inline-flex cursor-pointer items-center text-xs text-muted-foreground">
+                              <input
+                                type="checkbox"
+                                className="h-3.5 w-3.5"
+                                checked={isSelected}
+                                onChange={() => toggleCardSelection(card.id)}
+                                aria-label={`Select flashcard ${card.id}`}
+                              />
+                            </label>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  disabled={isMutating}
+                                  aria-label="Flashcard actions"
+                                >
+                                  <Ellipsis className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  disabled={isMutating || flashcards.length === 0}
+                                  onClick={() => enterSelectionMode(card.id)}
+                                >
+                                  Select flashcards
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-red-600 focus:text-red-600"
+                                  disabled={isMutating}
+                                  onClick={() =>
+                                    setConfirmAction({ kind: "delete-one", card })
+                                  }
+                                >
+                                  Delete flashcard
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={
+                                    isMutating ||
+                                    card.sourceCard.status === "suspended"
+                                  }
+                                  onClick={() => void handleSuspendCard(card)}
+                                >
+                                  Suspend flashcard
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={isMutating}
+                                  onClick={() => openEditDialog(card)}
+                                >
+                                  Edit flashcard
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                         <p
                           className={cn(
@@ -658,13 +780,13 @@ export function PageFlashcardsPanel() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {confirmAction?.kind === "batch-delete"
-                ? "Batch Delete Flashcards"
+              {confirmAction?.kind === "batch-delete-selected"
+                ? "Delete Selected Flashcards"
                 : "Delete Flashcard"}
             </DialogTitle>
             <DialogDescription>
-              {confirmAction?.kind === "batch-delete"
-                ? "This will delete all flashcards on this page. This action cannot be undone."
+              {confirmAction?.kind === "batch-delete-selected"
+                ? `This will delete ${confirmAction.count} selected flashcards. This action cannot be undone.`
                 : "This will delete the selected flashcard. This action cannot be undone."}
             </DialogDescription>
           </DialogHeader>
