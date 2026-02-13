@@ -151,7 +151,6 @@ export const pages = createTable(
       .notNull()
       .default("page"),
     primary_tag_id: uuid("primary_tag_id"),
-    folder_id: uuid("folder_id").references(() => folders.id),
     description: text("description"),
     image_previews: jsonb("image_previews")
       .$type<string[]>()
@@ -318,84 +317,6 @@ export const resourcesPages = createTable(
     primaryKey({ columns: [table.resource_id, table.page_id] }),
     index("resources_pages_resource_id_idx").on(table.resource_id),
     index("resources_pages_page_id_idx").on(table.page_id),
-  ],
-);
-
-export const tabs = createTable(
-  "tabs",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    user_id: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    title: varchar("title", { length: 255 }).notNull(),
-    path: text("path").notNull(),
-    position: integer("position").notNull(),
-    is_active: boolean("is_active").default(false),
-    is_pinned: boolean("is_pinned").default(false),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (table) => [
-    index("tabs_user_idx").on(table.user_id),
-    index("tabs_position_idx").on(table.position),
-    index("tabs_path_idx").on(table.path),
-  ],
-);
-
-export type Folder = typeof folders.$inferSelect;
-export const folders = createTable(
-  "folder",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    name: text("name").notNull(),
-    tag_id: uuid("tag_id")
-      .notNull()
-      .references(() => tags.id),
-    user_id: uuid("user_id")
-      .notNull()
-      .references(() => users.id),
-    parent_folder_id: uuid("parent_folder_id").references(
-      (): AnyPgColumn => folders.id,
-      {
-        onDelete: "cascade",
-      },
-    ),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (table) => [
-    index("folder_tag_id_idx").on(table.tag_id),
-    index("folder_user_id_idx").on(table.user_id),
-  ],
-);
-
-export const users_folders = createTable(
-  "users_folders",
-  {
-    user_id: uuid("user_id")
-      .notNull()
-      .references(() => users.id),
-    folder_id: uuid("folder_id")
-      .notNull()
-      .references(() => folders.id, { onDelete: "cascade" }),
-    is_collapsed: boolean("is_collapsed").default(false).notNull(),
-    created_at: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => [
-    primaryKey({ columns: [table.user_id, table.folder_id] }),
-    index("users_folders_user_id_idx").on(table.user_id),
-    index("users_folders_folder_id_idx").on(table.folder_id),
   ],
 );
 
@@ -621,10 +542,6 @@ export const pagesRelations = relations(pages, ({ many, one }) => ({
   tags: many(pages_tags),
   users: many(users_pages),
   resources: many(resourcesPages),
-  folder: one(folders, {
-    fields: [pages.folder_id],
-    references: [folders.id],
-  }),
   outgoingLinks: many(pages_edges, { relationName: "source" }),
   incomingLinks: many(pages_edges, { relationName: "target" }),
   nodeHashes: many(page_node_hashes),
@@ -659,8 +576,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   pages: many(users_pages),
   tags: many(users_tags),
   images: many(images),
-  tabs: many(tabs),
-  folders: many(folders),
 }));
 
 export const pagesTagsRelations = relations(pages_tags, ({ one }) => ({
@@ -731,36 +646,6 @@ export const imagesRelations = relations(images, ({ one }) => ({
   user: one(users, {
     fields: [images.user_id],
     references: [users.id],
-  }),
-}));
-
-export const tabsRelations = relations(tabs, ({ one }) => ({
-  user: one(users, {
-    fields: [tabs.user_id],
-    references: [users.id],
-  }),
-}));
-
-export const foldersRelations = relations(folders, ({ one, many }) => ({
-  tag: one(tags, {
-    fields: [folders.tag_id],
-    references: [tags.id],
-  }),
-  owner: one(users, {
-    fields: [folders.user_id],
-    references: [users.id],
-  }),
-  pages: many(pages),
-}));
-
-export const usersFoldersRelations = relations(users_folders, ({ one }) => ({
-  user: one(users, {
-    fields: [users_folders.user_id],
-    references: [users.id],
-  }),
-  folder: one(folders, {
-    fields: [users_folders.folder_id],
-    references: [folders.id],
   }),
 }));
 
@@ -963,7 +848,6 @@ export const entityTypeEnum = pgEnum("entity_type", [
   "tag",
   "card",
   "resource",
-  "folder",
   "user",
 ]);
 

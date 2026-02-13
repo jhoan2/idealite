@@ -1,13 +1,11 @@
 // src/app/api/v1/pages/delete/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { deletePage } from "~/server/actions/page";
-import { deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { currentUser } from "@clerk/nextjs/server";
 import { z } from "zod";
 
 const deletePageSchema = z.object({
   id: z.string().uuid(),
-  title: z.string().optional(), // For deleting associated tabs
 });
 
 export async function DELETE(request: NextRequest) {
@@ -18,15 +16,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, title } = deletePageSchema.parse(body);
-
-    // Delete the page
+    const { id } = deletePageSchema.parse(body);
     const result = await deletePage({ id });
-
-    // Delete associated tabs if title is provided
-    if (title && result.success) {
-      await deleteTabMatchingPageTitle(title);
-    }
 
     return NextResponse.json(result);
   } catch (error) {

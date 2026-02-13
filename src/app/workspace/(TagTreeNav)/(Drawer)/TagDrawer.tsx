@@ -4,19 +4,16 @@ import { useEffect, useState } from "react";
 import {
   Archive,
   FilePlus,
-  FolderPlus,
   Palette,
   Tag,
   Plus,
   Check,
-  X,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { DrawerTitle, DrawerHeader } from "~/components/ui/drawer";
 import { Input } from "~/components/ui/input";
 import { TreeTag } from "~/server/queries/usersTags";
 import { createPage } from "~/server/actions/page";
-import { createFolder } from "~/server/actions/usersFolders";
 import {
   toggleTagArchived,
   createTagForUser,
@@ -36,7 +33,6 @@ export default function TagDrawer({
 }) {
   const [isCreatingPage, setIsCreatingPage] = useState(false);
   const [isCreatingCanvas, setIsCreatingCanvas] = useState(false);
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isCreatingSubtag, setIsCreatingSubtag] = useState(false);
   const [showNameInput, setShowNameInput] = useState(false);
@@ -96,7 +92,6 @@ export default function TagDrawer({
       title: newTitle,
       tag_id: tag.id,
       hierarchy: getTagHierarchy(tag),
-      folder_id: null,
     };
   };
 
@@ -131,25 +126,6 @@ export default function TagDrawer({
       toast.error("Failed to create canvas");
     } finally {
       setIsCreatingCanvas(false);
-    }
-  };
-
-  const handleCreateFolder = async () => {
-    try {
-      setIsCreatingFolder(true);
-      const result = await createFolder({
-        tagId: tag.id,
-      });
-
-      if (!result.success) {
-        toast.error(result.error || "Failed to create folder");
-        return;
-      }
-    } catch (error) {
-      console.error("Error creating folder:", error);
-      toast.error("Failed to create folder");
-    } finally {
-      setIsCreatingFolder(false);
     }
   };
 
@@ -254,19 +230,6 @@ export default function TagDrawer({
             <Palette className="mr-3 h-4 w-4" />
           )}
           <span>{isCreatingCanvas ? "Creating canvas..." : "New Canvas"}</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="w-full justify-start py-6 text-sm font-normal"
-          onClick={handleCreateFolder}
-          disabled={isCreatingFolder}
-        >
-          {isCreatingFolder ? (
-            <Loader2 className="mr-3 h-4 w-4 animate-spin" />
-          ) : (
-            <FolderPlus className="mr-3 h-4 w-4" />
-          )}
-          <span>{isCreatingFolder ? "Creating folder..." : "New folder"}</span>
         </Button>
         <div className="h-px bg-border" />
         <Button

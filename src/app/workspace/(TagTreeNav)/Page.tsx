@@ -22,10 +22,9 @@ import {
   archivePageManually,
   unarchivePageManually,
 } from "~/server/actions/page";
-import { deleteTabMatchingPageTitle } from "~/server/actions/tabs";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { TreePage, TreeFolder, TreeTag } from "~/server/queries/usersTags";
+import { TreePage, TreeTag } from "~/server/queries/usersTags";
 
 interface PageComponentProps {
   page: TreePage;
@@ -34,7 +33,6 @@ interface PageComponentProps {
   onMovePageClick: (
     pageId: string,
     title: string,
-    folder_id: string | null,
     primary_tag_id: string | null,
   ) => void;
   handleItemClick: (
@@ -42,10 +40,7 @@ interface PageComponentProps {
     pageId: string,
     title: string,
   ) => Promise<void>;
-  onOpenDrawer: (
-    type: "tag" | "folder" | "page",
-    data: TreeTag | TreeFolder | TreePage,
-  ) => void;
+  onOpenDrawer: (type: "tag" | "page", data: TreeTag | TreePage) => void;
   isMobile: boolean;
 }
 
@@ -158,19 +153,13 @@ export const PageComponent: React.FC<PageComponentProps> = ({
     <ContextMenuContent className="w-64">
       <ContextMenuItem
         onSelect={() => {
-          onMovePageClick(
-            page.id,
-            page.title || "",
-            page.folder_id,
-            page.primary_tag_id,
-          );
+          onMovePageClick(page.id, page.title || "", page.primary_tag_id);
         }}
       >
         <Replace className="mr-2 h-4 w-4" />
         <span>Move to</span>
       </ContextMenuItem>
 
-      {/* Archive/Unarchive Menu Item */}
       {page.archived ? (
         <ContextMenuItem
           onSelect={handleUnarchivePage}
@@ -197,13 +186,10 @@ export const PageComponent: React.FC<PageComponentProps> = ({
       <ContextMenuItem
         onSelect={async () => {
           try {
-            const [pageResult, tabResult] = await Promise.all([
-              deletePage({ id: page.id }),
-              deleteTabMatchingPageTitle(page.title || ""),
-            ]);
+            const pageResult = await deletePage({ id: page.id });
 
-            if (!pageResult.success || !tabResult.success) {
-              toast.error("Failed to delete page and associated tabs");
+            if (!pageResult.success) {
+              toast.error("Failed to delete page");
               return;
             }
 

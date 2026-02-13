@@ -2,21 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { updateTagCollapsed } from "~/server/actions/usersTags";
-import { updateFolderCollapsed } from "~/server/actions/usersFolders";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 
 const batchUpdateSchema = z.object({
   tags: z
-    .array(
-      z.object({
-        id: z.string().uuid(),
-        isCollapsed: z.boolean(),
-      }),
-    )
-    .optional()
-    .default([]),
-  folders: z
     .array(
       z.object({
         id: z.string().uuid(),
@@ -37,11 +27,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { tags, folders } = batchUpdateSchema.parse(body);
+    const { tags } = batchUpdateSchema.parse(body);
 
     console.log(`Processing batch update for user ${userId}:`, {
       tagsCount: tags.length,
-      foldersCount: folders.length,
     });
 
     // Process tag updates in parallel
@@ -69,31 +58,6 @@ export async function POST(request: NextRequest) {
       }),
     );
 
-    // Process folder updates in parallel
-    const folderResults = await Promise.allSettled(
-      folders.map(async ({ id, isCollapsed }) => {
-        try {
-          const result = await updateFolderCollapsed({
-            folderId: id,
-            isCollapsed,
-          });
-
-          if (!result.success) {
-            throw new Error(result.error || `Failed to update folder ${id}`);
-          }
-
-          return { id, success: true };
-        } catch (error) {
-          console.error(`Failed to update folder ${id}:`, error);
-          return {
-            id,
-            success: false,
-            error: error instanceof Error ? error.message : "Unknown error",
-          };
-        }
-      }),
-    );
-
     // Count successes and failures
     const tagSuccesses = tagResults.filter(
       (result) => result.status === "fulfilled" && result.value.success,
@@ -105,23 +69,11 @@ export async function POST(request: NextRequest) {
         (result.status === "fulfilled" && !result.value.success),
     );
 
-    const folderSuccesses = folderResults.filter(
-      (result) => result.status === "fulfilled" && result.value.success,
-    ).length;
-
-    const folderFailures = folderResults.filter(
-      (result) =>
-        result.status === "rejected" ||
-        (result.status === "fulfilled" && !result.value.success),
-    );
-
     // Log failures for debugging
-    if (tagFailures.length > 0 || folderFailures.length > 0) {
+    if (tagFailures.length > 0) {
       console.warn("Batch update had some failures:", {
         tagFailures: tagFailures.length,
-        folderFailures: folderFailures.length,
         tagFailureDetails: tagFailures,
-        folderFailureDetails: folderFailures,
       });
 
       Sentry.captureMessage("Batch update partial failure", {
@@ -133,12 +85,9 @@ export async function POST(request: NextRequest) {
         },
         extra: {
           tagFailures: tagFailures.length,
-          folderFailures: folderFailures.length,
           totalTags: tags.length,
-          totalFolders: folders.length,
           failureDetails: {
             tags: tagFailures,
-            folders: folderFailures,
           },
         },
       });
@@ -153,22 +102,12 @@ export async function POST(request: NextRequest) {
           successful: tagSuccesses,
           failed: tagFailures.length,
         },
-        folders: {
-          total: folders.length,
-          successful: folderSuccesses,
-          failed: folderFailures.length,
-        },
       },
       // Include failure details if any
-      ...(tagFailures.length > 0 || folderFailures.length > 0
+      ...(tagFailures.length > 0
         ? {
             failures: {
               tags: tagFailures.map((f) =>
-                f.status === "fulfilled"
-                  ? f.value
-                  : { error: "Promise rejected" },
-              ),
-              folders: folderFailures.map((f) =>
                 f.status === "fulfilled"
                   ? f.value
                   : { error: "Promise rejected" },

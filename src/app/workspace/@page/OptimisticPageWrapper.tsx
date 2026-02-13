@@ -31,7 +31,6 @@ export function OptimisticPageWrapper({
       const result = await createPage(
         {
           title: "Untitled",
-          folder_id: null,
         },
         type,
       );

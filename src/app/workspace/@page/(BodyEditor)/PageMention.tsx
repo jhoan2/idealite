@@ -198,10 +198,12 @@ export const PageMention = Mention.extend({
           const deleteTo = selection.from;    // Current cursor position after full mention
 
           // Create the page first
-          const result = await createPage({
-            title: pageData.title,
-            folder_id: null, // Create in root folder
-          }, "page");
+          const result = await createPage(
+            {
+              title: pageData.title,
+            },
+            "page",
+          );
 
           if (result.success) {
             // Type guard: if success is true, result has data property

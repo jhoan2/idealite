@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, Folder, Tag } from "lucide-react";
+import { Check, Tag } from "lucide-react";
 import {
   CommandEmpty,
   CommandGroup,
@@ -13,7 +13,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { DialogDescription, DialogTitle } from "~/components/ui/dialog";
 import type { TreeTag } from "~/server/queries/usersTags";
-import type { TreeFolder } from "~/server/queries/usersTags";
 import { cn } from "~/lib/utils";
 
 interface MoveToDialogProps {
@@ -23,8 +22,39 @@ interface MoveToDialogProps {
   currentTagId: string;
   onMove: (destinationTagId: string) => Promise<void>;
   isLoading: boolean;
-  currentFolderId: string | null;
   primaryTagId: string | null;
+}
+
+interface MoveOption {
+  value: string;
+  label: string;
+}
+
+function generateMoveOptions(
+  tags: TreeTag[],
+  currentTagId: string,
+  primaryTagId: string | null,
+): MoveOption[] {
+  const options: MoveOption[] = [];
+
+  function collectTags(tag: TreeTag, parentPath = "") {
+    const currentPath = parentPath ? `${parentPath} / ${tag.name}` : tag.name;
+
+    if (tag.id !== currentTagId && tag.id !== primaryTagId) {
+      options.push({
+        value: `tag-${tag.id}`,
+        label: currentPath,
+      });
+    }
+
+    if (tag.children?.length) {
+      tag.children.forEach((child) => collectTags(child, currentPath));
+    }
+  }
+
+  tags.forEach((tag) => collectTags(tag));
+
+  return options.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export const MoveToDialog = ({
@@ -34,160 +64,22 @@ export const MoveToDialog = ({
   currentTagId,
   onMove,
   isLoading,
-  currentFolderId,
   primaryTagId,
 }: MoveToDialogProps) => {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
-  const flattenTags = (
-    tags: TreeTag[],
-    parentPath = "",
-  ): { value: string; label: string }[] => {
-    if (!Array.isArray(tags)) {
-      console.error("Expected tags to be an array, but got:", tags);
-      return []; // Return an empty array if tags is not an array
-    }
-    return tags.reduce((acc: { value: string; label: string }[], tag) => {
-      const currentPath = parentPath ? `${parentPath} / ${tag.name}` : tag.name;
-      acc.push({ value: tag.id, label: currentPath });
-
-      if (Array.isArray(tag.children) && tag.children.length > 0) {
-        acc.push(...flattenTags(tag.children, currentPath));
-      }
-
-      return acc;
-    }, []);
-  };
-
-  interface MoveOption {
-    value: string;
-    label: string;
-    type: "tag" | "folder";
-  }
-
-  function generateMoveOptions(
-    tags: TreeTag[],
-    currentTagId: string,
-    currentFolderId: string | null,
-    primaryTagId: string | null,
-  ): MoveOption[] {
-    const options: MoveOption[] = [];
-    const tagMap = new Map<string, string>(); // id -> name
-
-    // First collect all tags and build a map
-    function collectTags(tag: TreeTag, parentPath = "") {
-      const currentPath = parentPath ? `${parentPath} / ${tag.name}` : tag.name;
-
-      if (tag.id !== currentTagId && tag.id !== primaryTagId) {
-        options.push({
-          value: `tag-${tag.id}`,
-          label: currentPath,
-          type: "tag",
-        });
-      }
-
-      // Store in map for folder path building
-      tagMap.set(tag.id, tag.name);
-
-      if (tag.children) {
-        tag.children.forEach((child) => collectTags(child, currentPath));
-      }
-    }
-
-    // Collect all folders from a tag
-    function collectFolders(tag: TreeTag) {
-      if (tag.folders) {
-        // Create a map of folders for easy parent lookup
-        const folderMap = new Map<string, TreeFolder>();
-
-        // First pass: collect all folders in this tag
-        function mapFolders(folder: TreeFolder) {
-          folderMap.set(folder.id, folder);
-          if (folder.subFolders) {
-            folder.subFolders.forEach(mapFolders);
-          }
-        }
-
-        tag.folders.forEach(mapFolders);
-
-        // Second pass: build paths and add options
-        function buildFolderPath(folder: TreeFolder): string {
-          const parts: string[] = [folder.name];
-          let current = folder;
-
-          // Build path up through parent folders
-          while (
-            current.parent_folder_id &&
-            folderMap.has(current.parent_folder_id)
-          ) {
-            current = folderMap.get(current.parent_folder_id)!;
-            parts.unshift(current.name);
-          }
-
-          // Add tag path
-          const tagName = tagMap.get(tag.id);
-          if (tagName) {
-            parts.unshift(tagName);
-          }
-
-          return parts.join(" / ");
-        }
-
-        // Add folder options
-        folderMap.forEach((folder) => {
-          if (folder.id !== currentFolderId) {
-            options.push({
-              value: `folder-${folder.id}`,
-              label: buildFolderPath(folder),
-              type: "folder",
-            });
-          }
-        });
-      }
-
-      // Process child tags
-      if (tag.children) {
-        tag.children.forEach(collectFolders);
-      }
-    }
-
-    // Process all tags first to build the tag map
-    tags.forEach((tag) => collectTags(tag));
-
-    // Then collect all folders
-    tags.forEach((tag) => collectFolders(tag));
-
-    // Sort options
-    return options.sort((a, b) => {
-      // First sort by type (tags before folders)
-      if (a.type !== b.type) {
-        return a.type === "tag" ? -1 : 1;
-      }
-      // Then sort by label alphabetically
-      return a.label.localeCompare(b.label);
-    });
-  }
-
-  // Usage in component remains the same
-  const moveOptions = generateMoveOptions(
-    tags,
-    currentTagId,
-    currentFolderId,
-    primaryTagId,
-  );
+  const moveOptions = generateMoveOptions(tags, currentTagId, primaryTagId);
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <div className="flex flex-col gap-2 p-4">
-        <DialogTitle>Move to Location</DialogTitle>
-        <DialogDescription>
-          Select a destination tag or folder to move the page to.
-        </DialogDescription>
+        <DialogTitle>Move to Tag</DialogTitle>
+        <DialogDescription>Select a destination tag.</DialogDescription>
       </div>
       <div className="grid gap-4 py-4">
-        <CommandInput placeholder="Search locations..." />
+        <CommandInput placeholder="Search tags..." />
         <CommandList>
-          <CommandEmpty>No location found.</CommandEmpty>
+          <CommandEmpty>No tag found.</CommandEmpty>
           <CommandGroup>
             {moveOptions.map((option) => (
               <CommandItem
@@ -206,11 +98,7 @@ export const MoveToDialog = ({
                       : "opacity-0",
                   )}
                 />
-                {option.type === "folder" ? (
-                  <Folder className="mr-2 h-4 w-4 text-gray-400" />
-                ) : (
-                  <Tag className="mr-2 h-4 w-4 text-gray-400" />
-                )}
+                <Tag className="mr-2 h-4 w-4 text-gray-400" />
                 {option.label}
               </CommandItem>
             ))}

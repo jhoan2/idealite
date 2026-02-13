@@ -9,7 +9,6 @@ import {
   tags,
   users_tags,
   cards_tags,
-  folders,
   users,
 } from "../db/schema";
 import { revalidatePath } from "next/cache";
@@ -129,7 +128,6 @@ export async function movePagesBetweenTags(input: MovePagesInput) {
         .update(pages)
         .set({
           primary_tag_id: newTagId,
-          folder_id: null,
           updated_at: new Date(),
         })
         .where(eq(pages.id, pageId))
@@ -468,65 +466,6 @@ export async function changeTagRelations({
 
       if (!targetTag) {
         return { success: false, error: "Target tag not found" };
-      }
-
-      // First, handle folder transfers since they have direct tag references
-      // Get all folders for the source tag
-      const sourceFolders = await tx
-        .select()
-        .from(folders)
-        .where(eq(folders.tag_id, sourceTagId));
-
-      // For each folder, we need to:
-      // 1. Check for name conflicts in the target tag
-      // 2. Update the folder's tag_id
-      for (const folder of sourceFolders) {
-        // Check for name conflicts
-        const existingFolder = await tx
-          .select()
-          .from(folders)
-          .where(
-            and(eq(folders.tag_id, targetTagId), eq(folders.name, folder.name)),
-          )
-          .limit(1);
-
-        if (existingFolder.length > 0) {
-          // If there's a conflict, append a number to the name
-          let counter = 1;
-          let newName = `${folder.name} (${counter})`;
-          while (
-            await tx
-              .select()
-              .from(folders)
-              .where(
-                and(eq(folders.tag_id, targetTagId), eq(folders.name, newName)),
-              )
-              .limit(1)
-              .then((rows) => rows.length > 0)
-          ) {
-            counter++;
-            newName = `${folder.name} (${counter})`;
-          }
-
-          // Update folder with new name and tag
-          await tx
-            .update(folders)
-            .set({
-              name: newName,
-              tag_id: targetTagId,
-              updated_at: new Date(),
-            })
-            .where(eq(folders.id, folder.id));
-        } else {
-          // No conflict, just update the tag
-          await tx
-            .update(folders)
-            .set({
-              tag_id: targetTagId,
-              updated_at: new Date(),
-            })
-            .where(eq(folders.id, folder.id));
-        }
       }
 
       // Transfer user-tag relations

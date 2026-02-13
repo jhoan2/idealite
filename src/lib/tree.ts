@@ -1,4 +1,4 @@
-import type { TreeFolder, TreeTag } from "~/server/queries/usersTags";
+import type { TreeTag } from "~/server/queries/usersTags";
 import { v4 as uuidv4 } from "uuid";
 import { Tag } from "~/server/db/schema";
 
@@ -35,7 +35,6 @@ export const createUntitledPage = (node: TreeTag, allTags: TreeTag[]) => {
     title: newTitle,
     tag_id: node.id,
     hierarchy: getTagHierarchy(node, allTags),
-    folder_id: null,
   };
 };
 
@@ -47,31 +46,6 @@ export const findParent = (
     if (tag.children?.some((child) => child.id === targetId)) return tag;
     if (tag.children) {
       const found = findParent(tag.children, targetId);
-      if (found) return found;
-    }
-  }
-  return null;
-};
-
-export const findFolderParentTag = (
-  tags: TreeTag[],
-  folderId: string,
-): TreeTag | null => {
-  for (const tag of tags) {
-    // Check direct folders in the current tag
-    if (
-      tag.folders?.some(
-        (folder) =>
-          folder.id === folderId ||
-          folder.subFolders?.some((subfolder) => subfolder.id === folderId),
-      )
-    ) {
-      return tag;
-    }
-
-    // Check tags' children
-    if (tag.children) {
-      const found = findFolderParentTag(tag.children, folderId);
       if (found) return found;
     }
   }
@@ -92,15 +66,6 @@ export const getTagHierarchy = (
   return hierarchy;
 };
 
-export const generateUntitledFolderName = (folders: TreeFolder[]) => {
-  const untitledFolders = folders.filter((folder) =>
-    folder.name.toLowerCase().startsWith("untitled"),
-  );
-  return untitledFolders.length === 0
-    ? "untitled"
-    : `untitled ${untitledFolders.length}`;
-};
-
 export const calculateOrphanedPages = (tag: TreeTag): number => {
   let count = tag.pages.length;
   if (tag.children) {
@@ -109,24 +74,6 @@ export const calculateOrphanedPages = (tag: TreeTag): number => {
     }
   }
   return count;
-};
-
-export const createUntitledPageInFolder = (
-  folder: TreeFolder,
-  tagId: string,
-  allTags: TreeTag[],
-) => {
-  const newTitle = generateUntitledTitle(folder.pages);
-  const currentTag = getCurrentTagNode(allTags, tagId);
-  if (!currentTag) throw new Error("Tag not found");
-
-  return {
-    id: uuidv4(),
-    title: newTitle,
-    tag_id: tagId,
-    folder_id: folder.id,
-    hierarchy: getTagHierarchy(currentTag, allTags),
-  };
 };
 
 export const flattenTagTree = (tree: TreeTag[], existingTags: Tag[]): Tag[] => {
@@ -143,7 +90,9 @@ export const flattenTagTree = (tree: TreeTag[], existingTags: Tag[]): Tag[] => {
         parent_id: null,
         created_at: new Date(),
         updated_at: null,
+        embedding: null,
         deleted: null,
+        is_template: false,
       });
     }
 

@@ -6,12 +6,9 @@ import { FeatureDiscoveryProvider } from "./(FeatureDiscover)/FeatureDiscoveryCo
 import { currentUser } from "@clerk/nextjs/server";
 export default async function WorkspaceLayout({
   children,
-  editor,
   page,
 }: {
   children: React.ReactNode;
-  editor: React.ReactNode;
-  tabs: React.ReactNode;
   page: React.ReactNode;
 }) {
   const user = await currentUser();
@@ -42,7 +39,6 @@ export default async function WorkspaceLayout({
             {children}
           </div>
         </div>
-        {editor}
       </div>
     </FeatureDiscoveryProvider>
   );

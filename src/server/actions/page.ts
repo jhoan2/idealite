@@ -6,12 +6,9 @@ import {
   pages,
   pages_tags,
   resourcesPages,
-  users_folders,
   users_pages,
-  folders,
-  users_tags,
 } from "~/server/db/schema";
-import { eq, and, exists, or, sql } from "drizzle-orm";
+import { eq, and, exists, sql } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { movePagesBetweenTags } from "./usersTags";
@@ -510,7 +507,6 @@ export type CreatePageInput = {
   title: string;
   tag_id?: string; // Make optional
   hierarchy?: string[]; // Make optional
-  folder_id: string | null;
 };
 
 export async function createPage(
@@ -555,7 +551,6 @@ export async function createPage(
           content: type === "canvas" ? JSON.stringify({ document: " " }) : " ",
           content_type: type,
           primary_tag_id: input.tag_id || null, // Handle optional tag
-          folder_id: input.folder_id,
         })
         .returning();
 
@@ -704,7 +699,7 @@ export async function createPageWithRelationsFromWebhook(
 
 const movePageSchema = z.object({
   pageId: z.string().uuid(),
-  destinationId: z.string(), // Can be "folder-uuid" or "tag-uuid"
+  destinationId: z.string(), // "tag-uuid" or "uuid"
 });
 
 export async function movePage(input: z.infer<typeof movePageSchema>) {
@@ -717,107 +712,47 @@ export async function movePage(input: z.infer<typeof movePageSchema>) {
     const userId = user.externalId;
 
     const { pageId, destinationId } = movePageSchema.parse(input);
-    const [type = "", ...idParts] = destinationId.split("-");
-    const id = idParts.join("-");
+    const tagId = destinationId.startsWith("tag-")
+      ? destinationId.slice(4)
+      : destinationId;
 
-    if (!["folder", "tag"].includes(type) || !id) {
+    if (!tagId) {
       return { success: false, error: "Invalid destination" };
     }
 
-    return await db.transaction(async (tx) => {
-      // Check page access
-      const pageAccess = await tx.query.pages.findFirst({
-        where: and(
-          eq(pages.id, pageId),
-          eq(pages.deleted, false),
-          exists(
-            tx
-              .select()
-              .from(users_pages)
-              .where(
-                and(
-                  eq(users_pages.page_id, pageId),
-                  eq(users_pages.user_id, userId),
-                ),
-              ),
-          ),
-        ),
-      });
-
-      if (!pageAccess) {
-        throw new Error("Page not found or no access");
-      }
-
-      if (type === "folder") {
-        // Check folder access
-        const destFolder = await tx.query.folders.findFirst({
-          where: and(
-            eq(folders.id, id),
-            or(
-              eq(folders.user_id, userId),
-              exists(
-                tx
-                  .select()
-                  .from(users_folders)
-                  .where(
-                    and(
-                      eq(users_folders.folder_id, id),
-                      eq(users_folders.user_id, userId),
-                    ),
-                  ),
-              ),
+    // Check page access first
+    const pageAccess = await db.query.pages.findFirst({
+      where: and(
+        eq(pages.id, pageId),
+        eq(pages.deleted, false),
+        exists(
+          db
+            .select()
+            .from(users_pages)
+            .where(
+              and(eq(users_pages.page_id, pageId), eq(users_pages.user_id, userId)),
             ),
-          ),
-        });
-
-        if (!destFolder) {
-          throw new Error("Folder not found or no access");
-        }
-
-        // Check for name conflicts in destination folder
-        const existingPages = await tx
-          .select({ title: pages.title })
-          .from(pages)
-          .where(and(eq(pages.folder_id, id), eq(pages.deleted, false)));
-
-        let newTitle = pageAccess.title;
-        let counter = 1;
-        const baseTitle = pageAccess.title.replace(/ \(\d+\)$/, "");
-
-        while (existingPages.some((p) => p.title === newTitle)) {
-          newTitle = `${baseTitle} (${counter})`;
-          counter++;
-        }
-
-        // Update page with new folder and maintain tag relationships
-        await tx
-          .update(pages)
-          .set({
-            folder_id: id,
-            title: newTitle,
-            primary_tag_id: destFolder.tag_id,
-            updated_at: new Date(),
-          })
-          .where(eq(pages.id, pageId));
-
-        // Add new tag relationship if it doesn't exist
-        await tx
-          .insert(pages_tags)
-          .values({
-            page_id: pageId,
-            tag_id: destFolder.tag_id,
-          })
-          .onConflictDoNothing();
-      } else if (type === "tag") {
-        // Reuse existing movePagesBetweenTags logic
-        return movePagesBetweenTags({
-          pageId,
-          newTagId: id,
-        });
-      }
-      revalidatePath("/workspace");
-      return { success: true };
+        ),
+      ),
     });
+
+    if (!pageAccess) {
+      throw new Error("Page not found or no access");
+    }
+
+    const result = await movePagesBetweenTags({
+      pageId,
+      newTagId: tagId,
+    });
+
+    if (!result.success) {
+      const errorMessage =
+        "error" in result ? result.error : "Failed to move page";
+      throw new Error(errorMessage);
+    }
+
+    revalidatePath("/workspace");
+    return { success: true };
   } catch (error) {
     console.error("Error moving page:", error);
     return {

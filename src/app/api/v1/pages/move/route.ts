@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const movePageSchema = z.object({
   pageId: z.string().uuid(),
-  destinationId: z.string(), // Can be "folder-uuid" or "tag-uuid"
+  destinationId: z.string(), // "tag-uuid" or "uuid"
 });
 
 export async function POST(request: NextRequest) {

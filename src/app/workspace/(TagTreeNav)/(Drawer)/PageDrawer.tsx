@@ -121,7 +121,6 @@ export default function PageDrawer({
         onOpenChange={setShowMoveDialog}
         tags={allTags}
         currentTagId={currentTagId}
-        currentFolderId={page.folder_id}
         primaryTagId={page.primary_tag_id}
         onMove={handleMovePage}
         isLoading={isMoving}
