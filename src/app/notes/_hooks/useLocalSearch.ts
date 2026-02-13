@@ -7,7 +7,14 @@ import { db } from "~/storage/db";
 export function useLocalSearch(query: string) {
   return useLiveQuery(
     async () => {
-      if (!query.trim()) return [];
+      if (!query.trim()) {
+        return await db.pages
+          .orderBy("updatedAt")
+          .reverse()
+          .filter((p) => p.deleted === 0)
+          .limit(10)
+          .toArray();
+      }
 
       // Instant prefix/title search
       return await db.pages
